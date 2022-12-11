@@ -14,6 +14,7 @@
   1: audio1
   2: audio2
   3: audio3
+  4: volume cv
 
   Outputs:
   0: combination out
@@ -23,7 +24,7 @@
 */
 
 
-#define MIXER_INCOUNT         4
+#define MIXER_INCOUNT         5
 #define MIXER_OUTCOUNT        1
 #define MIXER_CONTROLCOUNT    1
 
@@ -31,6 +32,7 @@
 #define MIXER_IN_PORT_AUDIO1  1
 #define MIXER_IN_PORT_AUDIO2  2
 #define MIXER_IN_PORT_AUDIO3  3
+#define MIXER_IN_PORT_VOL     4
 
 #define MIXER_OUT_PORT_SUM    0
 

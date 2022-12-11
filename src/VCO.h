@@ -11,8 +11,8 @@
 
 /*
   Inputs:
-  0: freq
-  1: pulse width
+  0: freq cv
+  1: pulse width cv
 
   Outputs:
   0: sin wave: audio volt range
@@ -28,7 +28,6 @@
 #define VCO_INCOUNT         2
 #define VCO_OUTCOUNT        5
 #define VCO_CONTROLCOUNT    2
-
 
 #define VCO_IN_PORT_FREQ    0
 #define VCO_IN_PORT_PW      1

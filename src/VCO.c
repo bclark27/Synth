@@ -65,6 +65,7 @@ static Module vtable = {
 };
 
 #define DEFAULT_CONTROL_FREQ    0
+#define DEFAULT_CONTROL_PW      0.5f
 
 //////////////////////
 // PUBLIC FUNCTIONS //
@@ -80,6 +81,7 @@ Module * VCO_init()
 
   // set all control values
   SET_CONTROL_CURR_FREQ(vco, DEFAULT_CONTROL_FREQ);
+  SET_CONTROL_CURR_PW(vco, DEFAULT_CONTROL_PW);
 
   // push curr to prev
   CONTROL_PUSH_TO_PREV(vco);

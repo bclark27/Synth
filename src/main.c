@@ -5,7 +5,7 @@
 #include "AudioSettings.h"
 #include <math.h>
 
-#define SCREEN_WIDTH        1024
+#define SCREEN_WIDTH        2048
 #define SCREEN_HEIGHT       786
 #define FPS                 60
 
@@ -16,13 +16,13 @@ int main(void)
   Module * vco1 = ModuleFactory_createModule(ModuleType_VCO);
   Module * mix0 = ModuleFactory_createModule(ModuleType_Mixer);
 
-  R4 * vco0Sig = vco0->getOutputAddr(vco0, VCO_OUT_PORT_SAW);
-  R4 * vco1Sig = vco1->getOutputAddr(vco1, VCO_OUT_PORT_SQR);
+  R4 * vco0Sig = vco0->getOutputAddr(vco0, VCO_OUT_PORT_TRI);
+  R4 * vco1Sig = vco1->getOutputAddr(vco1, VCO_OUT_PORT_SAW);
   R4 * mixSig = mix0->getOutputAddr(mix0, MIXER_OUT_PORT_SUM);
 
-  vco0->setControlVal(vco0, VCO_CONTROL_FREQ, -1);
-  vco0->setControlVal(vco0, VCO_CONTROL_FREQ, -2);
-  mix0->setControlVal(mix0, MIXER_CONTROL_VOL, -1);
+  vco0->setControlVal(vco0, VCO_CONTROL_FREQ, 0);
+  vco1->setControlVal(vco1, VCO_CONTROL_FREQ, -1);
+  mix0->setControlVal(mix0, MIXER_CONTROL_VOL, -5);
 
   mix0->linkToInput(mix0, MIXER_IN_PORT_AUDIO0, vco0Sig);
   mix0->linkToInput(mix0, MIXER_IN_PORT_AUDIO1, vco1Sig);
@@ -82,7 +82,7 @@ int main(void)
 
       for (U4 t = 0; t < STREAM_BUFFER_SIZE; t++)
       {
-        signal[t] = mixSig[t] / 5;//(sig0[t] + sig1[t] + sig2[t]) / 3;
+        signal[t] = mixSig[t];//(sig0[t] + sig1[t] + sig2[t]) / 3;
       }
 
       UpdateAudioStream(synthStream, signal, STREAM_BUFFER_SIZE);

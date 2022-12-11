@@ -13,6 +13,7 @@
 #define IN_PORT_AUDIO1(mix)               ((mix)->inputPorts[MIXER_IN_PORT_AUDIO1])
 #define IN_PORT_AUDIO2(mix)               ((mix)->inputPorts[MIXER_IN_PORT_AUDIO2])
 #define IN_PORT_AUDIO3(mix)               ((mix)->inputPorts[MIXER_IN_PORT_AUDIO3])
+#define IN_PORT_VOL(mix)                  ((mix)->inputPorts[MIXER_IN_PORT_VOL])
 
 #define OUT_PORT_SUM(mix)                 (CURR_PORT_ADDR(mix, MIXER_OUT_PORT_SUM))
 
@@ -101,9 +102,10 @@ static void updateState(void * modPtr)
     if (IN_PORT_AUDIO2(mix)) sum[i] += IN_PORT_AUDIO2(mix)[i];
     if (IN_PORT_AUDIO3(mix)) sum[i] += IN_PORT_AUDIO3(mix)[i];
 
-    R4 rawVolts = INTERP(GET_CONTROL_PREV_VOL(mix), GET_CONTROL_CURR_VOL(mix), STREAM_BUFFER_SIZE, i);
-    R4 amp = VoltUtils_voltDbToAmpl(rawVolts);
-    sum[i] *= amp;
+    R4 rawVolts = 0;
+    if (IN_PORT_VOL(mix)) rawVolts += IN_PORT_VOL(mix)[i];
+    rawVolts += INTERP(GET_CONTROL_PREV_VOL(mix), GET_CONTROL_CURR_VOL(mix), STREAM_BUFFER_SIZE, i);
+    sum[i] *= VoltUtils_voltDbToAmpl(rawVolts);
   }
 
   CONTROL_PUSH_TO_PREV(mix);
