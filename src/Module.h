@@ -14,6 +14,7 @@ typedef struct Module
   void (*updateState)(void*);
   void (*pushCurrToPrev)(void*);
   R4* (*getOutputAddr)(void*,U4);
+  R4* (*getInputAddr)(void*,U4);
   U4 (*getInCount)(void*);
   U4 (*getOutCount)(void*);
   U4 (*getContolCount)(void*);

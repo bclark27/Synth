@@ -1,7 +1,7 @@
 
 #include "raylib/raylib.h"
 #include "comm/Common.h"
-#include "ModuleFactory.h"
+#include "ModularSynth.h"
 #include "AudioSettings.h"
 #include <math.h>
 
@@ -9,50 +9,55 @@
 #define SCREEN_HEIGHT       786
 #define FPS                 60
 
+static void timeTest(void)
+{
+  ModularSynth * synth = ModularSynth_init();
+  // ModularID clk = ModularSynth_addModule(synth, ModuleType_Clock);
+  ModularID adsr = ModularSynth_addModule(synth, ModuleType_ADSR);
+
+  // ModularSynth_addConnection(synth, clk, CLOCK_OUT_PORT_CLOCK, adsr, ADSR_IN_PORT_GATE);
+
+  struct timeval stop, start;
+  gettimeofday(&start, NULL);
+
+  for (int i = 0; i < 500; i++)
+  {
+    ModularSynth_update(synth);
+  }
+
+  gettimeofday(&stop, NULL);
+  double t = (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec;
+  printf("took %lf s\n", t / 1000000);
+
+  ModularSynth_free(synth);
+}
+
+
+
 
 int main(void)
 {
-  Module * vco0 = ModuleFactory_createModule(ModuleType_VCO);
-  Module * vco1 = ModuleFactory_createModule(ModuleType_VCO);
-  Module * mix0 = ModuleFactory_createModule(ModuleType_Mixer);
 
-  R4 * vco0Sig = vco0->getOutputAddr(vco0, VCO_OUT_PORT_TRI);
-  R4 * vco1Sig = vco1->getOutputAddr(vco1, VCO_OUT_PORT_SAW);
-  R4 * mixSig = mix0->getOutputAddr(mix0, MIXER_OUT_PORT_SUM);
+  ModularSynth * synth = ModularSynth_init();
 
-  vco0->setControlVal(vco0, VCO_CONTROL_FREQ, 0);
-  vco1->setControlVal(vco1, VCO_CONTROL_FREQ, -1);
-  mix0->setControlVal(mix0, MIXER_CONTROL_VOL, -5);
+  // ModularID vco0 = ModularSynth_addModule(synth, ModuleType_VCO);
+  // ModularID vco1 = ModularSynth_addModule(synth, ModuleType_VCO);
+  // ModularID vco2 = ModularSynth_addModule(synth, ModuleType_VCO);
+  ModularID clk0 = ModularSynth_addModule(synth, ModuleType_Clock);
+  ModularID mul0 = ModularSynth_addModule(synth, ModuleType_ClockMult);
 
-  mix0->linkToInput(mix0, MIXER_IN_PORT_AUDIO0, vco0Sig);
-  mix0->linkToInput(mix0, MIXER_IN_PORT_AUDIO1, vco1Sig);
+  // ModularSynth_addConnection(synth, vco0, VCO_OUT_PORT_SQR, vco1, VCO_IN_PORT_FREQ);
+  // ModularSynth_addConnection(synth, vco1, VCO_OUT_PORT_SAW, vco2, VCO_IN_PORT_FREQ);
+  // ModularSynth_addConnection(synth, vco2, VCO_OUT_PORT_SIN, OUT_MODULE_ID, OUTPUT_IN_PORT_LEFT);
 
+  ModularSynth_addConnection(synth, clk0, CLOCK_OUT_PORT_CLOCK, mul0, CLKMULT_IN_PORT_CLKIN);
+  ModularSynth_addConnection(synth, mul0, CLKMULT_OUT_PORT_HALF, OUT_MODULE_ID, OUTPUT_IN_PORT_LEFT);
 
-
-  // R4 tmp[STREAM_BUFFER_SIZE];
-  // vco0->linkToInput(vco0, 0, tmp);
-  //
-  // struct timeval stop, start;
-  //
-  // gettimeofday(&start, NULL);
-  // for (U4 i = 0; i < 600; i++)
-  // {
-  //   vco0->updateState(vco0);
-  //   mix0->updateState(mix0);
-  //
-  //   vco0->pushCurrToPrev(vco0);
-  //   mix0->pushCurrToPrev(mix0);
-  // }
-  // gettimeofday(&stop, NULL);
-  // double t = (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec;
-  // printf("took %lf s\n", t / 1000000);
-  // exit(0);
+  R4 * signal = ModularSynth_getLeftChannel(synth);
 
 
 
 
-
-  R4 signal[STREAM_BUFFER_SIZE];
   InitAudioDevice();
 
   SetAudioStreamBufferSizeDefault(STREAM_BUFFER_SIZE);
@@ -61,6 +66,7 @@ int main(void)
     sizeof(float) * 8,
     1
   );
+
   SetMasterVolume(0.5);
   PlayAudioStream(synthStream);
 
@@ -72,19 +78,7 @@ int main(void)
   {
     if (IsAudioStreamProcessed(synthStream))
     {
-      vco0->updateState(vco0);
-      vco1->updateState(vco1);
-      mix0->updateState(mix0);
-
-      vco0->pushCurrToPrev(vco0);
-      vco1->pushCurrToPrev(vco1);
-      mix0->pushCurrToPrev(mix0);
-
-      for (U4 t = 0; t < STREAM_BUFFER_SIZE; t++)
-      {
-        signal[t] = mixSig[t];//(sig0[t] + sig1[t] + sig2[t]) / 3;
-      }
-
+      ModularSynth_update(synth);
       UpdateAudioStream(synthStream, signal, STREAM_BUFFER_SIZE);
     }
 
@@ -110,6 +104,5 @@ int main(void)
   CloseAudioDevice();
   CloseWindow();
 
-  ModuleFactory_destroyModule(vco0);
-  ModuleFactory_destroyModule(mix0);
+  ModularSynth_free(synth);
 }

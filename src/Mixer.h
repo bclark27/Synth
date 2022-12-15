@@ -10,14 +10,14 @@
 
 /*
   Inputs:
-  0: audio0
-  1: audio1
-  2: audio2
-  3: audio3
-  4: volume cv
+  0: audio0: audio volt range
+  1: audio1: audio volt range
+  2: audio2: audio volt range
+  3: audio3: audio volt range
+  4: volume cv: cv volt range
 
   Outputs:
-  0: combination out
+  0: combination out: audio volt range
 
   Controls:
   0: volume
@@ -50,8 +50,8 @@ typedef struct Mixer
   R4 * inputPorts[MIXER_INCOUNT];
 
   // output ports
-  R4 outputPortsPrev[STREAM_BUFFER_SIZE * MIXER_OUTCOUNT];
-  R4 outputPortsCurr[STREAM_BUFFER_SIZE * MIXER_OUTCOUNT];
+  R4 outputPortsPrev[MODULE_BUFFER_SIZE * MIXER_OUTCOUNT];
+  R4 outputPortsCurr[MODULE_BUFFER_SIZE * MIXER_OUTCOUNT];
 
   R4 controlsCurr[MIXER_CONTROLCOUNT];
   R4 controlsPrev[MIXER_CONTROLCOUNT];

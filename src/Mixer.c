@@ -6,8 +6,10 @@
 // DEFINES  //
 //////////////
 
-#define PREV_PORT_ADDR(mod, port)         (((Mixer*)(mod))->outputPortsPrev + STREAM_BUFFER_SIZE * (port))
-#define CURR_PORT_ADDR(mod, port)         (((Mixer*)(mod))->outputPortsCurr + STREAM_BUFFER_SIZE * (port))
+#define IN_PORT_ADDR(mod, port)           (((Mixer*)(mod))->inputPorts[port]);
+
+#define PREV_PORT_ADDR(mod, port)         (((Mixer*)(mod))->outputPortsPrev + MODULE_BUFFER_SIZE * (port))
+#define CURR_PORT_ADDR(mod, port)         (((Mixer*)(mod))->outputPortsCurr + MODULE_BUFFER_SIZE * (port))
 
 #define IN_PORT_AUDIO0(mix)               ((mix)->inputPorts[MIXER_IN_PORT_AUDIO0])
 #define IN_PORT_AUDIO1(mix)               ((mix)->inputPorts[MIXER_IN_PORT_AUDIO1])
@@ -33,6 +35,7 @@ static void free_mixer(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
 static R4 * getOutputAddr(void * modPtr, U4 port);
+static R4 * getInputAddr(void * modPtr, U4 port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
@@ -49,6 +52,7 @@ static Module vtable = {
   .updateState = updateState,
   .pushCurrToPrev = pushCurrToPrev,
   .getOutputAddr = getOutputAddr,
+  .getInputAddr = getInputAddr,
   .getInCount = getInCount,
   .getOutCount = getOutCount,
   .getContolCount = getControlCount,
@@ -93,18 +97,18 @@ static void updateState(void * modPtr)
   Mixer * mix = (Mixer *)modPtr;
 
   R4 * sum = OUT_PORT_SUM(mix);
-  for (U4 i = 0; i < STREAM_BUFFER_SIZE; i++)
+  for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
   {
     sum[i] = 0;
 
-    if (IN_PORT_AUDIO0(mix)) sum[i] += IN_PORT_AUDIO0(mix)[i];
-    if (IN_PORT_AUDIO1(mix)) sum[i] += IN_PORT_AUDIO1(mix)[i];
-    if (IN_PORT_AUDIO2(mix)) sum[i] += IN_PORT_AUDIO2(mix)[i];
-    if (IN_PORT_AUDIO3(mix)) sum[i] += IN_PORT_AUDIO3(mix)[i];
+    sum[i] += IN_PORT_AUDIO0(mix) ? IN_PORT_AUDIO0(mix)[i] : 0;
+    sum[i] += IN_PORT_AUDIO1(mix) ? IN_PORT_AUDIO1(mix)[i] : 0;
+    sum[i] += IN_PORT_AUDIO2(mix) ? IN_PORT_AUDIO2(mix)[i] : 0;
+    sum[i] += IN_PORT_AUDIO3(mix) ? IN_PORT_AUDIO3(mix)[i] : 0;
 
     R4 rawVolts = 0;
-    if (IN_PORT_VOL(mix)) rawVolts += IN_PORT_VOL(mix)[i];
-    rawVolts += INTERP(GET_CONTROL_PREV_VOL(mix), GET_CONTROL_CURR_VOL(mix), STREAM_BUFFER_SIZE, i);
+    rawVolts += IN_PORT_VOL(mix) ? IN_PORT_VOL(mix)[i] : 0;
+    rawVolts += INTERP(GET_CONTROL_PREV_VOL(mix), GET_CONTROL_CURR_VOL(mix), MODULE_BUFFER_SIZE, i);
     sum[i] *= VoltUtils_voltDbToAmpl(rawVolts);
   }
 
@@ -114,12 +118,19 @@ static void updateState(void * modPtr)
 static void pushCurrToPrev(void * modPtr)
 {
   Mixer * mix = (Mixer *)modPtr;
-  memcpy(mix->outputPortsPrev, mix->outputPortsCurr, sizeof(R4) * STREAM_BUFFER_SIZE * MIXER_CONTROLCOUNT);
+  memcpy(mix->outputPortsPrev, mix->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * MIXER_OUTCOUNT);
 }
 
 static R4 * getOutputAddr(void * modPtr, U4 port)
 {
-  if (port >= MIXER_CONTROLCOUNT) return NULL;
+  if (port >= MIXER_OUTCOUNT) return NULL;
+
+  return PREV_PORT_ADDR(modPtr, port);
+}
+
+static R4 * getInputAddr(void * modPtr, U4 port)
+{
+  if (port >= MIXER_INCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
 }
@@ -141,7 +152,7 @@ static U4 getControlCount(void * modPtr)
 
 static void setControlVal(void * modPtr, U4 id, R4 val)
 {
-  if (id >= MIXER_INCOUNT) return;
+  if (id >= MIXER_CONTROLCOUNT) return;
 
   Mixer * mix = (Mixer *)modPtr;
   mix->controlsCurr[id] = val;
@@ -149,7 +160,7 @@ static void setControlVal(void * modPtr, U4 id, R4 val)
 
 static R4 getControlVal(void * modPtr, U4 id)
 {
-  if (id >= MIXER_INCOUNT) return 0;
+  if (id >= MIXER_CONTROLCOUNT) return 0;
 
   Mixer * mix = (Mixer *)modPtr;
   return mix->controlsCurr[id];

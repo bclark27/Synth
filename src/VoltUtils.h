@@ -12,22 +12,26 @@ different synth racks come with different standards for voltages on in and outpu
 set these ranges to emulate some type of rack
 */
 
-#define VOLTSTD_CV_MAX          5.f
-#define VOLTSTD_CV_MIN          (-VOLTSTD_CV_MAX)
-#define VOLTSTD_CV_RANGE        (VOLTSTD_CV_MAX - VOLTSTD_CV_MIN)
-#define VOLTSTD_CV_MID          ((VOLTSTD_CV_MAX + VOLTSTD_CV_MIN) / 2)
+#define VOLTSTD_CV_MAX            5.f
+#define VOLTSTD_CV_MIN            (-VOLTSTD_CV_MAX)
+#define VOLTSTD_CV_RANGE          (VOLTSTD_CV_MAX - VOLTSTD_CV_MIN)
+#define VOLTSTD_CV_MID            ((VOLTSTD_CV_MAX + VOLTSTD_CV_MIN) / 2)
 
-#define VOLTSTD_C3_VOLTAGE      0.f
-#define VOLTSTD_C3_FREQ         130.8128
+#define VOLTSTD_C3_VOLTAGE        0.f
+#define VOLTSTD_C3_FREQ           130.8128
 
-#define VOLTSTD_GATE_ON         5.f
-#define VOLTSTD_GATE_OFF        0.f
+#define VOLTSTD_GATE_HIGH         5.f
+#define VOLTSTD_GATE_LOW          0.f
+#define VOLTSTD_GATE_ERROR        0.01f
+#define VOLTSTD_GATE_HIGH_THRESH  (VOLTSTD_GATE_HIGH - VOLTSTD_GATE_ERROR)
+#define VOLTSTD_GATE_LOW_THRESH   (VOLTSTD_GATE_LOW + VOLTSTD_GATE_ERROR)
 
-#define VOLTSTD_AUD_MAX         5.f
-#define VOLTSTD_AUD_MIN         (-VOLTSTD_AUD_MAX)
-#define VOLTSTD_AUD_RANGE       (VOLTSTD_AUD_MAX - VOLTSTD_AUD_MIN)
+#define VOLTSTD_AUD_MAX           5.f
+#define VOLTSTD_AUD_MIN           (-VOLTSTD_AUD_MAX)
+#define VOLTSTD_AUD_RANGE         (VOLTSTD_AUD_MAX - VOLTSTD_AUD_MIN)
 
-#define VOLTSTD_VOLT_PER_DB     0.2f
+#define VOLTSTD_VOLT_PER_DB_AMP   0.2f
+#define VOLTSTD_VOLT_PER_DB_ATN   0.33f
 
 ////////////////////////
 //  PUBLIC FUNCTIONS  //

@@ -19,10 +19,10 @@ inline R4 VoltUtils_voltToFreq(R4 volts)
 
 inline R4 VoltUtils_voltDbToAmpl(R4 volts)
 {
-  return fasterPow(10, (volts - VOLTSTD_CV_MID) * VOLTSTD_VOLT_PER_DB);
+  return fasterPow(10, (volts - VOLTSTD_CV_MID) * VOLTSTD_VOLT_PER_DB_AMP);
 }
 
 inline R4 VoltUtils_voltDbToAtten(R4 volts)
 {
-  return volts <= VOLTSTD_CV_MIN ? 0 : fasterPow(10, (volts - VOLTSTD_CV_MAX) * VOLTSTD_VOLT_PER_DB);
+  return volts <= VOLTSTD_CV_MIN ? 0 : fasterPow(10, (volts - VOLTSTD_CV_MAX) * VOLTSTD_VOLT_PER_DB_ATN);
 }

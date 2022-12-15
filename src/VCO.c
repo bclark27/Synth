@@ -6,8 +6,10 @@
 // DEFINES  //
 //////////////
 
-#define PREV_PORT_ADDR(mod, port)         (((VCO*)(mod))->outputPortsPrev + STREAM_BUFFER_SIZE * (port))
-#define CURR_PORT_ADDR(mod, port)         (((VCO*)(mod))->outputPortsCurr + STREAM_BUFFER_SIZE * (port))
+#define IN_PORT_ADDR(mod, port)           (((VCO*)(mod))->inputPorts[port]);
+
+#define PREV_PORT_ADDR(mod, port)         (((VCO*)(mod))->outputPortsPrev + MODULE_BUFFER_SIZE * (port))
+#define CURR_PORT_ADDR(mod, port)         (((VCO*)(mod))->outputPortsCurr + MODULE_BUFFER_SIZE * (port))
 
 #define IN_PORT_FREQ(vco)                 ((vco)->inputPorts[VCO_IN_PORT_FREQ])
 #define IN_PORT_PW(vco)                   ((vco)->inputPorts[VCO_IN_PORT_PW])
@@ -37,6 +39,7 @@ static void free_vco(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
 static R4 * getOutputAddr(void * modPtr, U4 port);
+static R4 * getInputAddr(void * modPtr, U4 port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
@@ -56,6 +59,7 @@ static Module vtable = {
   .updateState = updateState,
   .pushCurrToPrev = pushCurrToPrev,
   .getOutputAddr = getOutputAddr,
+  .getInputAddr = getInputAddr,
   .getInCount = getInCount,
   .getOutCount = getOutCount,
   .getContolCount = getControlCount,
@@ -70,7 +74,6 @@ static Module vtable = {
 //////////////////////
 // PUBLIC FUNCTIONS //
 //////////////////////
-
 
 Module * VCO_init()
 {
@@ -109,19 +112,19 @@ static void updateState(void * modPtr)
 {
   VCO * vco = (VCO *)modPtr;
 
-  R4 strideTable[STREAM_BUFFER_SIZE];
-  R4 pwTable[STREAM_BUFFER_SIZE];
+  R4 strideTable[MODULE_BUFFER_SIZE];
+  R4 pwTable[MODULE_BUFFER_SIZE];
 
   createStrideTable(vco, strideTable);
   createPwTable(vco, pwTable);
 
-  Oscillator_sampleWithStrideAndPWTable(&vco->oscSin, OUT_PORT_SIN(vco), STREAM_BUFFER_SIZE, strideTable, pwTable);
-  Oscillator_sampleWithStrideAndPWTable(&vco->oscSaw, OUT_PORT_SAW(vco), STREAM_BUFFER_SIZE, strideTable, pwTable);
-  Oscillator_sampleWithStrideAndPWTable(&vco->oscSqr, OUT_PORT_SQR(vco), STREAM_BUFFER_SIZE, strideTable, pwTable);
-  Oscillator_sampleWithStrideAndPWTable(&vco->oscTri, OUT_PORT_TRI(vco), STREAM_BUFFER_SIZE, strideTable, pwTable);
+  Oscillator_sampleWithStrideAndPWTable(&vco->oscSin, OUT_PORT_SIN(vco), MODULE_BUFFER_SIZE, strideTable, pwTable);
+  Oscillator_sampleWithStrideAndPWTable(&vco->oscSaw, OUT_PORT_SAW(vco), MODULE_BUFFER_SIZE, strideTable, pwTable);
+  Oscillator_sampleWithStrideAndPWTable(&vco->oscSqr, OUT_PORT_SQR(vco), MODULE_BUFFER_SIZE, strideTable, pwTable);
+  Oscillator_sampleWithStrideAndPWTable(&vco->oscTri, OUT_PORT_TRI(vco), MODULE_BUFFER_SIZE, strideTable, pwTable);
 
   // scale osc output to min and max volt range
-  for (U4 i = 0; i < STREAM_BUFFER_SIZE * VCO_OUTCOUNT; i++)
+  for (U4 i = 0; i < MODULE_BUFFER_SIZE * VCO_OUTCOUNT; i++)
   {
     vco->outputPortsCurr[i] = (VOLTSTD_AUD_RANGE * vco->outputPortsCurr[i]) - VOLTSTD_AUD_MAX;
   }
@@ -133,7 +136,7 @@ static void updateState(void * modPtr)
 static void pushCurrToPrev(void * modPtr)
 {
   VCO * vco = (VCO *)modPtr;
-  memcpy(vco->outputPortsPrev, vco->outputPortsCurr, sizeof(R4) * STREAM_BUFFER_SIZE * VCO_OUTCOUNT);
+  memcpy(vco->outputPortsPrev, vco->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * VCO_OUTCOUNT);
 }
 
 static R4 * getOutputAddr(void * modPtr, U4 port)
@@ -141,6 +144,13 @@ static R4 * getOutputAddr(void * modPtr, U4 port)
   if (port >= VCO_OUTCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
+}
+
+static R4 * getInputAddr(void * modPtr, U4 port)
+{
+  if (port >= VCO_INCOUNT) return NULL;
+
+  return IN_PORT_ADDR(modPtr, port);
 }
 
 static U4 getInCount(void * modPtr)
@@ -160,7 +170,7 @@ static U4 getControlCount(void * modPtr)
 
 static void setControlVal(void * modPtr, U4 id, R4 val)
 {
-  if (id >= VCO_INCOUNT) return;
+  if (id >= VCO_CONTROLCOUNT) return;
 
   VCO * vco = (VCO *)modPtr;
   vco->controlsCurr[id] = val;
@@ -168,7 +178,7 @@ static void setControlVal(void * modPtr, U4 id, R4 val)
 
 static R4 getControlVal(void * modPtr, U4 id)
 {
-  if (id >= VCO_INCOUNT) return 0;
+  if (id >= VCO_CONTROLCOUNT) return 0;
 
   VCO * vco = (VCO *)modPtr;
   return vco->controlsCurr[id];
@@ -186,9 +196,9 @@ static void createStrideTable(VCO * vco, R4 * table)
 {
   if (IN_PORT_FREQ(vco))
   {
-    for (U4 i = 0; i < STREAM_BUFFER_SIZE; i++)
+    for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-      R4 freqControlVolts = INTERP(GET_CONTROL_PREV_FREQ(vco), GET_CONTROL_CURR_FREQ(vco), STREAM_BUFFER_SIZE, i);
+      R4 freqControlVolts = INTERP(GET_CONTROL_PREV_FREQ(vco), GET_CONTROL_CURR_FREQ(vco), MODULE_BUFFER_SIZE, i);
       R4 totalFreqVolts = IN_PORT_FREQ(vco)[i] + freqControlVolts;
       table[i] = VoltUtils_voltToFreq(totalFreqVolts);
       table[i] /= SAMPLE_RATE;
@@ -196,9 +206,9 @@ static void createStrideTable(VCO * vco, R4 * table)
   }
   else
   {
-    for (U4 i = 0; i < STREAM_BUFFER_SIZE; i++)
+    for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-      R4 freqControlVolts = INTERP(GET_CONTROL_PREV_FREQ(vco), GET_CONTROL_CURR_FREQ(vco), STREAM_BUFFER_SIZE, i);
+      R4 freqControlVolts = INTERP(GET_CONTROL_PREV_FREQ(vco), GET_CONTROL_CURR_FREQ(vco), MODULE_BUFFER_SIZE, i);
       table[i] = VoltUtils_voltToFreq(freqControlVolts);
       table[i] /= SAMPLE_RATE;
     }
@@ -209,17 +219,17 @@ static void createPwTable(VCO * vco, R4 * table)
 {
   if (IN_PORT_PW(vco))
   {
-    for (U4 i = 0; i < STREAM_BUFFER_SIZE; i++)
+    for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-      R4 totalPwVolts = IN_PORT_PW(vco)[i] + INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), STREAM_BUFFER_SIZE, i);
+      R4 totalPwVolts = IN_PORT_PW(vco)[i] / VOLTSTD_CV_MAX + INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), MODULE_BUFFER_SIZE, i);
       table[i] = MAX(MIN(totalPwVolts, 0.99f), 0.01f);
     }
   }
   else
   {
-    for (U4 i = 0; i < STREAM_BUFFER_SIZE; i++)
+    for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-      R4 totalPwVolts = INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), STREAM_BUFFER_SIZE, i);
+      R4 totalPwVolts = INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), MODULE_BUFFER_SIZE, i);
       table[i] = MAX(MIN(totalPwVolts, 0.99f), 0.01f);
     }
   }

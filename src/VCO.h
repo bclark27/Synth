@@ -11,8 +11,8 @@
 
 /*
   Inputs:
-  0: freq cv
-  1: pulse width cv
+  0: freq: audio volt range
+  1: pulse width: audio volt range
 
   Outputs:
   0: sin wave: audio volt range
@@ -26,7 +26,7 @@
 */
 
 #define VCO_INCOUNT         2
-#define VCO_OUTCOUNT        5
+#define VCO_OUTCOUNT        4
 #define VCO_CONTROLCOUNT    2
 
 #define VCO_IN_PORT_FREQ    0
@@ -52,8 +52,8 @@ typedef struct VCO
   R4 * inputPorts[VCO_INCOUNT];
 
   // output ports
-  R4 outputPortsPrev[STREAM_BUFFER_SIZE * VCO_OUTCOUNT];
-  R4 outputPortsCurr[STREAM_BUFFER_SIZE * VCO_OUTCOUNT];
+  R4 outputPortsPrev[MODULE_BUFFER_SIZE * VCO_OUTCOUNT];
+  R4 outputPortsCurr[MODULE_BUFFER_SIZE * VCO_OUTCOUNT];
 
   R4 controlsCurr[VCO_CONTROLCOUNT];
   R4 controlsPrev[VCO_CONTROLCOUNT];

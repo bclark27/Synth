@@ -5,8 +5,12 @@
 #include "Module.h"
 
 // all known modules:
+#include "OutputModule.h"
+#include "Clock.h"
+#include "ClockMult.h"
 #include "VCO.h"
 #include "Mixer.h"
+#include "ADSR.h"
 
 ///////////
 // TYPES //
@@ -14,8 +18,12 @@
 
 typedef enum ModuleType
 {
+  ModuleType_OutputModule,
+  ModuleType_Clock,
+  ModuleType_ClockMult,
   ModuleType_VCO,
   ModuleType_Mixer,
+  ModuleType_ADSR,
 } ModuleType;
 
 ////////////////////////

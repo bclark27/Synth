@@ -1,0 +1,85 @@
+#ifndef ADSR_H_
+#define ADSR_H_
+
+#include "comm/Common.h"
+#include "Module.h"
+
+///////////////
+//  DEFINES  //
+///////////////
+
+/*
+  Inputs:
+  0: gate in: gate range [0v, 5v]
+  1: attack: cv range [-5v, 5v]
+  2: decay: cv range [-5v, 5v]
+  3: sustain: cv range [-5v, 5v]
+  4: release: cv range [-5v, 5v]
+
+  Outputs:
+  0: envelope: cv range [-5v, 5v]
+
+  Controls:
+  0: attack
+  1: decay
+  2: sustain
+  3: release
+*/
+
+#define ADSR_INCOUNT            5
+#define ADSR_OUTCOUNT           1
+#define ADSR_CONTROLCOUNT       4
+
+#define ADSR_IN_PORT_GATE       0
+#define ADSR_IN_PORT_A          1
+#define ADSR_IN_PORT_D          2
+#define ADSR_IN_PORT_S          3
+#define ADSR_IN_PORT_R          4
+
+#define ADSR_OUT_PORT_ENV       0
+
+#define ADSR_CONTROL_A          0
+#define ADSR_CONTROL_D          1
+#define ADSR_CONTROL_S          2
+#define ADSR_CONTROL_R          3
+
+///////////
+// TYPES //
+///////////
+
+typedef enum ADSR_section
+{
+  ADSR_ASection,
+  ADSR_DSection,
+  ADSR_SSection,
+  ADSR_RSection,
+
+} ADSR_section;
+
+typedef struct ADSR
+{
+  Module module;
+
+  // input ports
+  R4 * inputPorts[ADSR_INCOUNT];
+
+  // output ports
+  R4 outputPortsPrev[MODULE_BUFFER_SIZE * ADSR_OUTCOUNT];
+  R4 outputPortsCurr[MODULE_BUFFER_SIZE * ADSR_OUTCOUNT];
+
+  R4 controlsCurr[ADSR_CONTROLCOUNT];
+  R4 controlsPrev[ADSR_CONTROLCOUNT];
+
+  ADSR_section section;
+  R4 timeSinceSectionStart;
+  R4 prevSampleValue;
+  R4 releaseStartVal;
+
+  bool isHeld;
+  bool envelopeActive;
+
+} ADSR;
+
+Module * ADSR_init(void);
+
+#endif

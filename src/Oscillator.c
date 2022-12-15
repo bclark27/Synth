@@ -231,8 +231,19 @@ R4 sawWave(R4 x, R4 shape)
   }
   return (TWO_ON_PI * sum + 1.01) / 2;
 #else
+  // R4 percent = x / PI2;
+  // if (percent < shape)
+  // {
+  //   return x / (PI2 * shape);
+  // }
+  // else
+  // {
+  //   return -(x - PI2 * shape) / (PI2 * (1 - shape)) + 1;
+  // }
+  
   R4 val = -x / PI + 1;
   return (val + 1) / 2;
+
 #endif
 }
 
