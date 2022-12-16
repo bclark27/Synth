@@ -221,7 +221,7 @@ static void createPwTable(VCO * vco, R4 * table)
   {
     for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-      R4 totalPwVolts = IN_PORT_PW(vco)[i] / VOLTSTD_CV_MAX + INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), MODULE_BUFFER_SIZE, i);
+      R4 totalPwVolts = IN_PORT_PW(vco)[i] / VOLTSTD_MOD_CV_MAX + INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), MODULE_BUFFER_SIZE, i);
       table[i] = MAX(MIN(totalPwVolts, 0.99f), 0.01f);
     }
   }

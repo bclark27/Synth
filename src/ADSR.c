@@ -76,11 +76,12 @@ static Module vtable = {
   .linkToInput = linkToInput,
 };
 
-#define DEFAULT_CONTROL_A   0.1f
-#define DEFAULT_CONTROL_D   0.4f
-#define DEFAULT_CONTROL_S   0.5f
+#define DEFAULT_CONTROL_A   0.01f
+#define DEFAULT_CONTROL_D   0.1f
+#define DEFAULT_CONTROL_S   0.1f
 #define DEFAULT_CONTROL_R   1.0f
 
+static int okok = 0;
 //////////////////////
 // PUBLIC FUNCTIONS //
 //////////////////////
@@ -130,6 +131,11 @@ static void updateState(void * modPtr)
     currS += IN_PORT_S(adsr) ? IN_PORT_S(adsr)[i] : 0;
     currR += IN_PORT_R(adsr) ? IN_PORT_R(adsr)[i] : 0;
 
+    currA = MAX(0, currA);
+    currD = MAX(0, currD);
+    currS = MAX(0, currS);
+    currR = MAX(0, currR);
+
     R4 gateVal = IN_PORT_GATE(adsr) ? IN_PORT_GATE(adsr)[i] : 0;
 
     bool isNewHigh = adsr->prevSampleValue < VOLTSTD_GATE_HIGH_THRESH &&
@@ -143,9 +149,11 @@ static void updateState(void * modPtr)
     // update envelope state
     // sample from correct equation
     R4 finalVal = 0;
+    // printf("%d\n", okok++);
 
     if (isNewHigh)
     {
+      adsr->prevADSRVal = adsr->prevADSRStop;
       adsr->section = ADSR_ASection;
       adsr->timeSinceSectionStart = 0;
       adsr->envelopeActive = 1;
@@ -165,9 +173,11 @@ static void updateState(void * modPtr)
         progressEnvelope(adsr, currA, currD, currS, currR);
       }
 
-      finalVal = sampleEnvelope(adsr, currA, currD, currS, currR);
     }
 
+    finalVal = sampleEnvelope(adsr, currA, currD, currS, currR);
+
+    adsr->prevADSRStop = finalVal;
     finalVal = (VOLTSTD_AUD_RANGE * finalVal) - VOLTSTD_AUD_MAX;
 
     OUT_PORT_ENV(adsr)[i] = finalVal;
@@ -241,7 +251,7 @@ static void progressEnvelope(ADSR * adsr, R4 currA, R4 currD, R4 currS, R4 currR
   switch (adsr->section)
   {
     case ADSR_ASection:
-    if (adsr->timeSinceSectionStart > currA)
+    if (adsr->timeSinceSectionStart / currA + adsr->prevADSRVal > 1)
     {
       adsr->section = ADSR_DSection;
       adsr->timeSinceSectionStart = 0;
@@ -265,7 +275,7 @@ static void progressEnvelope(ADSR * adsr, R4 currA, R4 currD, R4 currS, R4 currR
     break;
 
     case ADSR_RSection:
-    if (adsr->timeSinceSectionStart > currA)
+    if (adsr->timeSinceSectionStart > currR)
     {
       adsr->section = ADSR_ASection;
       adsr->timeSinceSectionStart = 0;
@@ -282,14 +292,15 @@ static R4 sampleEnvelope(ADSR * adsr, R4 currA, R4 currD, R4 currS, R4 currR)
   switch (adsr->section)
   {
     case ADSR_ASection:
-    val = adsr->timeSinceSectionStart / currA;
+    val = adsr->timeSinceSectionStart / currA + adsr->prevADSRVal;
     adsr->releaseStartVal = val;
     return val;
     break;
 
     case ADSR_DSection:
-    val = -adsr->timeSinceSectionStart / currD + 1;
+    val = (1 - currS) * -adsr->timeSinceSectionStart / currD + 1;
     adsr->releaseStartVal = val;
+    if (val == 0) printf("HERE\n");
     return val;
     break;
 
@@ -299,7 +310,8 @@ static R4 sampleEnvelope(ADSR * adsr, R4 currA, R4 currD, R4 currS, R4 currR)
     break;
 
     case ADSR_RSection:
-    return adsr->releaseStartVal * (-adsr->timeSinceSectionStart / currR + 1);
+    val = adsr->releaseStartVal * (-adsr->timeSinceSectionStart / currR + 1);
+    return val;
     break;
   }
 

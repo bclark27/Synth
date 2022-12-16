@@ -13,9 +13,10 @@ static void timeTest(void)
 {
   ModularSynth * synth = ModularSynth_init();
   // ModularID clk = ModularSynth_addModule(synth, ModuleType_Clock);
-  ModularID adsr = ModularSynth_addModule(synth, ModuleType_ADSR);
+  ModularID clk = ModularSynth_addModule(synth, ModuleType_Clock);
+  ModularID seq = ModularSynth_addModule(synth, ModuleType_Sequencer);
 
-  // ModularSynth_addConnection(synth, clk, CLOCK_OUT_PORT_CLOCK, adsr, ADSR_IN_PORT_GATE);
+  ModularSynth_addConnection(synth, clk, CLOCK_OUT_PORT_CLOCK, seq, SEQ_IN_PORT_CLKIN);
 
   struct timeval stop, start;
   gettimeofday(&start, NULL);
@@ -44,14 +45,17 @@ int main(void)
   // ModularID vco1 = ModularSynth_addModule(synth, ModuleType_VCO);
   // ModularID vco2 = ModularSynth_addModule(synth, ModuleType_VCO);
   ModularID clk0 = ModularSynth_addModule(synth, ModuleType_Clock);
-  ModularID mul0 = ModularSynth_addModule(synth, ModuleType_ClockMult);
+  ModularID seq = ModularSynth_addModule(synth, ModuleType_Sequencer);
+  ModularID adsr = ModularSynth_addModule(synth, ModuleType_ADSR);
+
 
   // ModularSynth_addConnection(synth, vco0, VCO_OUT_PORT_SQR, vco1, VCO_IN_PORT_FREQ);
   // ModularSynth_addConnection(synth, vco1, VCO_OUT_PORT_SAW, vco2, VCO_IN_PORT_FREQ);
   // ModularSynth_addConnection(synth, vco2, VCO_OUT_PORT_SIN, OUT_MODULE_ID, OUTPUT_IN_PORT_LEFT);
 
-  ModularSynth_addConnection(synth, clk0, CLOCK_OUT_PORT_CLOCK, mul0, CLKMULT_IN_PORT_CLKIN);
-  ModularSynth_addConnection(synth, mul0, CLKMULT_OUT_PORT_HALF, OUT_MODULE_ID, OUTPUT_IN_PORT_LEFT);
+  ModularSynth_addConnection(synth, clk0, CLOCK_OUT_PORT_CLOCK, seq, SEQ_IN_PORT_CLKIN);
+  ModularSynth_addConnection(synth, seq, SEQ_OUT_PORT_GATE, adsr, ADSR_IN_PORT_GATE);
+  ModularSynth_addConnection(synth, adsr, ADSR_OUT_PORT_ENV, OUT_MODULE_ID, OUTPUT_IN_PORT_LEFT);
 
   R4 * signal = ModularSynth_getLeftChannel(synth);
 

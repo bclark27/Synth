@@ -11,6 +11,7 @@
 #include "VCO.h"
 #include "Mixer.h"
 #include "ADSR.h"
+#include "Sequencer.h"
 
 ///////////
 // TYPES //
@@ -24,6 +25,7 @@ typedef enum ModuleType
   ModuleType_VCO,
   ModuleType_Mixer,
   ModuleType_ADSR,
+  ModuleType_Sequencer,
 } ModuleType;
 
 ////////////////////////

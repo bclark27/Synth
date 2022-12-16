@@ -11,13 +11,13 @@
 /*
   Inputs:
   0: gate in: gate range [0v, 5v]
-  1: attack: cv range [-5v, 5v]
-  2: decay: cv range [-5v, 5v]
-  3: sustain: cv range [-5v, 5v]
-  4: release: cv range [-5v, 5v]
+  1: attack: mod cv range [-10v, 10v]
+  2: decay: mod cv range [-10v, 10v]
+  3: sustain: mod cv range [-10v, 10v]
+  4: release: mod cv range [-10v, 10v]
 
   Outputs:
-  0: envelope: cv range [-5v, 5v]
+  0: envelope: mod cv range [-10v, 10v]
 
   Controls:
   0: attack
@@ -74,6 +74,8 @@ typedef struct ADSR
   R4 timeSinceSectionStart;
   R4 prevSampleValue;
   R4 releaseStartVal;
+  R4 prevADSRStop;
+  R4 prevADSRVal;
 
   bool isHeld;
   bool envelopeActive;

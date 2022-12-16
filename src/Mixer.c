@@ -61,7 +61,7 @@ static Module vtable = {
   .linkToInput = linkToInput,
 };
 
-#define DEFAULT_CONTROL_VOL   VOLTSTD_CV_MID
+#define DEFAULT_CONTROL_VOL   VOLTSTD_MOD_CV_MID
 
 ////////////////////////
 //  PUBLIC FUNCTIONS  //

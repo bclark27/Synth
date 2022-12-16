@@ -32,6 +32,10 @@ Module * ModuleFactory_createModule(ModuleType type)
     case ModuleType_ADSR:
     mod = ADSR_init();
     break;
+
+    case ModuleType_Sequencer:
+    mod = Sequencer_init();
+    break;
   }
 
   return mod;

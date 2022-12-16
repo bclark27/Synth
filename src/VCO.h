@@ -11,8 +11,8 @@
 
 /*
   Inputs:
-  0: freq: audio volt range
-  1: pulse width: audio volt range
+  0: freq: pitch cv range [0v - 5v]
+  1: pulse width: cv mod range [-10v - 10v]
 
   Outputs:
   0: sin wave: audio volt range
