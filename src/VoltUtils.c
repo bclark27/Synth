@@ -26,5 +26,5 @@ inline R4 VoltUtils_voltDbToAtten(R4 volts)
 {
   if (volts <= VOLTSTD_MOD_CV_MIN) return 0;
   if (volts >= VOLTSTD_MOD_CV_MAX) return 1;
-  return fasterPow(10, (volts - VOLTSTD_MOD_CV_MAX) * VOLTSTD_VOLT_PER_DB_ATN);
+  return volts / (VOLTSTD_MOD_CV_RANGE) + 0.5;//fasterPow(10, (volts - VOLTSTD_MOD_CV_MAX) * VOLTSTD_VOLT_PER_DB_ATN);
 }

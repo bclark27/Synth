@@ -123,6 +123,7 @@ static void updateState(void * modPtr)
   Oscillator_sampleWithStrideAndPWTable(&vco->oscSqr, OUT_PORT_SQR(vco), MODULE_BUFFER_SIZE, strideTable, pwTable);
   Oscillator_sampleWithStrideAndPWTable(&vco->oscTri, OUT_PORT_TRI(vco), MODULE_BUFFER_SIZE, strideTable, pwTable);
 
+
   // scale osc output to min and max volt range
   for (U4 i = 0; i < MODULE_BUFFER_SIZE * VCO_OUTCOUNT; i++)
   {

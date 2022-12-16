@@ -96,6 +96,11 @@ Module * Sequencer_init(void)
     SET_CONTROL_CURR_NOTE_ON(seq, i, 1);
   }
 
+  for (U4 i = 0; i < SEQ_NOTE_COUNT_TOTAL; i += 1)
+  {
+    SET_CONTROL_CURR_NOTE_PITCH(seq, i, i / (R4)12);
+  }
+
   SET_CONTROL_CURR_NOTE_LEN(seq, 0.5f);
   SET_CONTROL_CURR_SEQ_LEN(seq, SEQ_NOTE_COUNT_TOTAL);
 
@@ -183,11 +188,9 @@ static void updateState(void * modPtr)
     }
 
     // gate is not expired, note continues
-    // set teh gate high and the pitch cv
+    // set the gate high and the pitch cv
     OUT_PORT_GATE(seq)[i] = VOLTSTD_GATE_HIGH;
-
-    R4 pitchVolts = GET_CONTROL_CURR_NOTE_PITCH(seq, SEQ_CONTROL_NOTE_PITCH(seq->currentStepNum));
-    OUT_PORT_PITCH(seq)[i] = VoltUtils_voltToFreq(pitchVolts);
+    OUT_PORT_PITCH(seq)[i] = GET_CONTROL_CURR_NOTE_PITCH(seq, SEQ_CONTROL_NOTE_PITCH(seq->currentStepNum));
   }
 
   // push curr to prev

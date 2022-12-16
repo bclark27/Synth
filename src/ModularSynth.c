@@ -209,7 +209,7 @@ bool ModularSynth_removeModule(ModularSynth * synth, ModularID id)
 bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, U4 srcPort, ModularID destId, U4 destPort)
 {
   // exclude output module as a source
-  if (srcId == ModuleType_OutputModule) return 0;
+  if (srcId == OUT_MODULE_ID) return 0;
 
   // exclude out of bound id
   if (srcId >= MAX_RACK_SIZE || destId >= MAX_RACK_SIZE) return 0;
@@ -226,7 +226,6 @@ bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, U4 srcPor
 
   // they exist and ports are good! link them
   destMod->linkToInput(destMod, destPort, srcMod->getOutputAddr(srcMod, srcPort));
-
 
   return 1;
 }

@@ -78,10 +78,9 @@ static Module vtable = {
 
 #define DEFAULT_CONTROL_A   0.01f
 #define DEFAULT_CONTROL_D   0.1f
-#define DEFAULT_CONTROL_S   0.1f
-#define DEFAULT_CONTROL_R   1.0f
+#define DEFAULT_CONTROL_S   0.0f
+#define DEFAULT_CONTROL_R   0.3f
 
-static int okok = 0;
 //////////////////////
 // PUBLIC FUNCTIONS //
 //////////////////////
@@ -178,7 +177,7 @@ static void updateState(void * modPtr)
     finalVal = sampleEnvelope(adsr, currA, currD, currS, currR);
 
     adsr->prevADSRStop = finalVal;
-    finalVal = (VOLTSTD_AUD_RANGE * finalVal) - VOLTSTD_AUD_MAX;
+    finalVal = (VOLTSTD_MOD_CV_RANGE * finalVal) - VOLTSTD_MOD_CV_MAX;
 
     OUT_PORT_ENV(adsr)[i] = finalVal;
   }

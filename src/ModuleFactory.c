@@ -36,6 +36,10 @@ Module * ModuleFactory_createModule(ModuleType type)
     case ModuleType_Sequencer:
     mod = Sequencer_init();
     break;
+
+    case ModuleType_Attenuator:
+    mod = Attenuator_init();
+    break;
   }
 
   return mod;
