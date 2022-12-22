@@ -8,7 +8,7 @@
 //////////////
 
 #undef  ANALOG
-#define HARMONICS 64
+#define HARMONICS 32
 
 /////////////////////////////
 //  FUNCTION DECLERATIONS  //
@@ -210,7 +210,7 @@ R4 squareWave(R4 x, R4 shape)
   for (U4 i = 0; i < HARMONICS; i++)
   {
     U4 term = i * 2 + 1;
-    sum += fastSin(term * x) / term;
+    sum += fastSin(term * x, shape) / term;
   }
   return (sum + 1) / 2;
 #else
@@ -240,7 +240,7 @@ R4 sawWave(R4 x, R4 shape)
   // {
   //   return -(x - PI2 * shape) / (PI2 * (1 - shape)) + 1;
   // }
-  
+
   R4 val = -x / PI + 1;
   return (val + 1) / 2;
 

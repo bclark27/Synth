@@ -46,6 +46,6 @@ ModularID ModularSynth_addModule(ModularSynth * synth, ModuleType type);
 bool ModularSynth_removeModule(ModularSynth * synth, ModularID id);
 bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, U4 srcPort, ModularID destId, U4 destPort);
 bool ModularSynth_removeConnection(ModularSynth * synth);
-
+bool ModularSynth_setControl(ModularSynth * synth, ModularID id, U4 controlID, R4 val);
 
 #endif

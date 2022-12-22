@@ -77,6 +77,7 @@ typedef struct Sequencer
   U4 currentStepNum;
   R4 gateOpenTime;
   bool clockIsHigh;
+  bool gateHigh;
 } Sequencer;
 
 ////////////////////////

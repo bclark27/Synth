@@ -12,6 +12,7 @@
 #define CURR_PORT_ADDR(mod, port)         (((ADSR*)(mod))->outputPortsCurr + MODULE_BUFFER_SIZE * (port))
 
 #define IN_PORT_GATE(adsr)                ((adsr)->inputPorts[ADSR_IN_PORT_GATE])
+#define IN_PORT_TRIG(adsr)                ((adsr)->inputPorts[ADSR_IN_PORT_TRIG])
 #define IN_PORT_A(adsr)                   ((adsr)->inputPorts[ADSR_IN_PORT_A])
 #define IN_PORT_D(adsr)                   ((adsr)->inputPorts[ADSR_IN_PORT_D])
 #define IN_PORT_S(adsr)                   ((adsr)->inputPorts[ADSR_IN_PORT_S])
@@ -77,8 +78,8 @@ static Module vtable = {
 };
 
 #define DEFAULT_CONTROL_A   0.01f
-#define DEFAULT_CONTROL_D   0.1f
-#define DEFAULT_CONTROL_S   0.0f
+#define DEFAULT_CONTROL_D   0.05f
+#define DEFAULT_CONTROL_S   0.1f
 #define DEFAULT_CONTROL_R   0.3f
 
 //////////////////////
@@ -143,7 +144,6 @@ static void updateState(void * modPtr)
     adsr->prevSampleValue = gateVal;
 
     adsr->isHeld = gateVal > VOLTSTD_GATE_HIGH_THRESH;
-
 
     // update envelope state
     // sample from correct equation
@@ -266,7 +266,12 @@ static void progressEnvelope(ADSR * adsr, R4 currA, R4 currD, R4 currS, R4 currR
     break;
 
     case ADSR_SSection:
-    if (adsr->timeSinceSectionStart > currS)
+    // if (adsr->timeSinceSectionStart > currS)
+    // {
+    //   adsr->section = ADSR_RSection;
+    //   adsr->timeSinceSectionStart = 0;
+    // }
+    if (!adsr->isHeld)
     {
       adsr->section = ADSR_RSection;
       adsr->timeSinceSectionStart = 0;
@@ -291,24 +296,27 @@ static R4 sampleEnvelope(ADSR * adsr, R4 currA, R4 currD, R4 currS, R4 currR)
   switch (adsr->section)
   {
     case ADSR_ASection:
+    // printf("A\n");
     val = adsr->timeSinceSectionStart / currA + adsr->prevADSRVal;
     adsr->releaseStartVal = val;
     return val;
     break;
 
     case ADSR_DSection:
+    // printf("D\n");
     val = (1 - currS) * -adsr->timeSinceSectionStart / currD + 1;
     adsr->releaseStartVal = val;
-    if (val == 0) printf("HERE\n");
     return val;
     break;
 
     case ADSR_SSection:
+    // printf("S\n");
     adsr->releaseStartVal = currS;
     return currS;
     break;
 
     case ADSR_RSection:
+    // printf("R\n");
     val = adsr->releaseStartVal * (-adsr->timeSinceSectionStart / currR + 1);
     return val;
     break;

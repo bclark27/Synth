@@ -26,15 +26,16 @@
   3: release
 */
 
-#define ADSR_INCOUNT            5
+#define ADSR_INCOUNT            6
 #define ADSR_OUTCOUNT           1
 #define ADSR_CONTROLCOUNT       4
 
 #define ADSR_IN_PORT_GATE       0
-#define ADSR_IN_PORT_A          1
-#define ADSR_IN_PORT_D          2
-#define ADSR_IN_PORT_S          3
-#define ADSR_IN_PORT_R          4
+#define ADSR_IN_PORT_TRIG       1
+#define ADSR_IN_PORT_A          2
+#define ADSR_IN_PORT_D          3
+#define ADSR_IN_PORT_S          4
+#define ADSR_IN_PORT_R          5
 
 #define ADSR_OUT_PORT_ENV       0
 

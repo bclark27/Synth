@@ -230,6 +230,16 @@ bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, U4 srcPor
   return 1;
 }
 
+bool ModularSynth_setControl(ModularSynth * synth, ModularID id, U4 controlID, R4 val)
+{
+  Module * mod = getModuleById(synth, id);
+
+  if (!mod) return 0;
+
+  mod->setControlVal(mod, controlID, val);
+  return 1;
+}
+
 /////////////////////////
 //  PRIVATE FUNCTIONS  //
 /////////////////////////
@@ -239,7 +249,7 @@ static Module * getModuleById(ModularSynth * synth, ModularID id)
   // check id bounds
   if (id >= MAX_RACK_SIZE) return NULL;
 
-  // check if module exists
+  // check if module does not exist
   if (synth->moduleIDAvailability[id]) return NULL;
 
   return synth->modules[synth->moduleIDtoIdx[id]];

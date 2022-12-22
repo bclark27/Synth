@@ -79,6 +79,9 @@ static Module vtable = {
   .linkToInput = linkToInput,
 };
 
+#define DEFAULT_NOTE_LEN  0.1f
+#define DEFAULT_SEQ_LEN   4
+
 //////////////////////
 // PUBLIC FUNCTIONS //
 //////////////////////
@@ -96,13 +99,19 @@ Module * Sequencer_init(void)
     SET_CONTROL_CURR_NOTE_ON(seq, i, 1);
   }
 
-  for (U4 i = 0; i < SEQ_NOTE_COUNT_TOTAL; i += 1)
-  {
-    SET_CONTROL_CURR_NOTE_PITCH(seq, i, i / (R4)12);
-  }
+  // for (U4 i = 0; i < SEQ_NOTE_COUNT_TOTAL; i += 1)
+  // {
+  //   SET_CONTROL_CURR_NOTE_PITCH(seq, i, i / (R4)12);
+  // }
 
-  SET_CONTROL_CURR_NOTE_LEN(seq, 0.5f);
-  SET_CONTROL_CURR_SEQ_LEN(seq, SEQ_NOTE_COUNT_TOTAL);
+  SET_CONTROL_CURR_NOTE_PITCH(seq, 0, 0 / (R4)12);
+  SET_CONTROL_CURR_NOTE_PITCH(seq, 1, 4 / (R4)12);
+  SET_CONTROL_CURR_NOTE_PITCH(seq, 2, 7 / (R4)12);
+  SET_CONTROL_CURR_NOTE_PITCH(seq, 3, 9 / (R4)12);
+
+
+  SET_CONTROL_CURR_NOTE_LEN(seq, DEFAULT_NOTE_LEN);
+  SET_CONTROL_CURR_SEQ_LEN(seq, DEFAULT_SEQ_LEN);
 
 
 
@@ -110,6 +119,7 @@ Module * Sequencer_init(void)
   seq->currentStepNum = 0;
   seq->gateOpenTime = 0;
   seq->clockIsHigh = 0;
+  seq->gateHigh = 0;
 
   // push curr to prev
   CONTROL_PUSH_TO_PREV(seq);
@@ -134,6 +144,7 @@ static void updateState(void * modPtr)
 
   for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
   {
+
     // zero all outputs, only turn on if passed the tests bellow
     OUT_PORT_GATE(seq)[i] = VOLTSTD_GATE_LOW;
     OUT_PORT_TRIG(seq)[i] = VOLTSTD_GATE_LOW;
@@ -154,43 +165,32 @@ static void updateState(void * modPtr)
     // if the clock has now risen
     if (risingEdge)
     {
-      // set the curr gate time to 0
-      seq->gateOpenTime = 0;
-
-      // progress to the next note
       seq->currentStepNum = (seq->currentStepNum + 1) % sequenceLen;
     }
 
+    if (!GET_CONTROL_CURR_NOTE_ON(seq, seq->currentStepNum)) continue;
 
-    // if the note is off then do not allow the gate or trig to open
-    if (GET_CONTROL_CURR_NOTE_ON(seq, seq->currentStepNum) == 0)
-    {
-      continue;
-    }
-
-    // set the trigger output if rising edge
     if (risingEdge)
     {
       OUT_PORT_TRIG(seq)[i] = VOLTSTD_GATE_HIGH;
+      OUT_PORT_GATE(seq)[i] = VOLTSTD_GATE_HIGH;
+      seq->gateOpenTime = 0;
+      seq->gateHigh = 1;
     }
 
-    // if the gate open is zero, assume the gate is done
-    if (!risingEdge && seq->gateOpenTime == 0) continue;
+    if (!seq->gateHigh) continue;
 
-    // update the gate open time
     seq->gateOpenTime += SEC_PER_SAMPLE;
 
-    // if gate is open too long, close it and continue
     if (seq->gateOpenTime >= GET_CONTROL_CURR_NOTE_LEN(seq))
     {
-      seq->gateOpenTime = 0;
+      seq->gateHigh = 0;
       continue;
     }
 
-    // gate is not expired, note continues
-    // set the gate high and the pitch cv
     OUT_PORT_GATE(seq)[i] = VOLTSTD_GATE_HIGH;
-    OUT_PORT_PITCH(seq)[i] = GET_CONTROL_CURR_NOTE_PITCH(seq, SEQ_CONTROL_NOTE_PITCH(seq->currentStepNum));
+    OUT_PORT_PITCH(seq)[i] = GET_CONTROL_CURR_NOTE_PITCH(seq, seq->currentStepNum);
+
   }
 
   // push curr to prev
