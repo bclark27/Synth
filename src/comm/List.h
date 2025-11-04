@@ -56,7 +56,7 @@ typedef List Stack;
 
 List * List_listInit(U4 dataLen, bool passByVal, CompareFunction compFunc, FreeDataFunction freeFunc);
 void List_listObjInit(List * list, U4 dataLen, bool passByVal, CompareFunction compFunc, FreeDataFunction freeFunc);
-void List_iterateList(List * list, callbackFunction callBack, void * args);
+void List_iterateList(List * list, CallbackFunction callBack, void * args);
 ListItr List_getItr(List * list);
 void * List_getNextRef(ListItr * itr);
 void * List_getNextVal(ListItr * itr);

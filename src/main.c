@@ -63,8 +63,8 @@ static void timeTest(void)
 
 int main(void)
 {
-  timeTest();
-  exit(0);
+  // timeTest();
+  // exit(0);
 
 
 

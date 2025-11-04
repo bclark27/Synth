@@ -23,7 +23,7 @@ typedef struct
 HashSet * HashSet_init(U4 keyLen, bool passByRef, FreeDataFunction freeDataFunc, HashFunction keyHashFunc);
 void HashSet_free(HashSet * hs);
 
-void HashSet_iterate(HashSet * hs, callbackFunction callBack, void * args);
+void HashSet_iterate(HashSet * hs, CallbackFunction callBack, void * args);
 bool HashSet_insert(HashSet * hs, void * key);
 void HashSet_remove(HashSet * hs, void * key);
 bool HashSet_keyIn(HashSet * hs, void * key);

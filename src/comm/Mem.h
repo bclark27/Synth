@@ -17,7 +17,7 @@ this is a bad free.
 //  DEFINES  //
 ///////////////
 
-#ifdef TRACK_MEM
+#ifdef TRACK_MEMasdfasdf
 
 #define malloc(s)       mem_malloc(s, __FILE__, __LINE__)
 #define calloc(n, s)    mem_calloc(n, s, __FILE__, __LINE__)

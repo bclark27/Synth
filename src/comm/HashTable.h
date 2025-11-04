@@ -59,8 +59,8 @@ void * HashTable_getVal(HashTable * ht, void * key, U4 keyLen, U4 * valLen, Hash
 void HashTable_remove(HashTable * ht, void * key, U4 keyLen, HashFunction keyHashFunc);
 bool HashTable_keyIn(HashTable * ht, void * key, U4 keyLen, HashFunction keyHashFunc);
 bool HashTable_valIn(HashTable * ht, void * key, U4 keyLen, HashFunction keyHashFunc);
-void HashTable_iterateTableVals(HashTable * ht, callbackFunction callBack, void * args);
-void HashTable_iterateTableKeys(HashTable * ht, callbackFunction callBack, void * args);
-void HashTable_iterateTableKV(HashTable * ht, callbackFunction callBack, void * args);
+void HashTable_iterateTableVals(HashTable * ht, CallbackFunction callBack, void * args);
+void HashTable_iterateTableKeys(HashTable * ht, CallbackFunction callBack, void * args);
+void HashTable_iterateTableKV(HashTable * ht, CallbackFunction callBack, void * args);
 
 #endif

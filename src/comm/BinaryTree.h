@@ -40,9 +40,9 @@ typedef struct BinaryTree
 BinaryTree * BinaryTree_init(U4 dataLen, bool passByVal, CompareFunction compFunc, FreeDataFunction freeFunc);
 void BinaryTree_free(BinaryTree * bt);
 
-void BinaryTree_nodePreOrderTraversal(TreeNode * tn, callbackFunction callback, void * args);
-void BinaryTree_nodePostOrderTraversal(TreeNode * tn, callbackFunction callback, void * args);
-void BinaryTree_nodeInOrderTraversal(TreeNode * tn, callbackFunction callback, void * args);
+void BinaryTree_nodePreOrderTraversal(TreeNode * tn, CallbackFunction callback, void * args);
+void BinaryTree_nodePostOrderTraversal(TreeNode * tn, CallbackFunction callback, void * args);
+void BinaryTree_nodeInOrderTraversal(TreeNode * tn, CallbackFunction callback, void * args);
 
 bool BinaryTree_insert(BinaryTree * bt, void * data);
 bool BinaryTree_remove(BinaryTree * bt, void * data);
