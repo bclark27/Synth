@@ -11,6 +11,8 @@
 //  FUNCTION DECLERATIONS  //
 /////////////////////////////
 
+static Module * getModuleByName(ModularSynth * synth, char * name);
+static ModularID getModuleIdByName(ModularSynth * synth, char * name, bool* found);
 static Module * getModuleById(ModularSynth * synth, ModularID id);
 static bool connectionLogEq(ModuleConnection a, ModuleConnection b);
 static bool connectionExists(ModularSynth * synth, ModuleConnection connection);
@@ -19,6 +21,7 @@ static void removeConnectionLog(ModularSynth * synth, ModuleConnection connectio
 static void getAllInPortConnections(ModularSynth * synth, ModularID id, ModuleConnection * connections, U4 * connectionsCount);
 static void getAllOutPortConnections(ModularSynth * synth, ModularID id, ModularPortID port, ModuleConnection * connections, U4 * connectionsCount);
 static ModuleConnection getConnectionToDestInPort(ModularSynth * synth, ModularID id, ModularPortID port, bool* found);
+static bool addConnectionHelper(ModularSynth * synth, Module * srcMod, ModularID srcId, ModularPortID srcPort, Module * destMod, ModularID destId, ModularPortID destPort);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -189,6 +192,8 @@ bool ModularSynth_removeModule(ModularSynth * synth, ModularID id)
     }
 
   }
+  
+  // TODO: need to go in here and remove the book keeping about the connections
 
   // free the module
   ModuleFactory_destroyModule(delMod);
@@ -234,27 +239,28 @@ bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, ModularPo
 
   if (!srcMod || !destMod) return 0;
 
-  // check that port numbers are valid
-  if (srcPort >= srcMod->getOutCount(srcMod)) return 0;
-  if (destPort >= destMod->getInCount(destMod)) return 0;
+  return addConnectionHelper(synth, srcMod, srcId, srcPort, destMod, destId, destPort);
+}
 
-  // check that the destination is not hooked up to something already
-  bool found;
-  ModuleConnection connection = getConnectionToDestInPort(synth, destId, destPort, &found);
-  if (found) return 0;
+bool ModularSynth_addConnectionByName(ModularSynth * synth, char* srcModuleName, char* srcPortName, char* destModuleName, char* destPortName)
+{
+  if (!srcModuleName || !srcPortName || !destModuleName || !destPortName) return 0;
 
-  // they exist and ports are good! link them
-  destMod->linkToInput(destMod, destPort, srcMod->getOutputAddr(srcMod, srcPort));
+  bool srcFound;
+  bool destFound;
+  ModularID srcId = getModuleIdByName(synth, srcModuleName, &srcFound);
+  ModularID destId = getModuleIdByName(synth, destModuleName, &destFound);
+  if (!srcFound || !destFound) return 0;
+  
+  Module * srcMod = getModuleById(synth, srcId);
+  Module * destMod = getModuleById(synth, destId);
+  if (!srcMod || !destMod) return 0;
+  
+  ModularPortID srcPort = Module_GetOutPortId(srcMod, srcPortName, &srcFound);
+  ModularPortID destPort = Module_GetInPortId(destMod, destPortName, &destFound);
+  if (!srcFound || !destFound) return 0;
 
-  logConnection(synth, (ModuleConnection)
-    { 
-      .srcPort = srcPort, 
-      .destPort = destPort, 
-      .srcMod = srcId, 
-      .destMod = destId
-    });
-
-  return 1;
+  return addConnectionHelper(synth, srcMod, srcId, srcPort, destMod, destId, destPort);
 }
 
 void ModularSynth_removeConnection(ModularSynth * synth, ModularID destId, ModularPortID destPort)
@@ -380,6 +386,35 @@ char* ModularSynth_PrintFullModuleInfo(ModularSynth * synth, ModularID id)
 //  PRIVATE FUNCTIONS  //
 /////////////////////////
 
+static Module * getModuleByName(ModularSynth * synth, char * name)
+{
+  for (int i = 0; i < synth->modulesCount; i++)
+  {
+    if (strcmp(synth->modules[i]->name, name) == 0) return synth->modules[i];
+  }
+
+  return NULL;
+}
+
+static ModularID getModuleIdByName(ModularSynth * synth, char * name, bool* found)
+{
+  for (int id = 0; id < MAX_RACK_SIZE; id++)
+  {
+    if (synth->moduleIDAvailability[id] == 0)
+    {
+      U2 idx = synth->moduleIDtoIdx[id];
+      Module * mod = synth->modules[idx];
+      if (strcmp(mod->name, name) == 0)
+      {
+        *found = 1;
+        return id;
+      }
+    }
+  }
+
+  *found = 0;
+}
+
 static Module * getModuleById(ModularSynth * synth, ModularID id)
 {
   // check id bounds
@@ -469,4 +504,29 @@ static ModuleConnection getConnectionToDestInPort(ModularSynth * synth, ModularI
     }
   }
   *found = 0;
+}
+
+static bool addConnectionHelper(ModularSynth * synth, Module * srcMod, ModularID srcId, ModularPortID srcPort, Module * destMod, ModularID destId, ModularPortID destPort)
+{
+  // check that port numbers are valid
+  if (srcPort >= srcMod->getOutCount(srcMod)) return 0;
+  if (destPort >= destMod->getInCount(destMod)) return 0;
+  
+  // check that the destination is not hooked up to something already
+  bool found;
+  ModuleConnection connection = getConnectionToDestInPort(synth, destId, destPort, &found);
+  if (found) return 0;
+
+  // they exist and ports are good! link them
+  destMod->linkToInput(destMod, destPort, srcMod->getOutputAddr(srcMod, srcPort));
+
+  logConnection(synth, (ModuleConnection)
+    { 
+      .srcPort = srcPort, 
+      .destPort = destPort, 
+      .srcMod = srcId, 
+      .destMod = destId
+    });
+
+  return 1;
 }

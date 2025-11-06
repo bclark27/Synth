@@ -145,9 +145,11 @@ int main(void)
   synth = ModularSynth_init();
 
   ModularID vco1 = ModularSynth_addModule(synth, ModuleType_VCO, strdup("vco1"));
-  ModularSynth_addConnection(synth, vco1, VCO_OUT_PORT_SAW, vco1, VCO_IN_PORT_FREQ);
-  ModularSynth_addConnection(synth, vco1, VCO_OUT_PORT_SAW, vco1, VCO_IN_PORT_PW);
-  ModularSynth_removeConnection(synth, vco1, VCO_IN_PORT_FREQ);
+  // ModularSynth_addConnection(synth, vco1, VCO_OUT_PORT_SAW, vco1, VCO_IN_PORT_FREQ);
+  // ModularSynth_addConnection(synth, vco1, VCO_OUT_PORT_SAW, vco1, VCO_IN_PORT_PW);
+  ModularSynth_addConnectionByName(synth, "vco1", "saw", "vco1", "freq");
+  ModularSynth_addConnectionByName(synth, "vco1", "saw", "vco1", "pw");
+  //ModularSynth_removeConnection(synth, vco1, VCO_IN_PORT_FREQ);
   printf("%s\n", ModularSynth_PrintFullModuleInfo(synth, vco1));
 
   R4 * signal = ModularSynth_getLeftChannel(synth);

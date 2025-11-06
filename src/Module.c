@@ -1,0 +1,79 @@
+#include "Module.h"
+
+#include "comm/Common.h"
+#include "AudioSettings.h"
+
+//////////////
+// DEFINES  //
+//////////////
+
+/////////////////////////////
+//  FUNCTION DECLERATIONS  //
+/////////////////////////////
+
+//////////////////////
+// PUBLIC FUNCTIONS //
+//////////////////////
+
+ModularPortID Module_GetInPortId(Module* mod, char* name, bool* found)
+{
+    if (!mod || !name)
+    {
+        *found = 0;
+        return 0;
+    }
+
+    for (int i = 0; i < mod->inPortNamesCount; i++)
+    {
+        if (strcmp(name, mod->inPortNames[i]) == 0)
+        {
+            *found = 1;
+            return i;
+        }
+    }
+
+    *found = 0;
+    return 0;
+}
+
+ModularPortID Module_GetOutPortId(Module* mod, char* name, bool* found)
+{
+    if (!mod || !name)
+    {
+        *found = 0;
+        return 0;
+    }
+
+    for (int i = 0; i < mod->outPortNamesCount; i++)
+    {
+        if (strcmp(name, mod->outPortNames[i]) == 0)
+        {
+            *found = 1;
+            return i;
+        }
+    }
+
+    *found = 0;
+    return 0;
+}
+
+ModularPortID Module_GetControlId(Module* mod, char* name, bool* found)
+{
+    if (!mod || !name)
+    {
+        *found = 0;
+        return 0;
+    }
+
+    for (int i = 0; i < mod->controlNamesCount; i++)
+    {
+        if (strcmp(name, mod->controlNames[i]) == 0)
+        {
+            *found = 1;
+            return i;
+        }
+    }
+
+    *found = 0;
+    return 0;
+}

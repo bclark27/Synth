@@ -37,4 +37,8 @@ typedef struct Module
 //  PUBLIC FUNCTIONS  //
 ////////////////////////
 
+ModularPortID Module_GetInPortId(Module* mod, char* name, bool* found);
+ModularPortID Module_GetOutPortId(Module* mod, char* name, bool* found);
+ModularPortID Module_GetControlId(Module* mod, char* name, bool* found);
+
 #endif
