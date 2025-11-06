@@ -41,6 +41,15 @@
 #define R8 double
 #define R16 long double
 
+
+// Shift a contiguous block of an array to a new index.
+// arr: array
+// type: type of array elements
+// start: starting index of block to move
+// end: ending index of block to move (inclusive)
+// dest: destination index (can be < or > start)
+#define ARRAY_SHIFT(arr, type, start, end, dest) \
+    memmove(&(arr)[dest], &(arr)[start], ((end) - (start) + 1) * sizeof(type))
 #define ARRAY_LEN(x) (sizeof(x) / sizeof((x)[0]))
 #define RAND_DOUBLE (((rand() / (double)RAND_MAX) * 2) - 1)
 #define MIN(a,b) (((a)<(b))?(a):(b))

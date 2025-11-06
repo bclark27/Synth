@@ -56,7 +56,7 @@ void ModularSynth_update(ModularSynth * synth);
 ModularID ModularSynth_addModule(ModularSynth * synth, ModuleType type, char * name);
 bool ModularSynth_removeModule(ModularSynth * synth, ModularID id);
 bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, ModularPortID srcPort, ModularID destId, ModularPortID destPort);
-bool ModularSynth_removeConnection(ModularSynth * synth, ModularID srcId, ModularPortID srcPort, ModularID destId, ModularPortID destPort);
+void ModularSynth_removeConnection(ModularSynth * synth, ModularID destId, ModularPortID destPort);
 bool ModularSynth_setControl(ModularSynth * synth, ModularID id, ModularPortID controlID, R4 val);
 
 char* ModularSynth_PrintFullModuleInfo(ModularSynth * synth, ModularID id);

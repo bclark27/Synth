@@ -12,6 +12,13 @@
 /////////////////////////////
 
 static Module * getModuleById(ModularSynth * synth, ModularID id);
+static bool connectionLogEq(ModuleConnection a, ModuleConnection b);
+static bool connectionExists(ModularSynth * synth, ModuleConnection connection);
+static void logConnection(ModularSynth * synth, ModuleConnection connection);
+static void removeConnectionLog(ModularSynth * synth, ModuleConnection connection);
+static void getAllInPortConnections(ModularSynth * synth, ModularID id, ModuleConnection * connections, U4 * connectionsCount);
+static void getAllOutPortConnections(ModularSynth * synth, ModularID id, ModularPortID port, ModuleConnection * connections, U4 * connectionsCount);
+static ModuleConnection getConnectionToDestInPort(ModularSynth * synth, ModularID id, ModularPortID port, bool* found);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -218,6 +225,9 @@ bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, ModularPo
   // exclude out of bound id
   if (srcId >= MAX_RACK_SIZE || destId >= MAX_RACK_SIZE) return 0;
 
+  // check that we have enough space to add a connection
+  if (synth->portConnectionsCount >= MAX_CONN_COUNT) return 0;
+
   // cheeck that the modules exist
   Module * srcMod = getModuleById(synth, srcId);
   Module * destMod = getModuleById(synth, destId);
@@ -228,15 +238,51 @@ bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, ModularPo
   if (srcPort >= srcMod->getOutCount(srcMod)) return 0;
   if (destPort >= destMod->getInCount(destMod)) return 0;
 
+  // check that the destination is not hooked up to something already
+  bool found;
+  ModuleConnection connection = getConnectionToDestInPort(synth, destId, destPort, &found);
+  if (found) return 0;
+
   // they exist and ports are good! link them
   destMod->linkToInput(destMod, destPort, srcMod->getOutputAddr(srcMod, srcPort));
+
+  logConnection(synth, (ModuleConnection)
+    { 
+      .srcPort = srcPort, 
+      .destPort = destPort, 
+      .srcMod = srcId, 
+      .destMod = destId
+    });
 
   return 1;
 }
 
-bool ModularSynth_removeConnection(ModularSynth * synth, ModularID srcId, ModularPortID srcPort, ModularID destId, ModularPortID destPort)
+void ModularSynth_removeConnection(ModularSynth * synth, ModularID destId, ModularPortID destPort)
 {
+  // exclude out of bound id
+  if (destId >= MAX_RACK_SIZE) return;
 
+  // check that we have enough space to add a connection
+  if (synth->portConnectionsCount >= MAX_CONN_COUNT) return;
+
+  // cheeck that the modules exist
+  Module * destMod = getModuleById(synth, destId);
+
+  if (!destMod) return;
+
+  // check that port numbers are valid
+  if (destPort >= destMod->getInCount(destMod)) return;
+
+  // they exist and ports are good! disconnect the dest so it does not point to the other port anymore
+  destMod->linkToInput(destMod, destPort, NULL);
+
+  // find what it was connected to
+  bool found;
+  ModuleConnection connection = getConnectionToDestInPort(synth, destId, destPort, &found);
+  if (found)
+  {
+    removeConnectionLog(synth, connection);
+  }
 }
 
 bool ModularSynth_setControl(ModularSynth * synth, ModularID id, ModularPortID controlID, R4 val)
@@ -267,21 +313,61 @@ char* ModularSynth_PrintFullModuleInfo(ModularSynth * synth, ModularID id)
   snprintf(buffer, bufSize, "Name: %s\n", mod->name ? mod->name : "(unnamed)");
 
   strcat(buffer, "In Ports:\n");
-  for (int i = 0; i < mod->inPortNamesCount; i++) {
+  for (ModularPortID i = 0; i < mod->inPortNamesCount; i++) {
       strcat(buffer, "    ");
       strcat(buffer, mod->inPortNames[i]);
+      strcat(buffer, " <- ");
+      
+      bool found;
+      ModuleConnection connection = getConnectionToDestInPort(synth, id, i, &found);
+      if (found)
+      {
+        Module * otherMod = getModuleById(synth, connection.srcMod);
+        strcat(buffer, otherMod->name);
+        strcat(buffer, ".");
+        strcat(buffer, otherMod->outPortNames[connection.srcPort]);
+      }
+      else
+      {
+        strcat(buffer, "null");
+      }
+      
       strcat(buffer, "\n");
   }
 
   strcat(buffer, "Out Ports:\n");
-  for (int i = 0; i < mod->outPortNamesCount; i++) {
+  ModuleConnection connections[MAX_CONN_COUNT];
+  for (ModularPortID i = 0; i < mod->outPortNamesCount; i++) {
       strcat(buffer, "    ");
       strcat(buffer, mod->outPortNames[i]);
+      strcat(buffer, " -> ");
+
+      U4 count;
+      getAllOutPortConnections(synth, id, i, connections, &count);
+      for (int k = 0; k < count; k++)
+      {
+        ModuleConnection connection = connections[k];
+        Module * otherMod = getModuleById(synth, connection.destMod);
+        strcat(buffer, otherMod->name);
+        strcat(buffer, ".");
+        strcat(buffer, otherMod->inPortNames[connection.destPort]);
+
+        if (k != count - 1)
+        {
+          strcat(buffer, ", ");
+        }
+      }
+
+      if (!count)
+      {
+        strcat(buffer, "null");
+      }
+
       strcat(buffer, "\n");
   }
 
   strcat(buffer, "Control Names:\n");
-  for (int i = 0; i < mod->controlNamesCount; i++) {
+  for (ModularPortID i = 0; i < mod->controlNamesCount; i++) {
       strcat(buffer, "    ");
       strcat(buffer, mod->controlNames[i]);
       strcat(buffer, "\n");
@@ -303,4 +389,84 @@ static Module * getModuleById(ModularSynth * synth, ModularID id)
   if (synth->moduleIDAvailability[id]) return NULL;
 
   return synth->modules[synth->moduleIDtoIdx[id]];
+}
+
+static bool connectionLogEq(ModuleConnection a, ModuleConnection b)
+{
+  return a.destMod == b.destMod &&
+        a.destPort == b.destPort &&
+        a.srcMod   == b.srcMod &&
+        a.srcPort  == b.srcPort;
+}
+
+static bool connectionExists(ModularSynth * synth, ModuleConnection connection)
+{
+  for (int i = 0; i < synth->portConnectionsCount; i++)
+  {
+    if (connectionLogEq(synth->portConnections[i], connection)) return 1;
+  }
+  return 0;
+}
+
+static void logConnection(ModularSynth * synth, ModuleConnection connection)
+{
+  if (connectionExists(synth, connection)) return;
+  if (synth->portConnectionsCount >= MAX_CONN_COUNT) return;
+
+  synth->portConnections[synth->portConnectionsCount] = connection;
+  synth->portConnectionsCount++;
+}
+
+static void removeConnectionLog(ModularSynth * synth, ModuleConnection connection)
+{
+  for (int i = 0; i < synth->portConnectionsCount; i++)
+  {
+    if (connectionLogEq(synth->portConnections[i], connection))
+    {
+      ARRAY_SHIFT(synth->portConnections, ModuleConnection, i + 1, synth->portConnectionsCount - 1, i);
+      synth->portConnectionsCount--;
+      return;
+    }
+  }
+}
+
+static void getAllInPortConnections(ModularSynth * synth, ModularID id, ModuleConnection * connections, U4 * connectionsCount)
+{
+  U4 count = 0;
+  for (int i = 0; i < synth->portConnectionsCount; i++)
+  {
+    if (synth->portConnections[i].destMod == id)
+    {
+      connections[count] = synth->portConnections[i];
+      count++;
+    }
+  }
+  *connectionsCount = count;
+}
+
+static void getAllOutPortConnections(ModularSynth * synth, ModularID id, ModularPortID port, ModuleConnection * connections, U4 * connectionsCount)
+{
+  U4 count = 0;
+  for (int i = 0; i < synth->portConnectionsCount; i++)
+  {
+    if (synth->portConnections[i].srcMod == id && synth->portConnections[i].srcPort == port)
+    {
+      connections[count] = synth->portConnections[i];
+      count++;
+    }
+  }
+  *connectionsCount = count;
+}
+
+static ModuleConnection getConnectionToDestInPort(ModularSynth * synth, ModularID id, ModularPortID port, bool* found)
+{
+  for (int i = 0; i < synth->portConnectionsCount; i++)
+  {
+    if (synth->portConnections[i].destMod == id && synth->portConnections[i].destPort == port)
+    {
+      *found = 1;
+      return synth->portConnections[i];
+    }
+  }
+  *found = 0;
 }
