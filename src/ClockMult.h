@@ -63,6 +63,6 @@ typedef struct ClockMult
 
 } ClockMult;
 
-Module * ClockMult_init();
+Module * ClockMult_init(char* name);
 
 #endif

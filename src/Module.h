@@ -8,19 +8,29 @@
 // TYPES //
 ///////////
 
+typedef U2 ModularPortID;
+
 typedef struct Module
 {
   void (*freeModule)(void*);
   void (*updateState)(void*);
   void (*pushCurrToPrev)(void*);
-  R4* (*getOutputAddr)(void*,U4);
-  R4* (*getInputAddr)(void*,U4);
+  R4* (*getOutputAddr)(void*,ModularPortID);
+  R4* (*getInputAddr)(void*,ModularPortID);
   U4 (*getInCount)(void*);
   U4 (*getOutCount)(void*);
   U4 (*getContolCount)(void*);
-  void (*setControlVal)(void*,U4,R4);
-  R4 (*getControlVal)(void*,U4);
-  void (*linkToInput)(void*,U4,R4*);
+  void (*setControlVal)(void*,ModularPortID,R4);
+  R4 (*getControlVal)(void*,ModularPortID);
+  void (*linkToInput)(void*,ModularPortID,R4*);
+
+  char* name;
+  int inPortNamesCount;
+  char** inPortNames;
+  int outPortNamesCount;
+  char** outPortNames;
+  int controlNamesCount;
+  char** controlNames;
 } Module;
 
 ////////////////////////

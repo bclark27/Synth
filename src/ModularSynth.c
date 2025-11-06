@@ -17,6 +17,8 @@ static Module * getModuleById(ModularSynth * synth, ModularID id);
 //  DEFAULT VALUES  //
 //////////////////////
 
+static const char * outModuleName = "OUT_MOD";
+
 //////////////////////
 // PUBLIC FUNCTIONS //
 //////////////////////
@@ -25,12 +27,12 @@ ModularSynth * ModularSynth_init(void)
 {
   ModularSynth * synth = calloc(1, sizeof(ModularSynth));
 
-  synth->moduleCount = 1;
+  synth->modulesCount = 1;
   synth->moduleIDtoIdx[OUT_MODULE_ID] = OUT_MODULE_IDX;
   memset(synth->moduleIDAvailability, 1, MAX_RACK_SIZE * sizeof(U1));
   synth->moduleIDAvailability[OUT_MODULE_ID] = 0;
 
-  Module * outMod = ModuleFactory_createModule(ModuleType_OutputModule);
+  Module * outMod = ModuleFactory_createModule(ModuleType_OutputModule, strdup(outModuleName));
   synth->modules[OUT_MODULE_IDX] = outMod;
 
   // get output modules out buffers
@@ -69,7 +71,7 @@ void ModularSynth_update(ModularSynth * synth)
   // update all states, then push to out
 
   Module * module;
-  U4 moduleCount = synth->moduleCount;
+  U4 modulesCount = synth->modulesCount;
   R4 * currOutputPtrLeft = synth->outputBufferLeft;
   R4 * currOutputPtrRight = synth->outputBufferRight;
 
@@ -77,14 +79,14 @@ void ModularSynth_update(ModularSynth * synth)
   for (U4 i = 0; i < MODULE_BUFS_PER_STREAM_BUF; i++)
   {
     // update the modules
-    for (U4 m = 0; m < moduleCount; m++)
+    for (U4 m = 0; m < modulesCount; m++)
     {
       module = synth->modules[m];
       module->updateState(module);
     }
 
     // push updates
-    for (U4 m = 0; m < moduleCount; m++)
+    for (U4 m = 0; m < modulesCount; m++)
     {
       module = synth->modules[m];
       module->pushCurrToPrev(module);
@@ -101,7 +103,7 @@ void ModularSynth_update(ModularSynth * synth)
   }
 }
 
-ModularID ModularSynth_addModule(ModularSynth * synth, ModuleType type)
+ModularID ModularSynth_addModule(ModularSynth * synth, ModuleType type, char * name)
 {
   // exclude all output module types
   if (type == ModuleType_OutputModule) return 0;
@@ -120,20 +122,22 @@ ModularID ModularSynth_addModule(ModularSynth * synth, ModuleType type)
   if (!id) return 0;
 
   // create the module
-  Module * module = ModuleFactory_createModule(type);
+  Module * module = ModuleFactory_createModule(type, name);
 
   // add ptr to the end of the list
-  U2 idx = synth->moduleCount;
+  U2 idx = synth->modulesCount;
   synth->modules[idx] = module;
 
   // make sure the len is now +1
-  synth->moduleCount += 1;
+  synth->modulesCount += 1;
 
   // take that idx, and sotre in the id->idx table
   synth->moduleIDtoIdx[id] = idx;
 
   // mark the id as unavailable
   synth->moduleIDAvailability[id] = 0;
+
+  printf("Adding Module\n\tName: %s\n", module->name);
 
   return id;
 }
@@ -161,7 +165,7 @@ bool ModularSynth_removeModule(ModularSynth * synth, ModularID id)
 
   Module * delMod = synth->modules[idx];
 
-  for (U2 i = 0; i < synth->moduleCount; i++)
+  for (U2 i = 0; i < synth->modulesCount; i++)
   {
     if (i == idx) continue;
 
@@ -192,7 +196,7 @@ bool ModularSynth_removeModule(ModularSynth * synth, ModularID id)
   }
 
   // shift all the modules in the module list above idx to down one idx
-  for (U4 i = idx; i < synth->moduleCount - 1; i++)
+  for (U4 i = idx; i < synth->modulesCount - 1; i++)
   {
     synth->modules[i] = synth->modules[i + 1];
   }
@@ -201,12 +205,12 @@ bool ModularSynth_removeModule(ModularSynth * synth, ModularID id)
   synth->moduleIDAvailability[id] = 1;
 
   // decrement the total count
-  synth->moduleCount--;
+  synth->modulesCount--;
 
   return 1;
 }
 
-bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, U4 srcPort, ModularID destId, U4 destPort)
+bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, ModularPortID srcPort, ModularID destId, ModularPortID destPort)
 {
   // exclude output module as a source
   if (srcId == OUT_MODULE_ID) return 0;
@@ -230,7 +234,12 @@ bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, U4 srcPor
   return 1;
 }
 
-bool ModularSynth_setControl(ModularSynth * synth, ModularID id, U4 controlID, R4 val)
+bool ModularSynth_removeConnection(ModularSynth * synth, ModularID srcId, ModularPortID srcPort, ModularID destId, ModularPortID destPort)
+{
+
+}
+
+bool ModularSynth_setControl(ModularSynth * synth, ModularID id, ModularPortID controlID, R4 val)
 {
   Module * mod = getModuleById(synth, id);
 
@@ -238,6 +247,47 @@ bool ModularSynth_setControl(ModularSynth * synth, ModularID id, U4 controlID, R
 
   mod->setControlVal(mod, controlID, val);
   return 1;
+}
+
+char* ModularSynth_PrintFullModuleInfo(ModularSynth * synth, ModularID id)
+{
+  Module * mod = getModuleById(synth, id);
+
+  if (!mod) return NULL;
+
+  // Estimate buffer size (roughly)
+  size_t bufSize = 256;
+  bufSize += 64 * (mod->inPortNamesCount + mod->outPortNamesCount + mod->controlNamesCount);
+
+  char* buffer = malloc(bufSize);
+  if (!buffer) return NULL;
+  buffer[0] = '\0';
+
+  // Compose
+  snprintf(buffer, bufSize, "Name: %s\n", mod->name ? mod->name : "(unnamed)");
+
+  strcat(buffer, "In Ports:\n");
+  for (int i = 0; i < mod->inPortNamesCount; i++) {
+      strcat(buffer, "    ");
+      strcat(buffer, mod->inPortNames[i]);
+      strcat(buffer, "\n");
+  }
+
+  strcat(buffer, "Out Ports:\n");
+  for (int i = 0; i < mod->outPortNamesCount; i++) {
+      strcat(buffer, "    ");
+      strcat(buffer, mod->outPortNames[i]);
+      strcat(buffer, "\n");
+  }
+
+  strcat(buffer, "Control Names:\n");
+  for (int i = 0; i < mod->controlNamesCount; i++) {
+      strcat(buffer, "    ");
+      strcat(buffer, mod->controlNames[i]);
+      strcat(buffer, "\n");
+  }
+
+  return buffer; // caller must free()
 }
 
 /////////////////////////

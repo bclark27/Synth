@@ -70,6 +70,6 @@ typedef struct VCO
 //  PUBLIC FUNCTIONS  //
 ////////////////////////
 
-Module * VCO_init(void);
+Module * VCO_init(char* name);
 
 #endif

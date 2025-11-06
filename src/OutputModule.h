@@ -58,7 +58,7 @@ typedef struct OutputModule
 //  PUBLIC FUNCTIONS  //
 ////////////////////////
 
-Module * OutputModule_init(void);
+Module * OutputModule_init(char* name);
 
 
 #endif

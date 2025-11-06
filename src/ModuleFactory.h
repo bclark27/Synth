@@ -34,7 +34,7 @@ typedef enum ModuleType
 //  PUBLIC FUNCTIONS  //
 ////////////////////////
 
-Module * ModuleFactory_createModule(ModuleType type);
+Module * ModuleFactory_createModule(ModuleType type, char * name);
 void ModuleFactory_destroyModule(Module * module);
 
 #endif

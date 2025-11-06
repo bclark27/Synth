@@ -26,16 +26,16 @@
 static void free_clkMult(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
-static R4 * getOutputAddr(void * modPtr, U4 port);
-static R4 * getInputAddr(void * modPtr, U4 port);
+static R4 * getOutputAddr(void * modPtr, ModularPortID port);
+static R4 * getInputAddr(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, U4 id, R4 val);
-static R4 getControlVal(void * modPtr, U4 id);
-static void linkToInput(void * modPtr, U4 port, R4 * readAddr);
+static void setControlVal(void * modPtr, ModularPortID id, R4 val);
+static R4 getControlVal(void * modPtr, ModularPortID id);
+static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
 
-static R4 divideHelper(ClockMult * clkMult, U4 id);
+static R4 divideHelper(ClockMult * clkMult, ModularPortID id);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -61,12 +61,13 @@ static const U4 halfsMode[CLKMULT_OUTCOUNT] = {1, 2, 4, 8, 16};
 // PUBLIC FUNCTIONS //
 //////////////////////
 
-Module * ClockMult_init()
+Module * ClockMult_init(char* name)
 {
   ClockMult * clkMult = calloc(1, sizeof(ClockMult));
 
   // set vtable
   clkMult->module = vtable;
+  clkMult->module.name = name;
 
   // set priv vars
   clkMult->currCount = 0;
@@ -130,14 +131,14 @@ static void pushCurrToPrev(void * modPtr)
   memcpy(clkMult->outputPortsPrev, clkMult->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * CLKMULT_OUTCOUNT);
 }
 
-static R4 * getOutputAddr(void * modPtr, U4 port)
+static R4 * getOutputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= CLKMULT_OUTCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
 }
 
-static R4 * getInputAddr(void * modPtr, U4 port)
+static R4 * getInputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= CLKMULT_INCOUNT) return NULL;
 
@@ -159,7 +160,7 @@ static U4 getControlCount(void * modPtr)
   return CLKMULT_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, U4 id, R4 val)
+static void setControlVal(void * modPtr, ModularPortID id, R4 val)
 {
   if (id >= CLKMULT_CONTROLCOUNT) return;
 
@@ -167,7 +168,7 @@ static void setControlVal(void * modPtr, U4 id, R4 val)
   clkMult->controlsCurr[id] = val;
 }
 
-static R4 getControlVal(void * modPtr, U4 id)
+static R4 getControlVal(void * modPtr, ModularPortID id)
 {
   if (id >= CLKMULT_CONTROLCOUNT) return 0;
 
@@ -175,7 +176,7 @@ static R4 getControlVal(void * modPtr, U4 id)
   return clkMult->controlsCurr[id];
 }
 
-static void linkToInput(void * modPtr, U4 port, R4 * readAddr)
+static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr)
 {
   if (port >= CLKMULT_INCOUNT) return;
 
@@ -183,7 +184,7 @@ static void linkToInput(void * modPtr, U4 port, R4 * readAddr)
   clkMult->inputPorts[port] = readAddr;
 }
 
-static R4 divideHelper(ClockMult * clkMult, U4 id)
+static R4 divideHelper(ClockMult * clkMult, ModularPortID id)
 {
   if (clkMult->currCount % (clkMult->lastHighToHighCount / clkMult->divisors[id]) == 0 &&
         clkMult->dividedCounts[id] < clkMult->divisors[id])

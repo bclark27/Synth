@@ -84,6 +84,6 @@ typedef struct Sequencer
 //  PUBLIC FUNCTIONS  //
 ////////////////////////
 
-Module * Sequencer_init(void);
+Module * Sequencer_init(char* name);
 
 #endif

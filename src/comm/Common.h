@@ -41,6 +41,7 @@
 #define R8 double
 #define R16 long double
 
+#define ARRAY_LEN(x) (sizeof(x) / sizeof((x)[0]))
 #define RAND_DOUBLE (((rand() / (double)RAND_MAX) * 2) - 1)
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))

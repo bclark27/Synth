@@ -47,14 +47,14 @@
 static void free_adsr(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
-static R4 * getOutputAddr(void * modPtr, U4 port);
-static R4 * getInputAddr(void * modPtr, U4 port);
+static R4 * getOutputAddr(void * modPtr, ModularPortID port);
+static R4 * getInputAddr(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, U4 id, R4 val);
-static R4 getControlVal(void * modPtr, U4 id);
-static void linkToInput(void * modPtr, U4 port, R4 * readAddr);
+static void setControlVal(void * modPtr, ModularPortID id, R4 val);
+static R4 getControlVal(void * modPtr, ModularPortID id);
+static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
 
 static void progressEnvelope(ADSR * adsr, R4 currA, R4 currD, R4 currS, R4 currR);
 static R4 sampleEnvelope(ADSR * adsr, R4 currA, R4 currD, R4 currS, R4 currR);
@@ -86,12 +86,13 @@ static Module vtable = {
 // PUBLIC FUNCTIONS //
 //////////////////////
 
-Module * ADSR_init()
+Module * ADSR_init(char* name)
 {
   ADSR * adsr = calloc(1, sizeof(ADSR));
 
   // set vtable
   adsr->module = vtable;
+  adsr->module.name = name;
 
   //set controls
   SET_CONTROL_CURR_A(adsr, DEFAULT_CONTROL_A);
@@ -192,14 +193,14 @@ static void pushCurrToPrev(void * modPtr)
   memcpy(adsr->outputPortsPrev, adsr->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * ADSR_OUTCOUNT);
 }
 
-static R4 * getOutputAddr(void * modPtr, U4 port)
+static R4 * getOutputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= ADSR_OUTCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
 }
 
-static R4 * getInputAddr(void * modPtr, U4 port)
+static R4 * getInputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= ADSR_INCOUNT) return NULL;
 
@@ -221,7 +222,7 @@ static U4 getControlCount(void * modPtr)
   return ADSR_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, U4 id, R4 val)
+static void setControlVal(void * modPtr, ModularPortID id, R4 val)
 {
   if (id >= ADSR_CONTROLCOUNT) return;
 
@@ -229,7 +230,7 @@ static void setControlVal(void * modPtr, U4 id, R4 val)
   adsr->controlsCurr[id] = val;
 }
 
-static R4 getControlVal(void * modPtr, U4 id)
+static R4 getControlVal(void * modPtr, ModularPortID id)
 {
   if (id >= ADSR_CONTROLCOUNT) return 0;
 
@@ -237,7 +238,7 @@ static R4 getControlVal(void * modPtr, U4 id)
   return adsr->controlsCurr[id];
 }
 
-static void linkToInput(void * modPtr, U4 port, R4 * readAddr)
+static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr)
 {
   if (port >= ADSR_INCOUNT) return;
 

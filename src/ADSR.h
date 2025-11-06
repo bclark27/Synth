@@ -83,6 +83,6 @@ typedef struct ADSR
 
 } ADSR;
 
-Module * ADSR_init(void);
+Module * ADSR_init(char* name);
 
 #endif

@@ -24,14 +24,14 @@
 static void free_outputModule(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
-static R4 * getOutputAddr(void * modPtr, U4 port);
-static R4 * getInputAddr(void * modPtr, U4 port);
+static R4 * getOutputAddr(void * modPtr, ModularPortID port);
+static R4 * getInputAddr(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, U4 id, R4 val);
-static R4 getControlVal(void * modPtr, U4 id);
-static void linkToInput(void * modPtr, U4 port, R4 * readAddr);
+static void setControlVal(void * modPtr, ModularPortID id, R4 val);
+static R4 getControlVal(void * modPtr, ModularPortID id);
+static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -56,11 +56,12 @@ static Module vtable = {
 // PUBLIC FUNCTIONS //
 //////////////////////
 
-Module * OutputModule_init(void)
+Module * OutputModule_init(char* name)
 {
   OutputModule * out = calloc(1, sizeof(OutputModule));
 
   out->module = vtable;
+  out->module.name = name;
 
   return (Module*) out;
 }
@@ -118,14 +119,14 @@ static void pushCurrToPrev(void * modPtr)
   memcpy(out->outputPortsPrev, out->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * OUTPUT_OUTCOUNT);
 }
 
-static R4 * getOutputAddr(void * modPtr, U4 port)
+static R4 * getOutputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= OUTPUT_OUTCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
 }
 
-static R4 * getInputAddr(void * modPtr, U4 port)
+static R4 * getInputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= OUTPUT_INCOUNT) return NULL;
 
@@ -147,7 +148,7 @@ static U4 getControlCount(void * modPtr)
   return OUTPUT_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, U4 id, R4 val)
+static void setControlVal(void * modPtr, ModularPortID id, R4 val)
 {
   if (id >= OUTPUT_CONTROLCOUNT) return;
 
@@ -155,7 +156,7 @@ static void setControlVal(void * modPtr, U4 id, R4 val)
   out->controlsCurr[id] = val;
 }
 
-static R4 getControlVal(void * modPtr, U4 id)
+static R4 getControlVal(void * modPtr, ModularPortID id)
 {
   if (id >= OUTPUT_CONTROLCOUNT) return 0;
 
@@ -163,7 +164,7 @@ static R4 getControlVal(void * modPtr, U4 id)
   return out->controlsCurr[id];
 }
 
-static void linkToInput(void * modPtr, U4 port, R4 * readAddr)
+static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr)
 {
   if (port >= OUTPUT_INCOUNT) return;
 

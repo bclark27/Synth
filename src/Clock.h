@@ -53,6 +53,6 @@ typedef struct Clock
 //  PUBLIC FUNCTIONS  //
 ////////////////////////
 
-Module * Clock_init(void);
+Module * Clock_init(char* name);
 
 #endif

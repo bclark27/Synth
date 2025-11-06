@@ -52,6 +52,6 @@ typedef struct Attenuator
 } Attenuator;
 
 
-Module * Attenuator_init(void);
+Module * Attenuator_init(char* name);
 
 #endif

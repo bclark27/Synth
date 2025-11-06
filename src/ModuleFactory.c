@@ -4,41 +4,41 @@
 // PUBLIC FUNCTIONS //
 //////////////////////
 
-Module * ModuleFactory_createModule(ModuleType type)
+Module * ModuleFactory_createModule(ModuleType type, char * name)
 {
   Module * mod = NULL;
   switch (type)
   {
     case ModuleType_OutputModule:
-    mod = OutputModule_init();
+    mod = OutputModule_init(name);
     break;
 
     case ModuleType_Clock:
-    mod = Clock_init();
+    mod = Clock_init(name);
     break;
 
     case ModuleType_ClockMult:
-    mod = ClockMult_init();
+    mod = ClockMult_init(name);
     break;
 
     case ModuleType_VCO:
-    mod = VCO_init();
+    mod = VCO_init(name);
     break;
 
     case ModuleType_Mixer:
-    mod = Mixer_init();
+    mod = Mixer_init(name);
     break;
 
     case ModuleType_ADSR:
-    mod = ADSR_init();
+    mod = ADSR_init(name);
     break;
 
     case ModuleType_Sequencer:
-    mod = Sequencer_init();
+    mod = Sequencer_init(name);
     break;
 
     case ModuleType_Attenuator:
-    mod = Attenuator_init();
+    mod = Attenuator_init(name);
     break;
   }
 

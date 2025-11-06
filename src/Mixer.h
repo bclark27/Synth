@@ -61,6 +61,6 @@ typedef struct Mixer
 //  PUBLIC FUNCTIONS  //
 ////////////////////////
 
-Module * Mixer_init(void);
+Module * Mixer_init(char* name);
 
 #endif

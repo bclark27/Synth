@@ -34,14 +34,14 @@
 static void free_mixer(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
-static R4 * getOutputAddr(void * modPtr, U4 port);
-static R4 * getInputAddr(void * modPtr, U4 port);
+static R4 * getOutputAddr(void * modPtr, ModularPortID port);
+static R4 * getInputAddr(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, U4 id, R4 val);
-static R4 getControlVal(void * modPtr, U4 id);
-static void linkToInput(void * modPtr, U4 port, R4 * readAddr);
+static void setControlVal(void * modPtr, ModularPortID id, R4 val);
+static R4 getControlVal(void * modPtr, ModularPortID id);
+static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -67,11 +67,12 @@ static Module vtable = {
 //  PUBLIC FUNCTIONS  //
 ////////////////////////
 
-Module * Mixer_init(void)
+Module * Mixer_init(char* name)
 {
   Mixer * mix = calloc(1, sizeof(Mixer));
 
   mix->module = vtable;
+  mix->module.name = name;
 
   // set all control values
   SET_CONTROL_CURR_VOL(mix, DEFAULT_CONTROL_VOL);
@@ -121,14 +122,14 @@ static void pushCurrToPrev(void * modPtr)
   memcpy(mix->outputPortsPrev, mix->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * MIXER_OUTCOUNT);
 }
 
-static R4 * getOutputAddr(void * modPtr, U4 port)
+static R4 * getOutputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= MIXER_OUTCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
 }
 
-static R4 * getInputAddr(void * modPtr, U4 port)
+static R4 * getInputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= MIXER_INCOUNT) return NULL;
 
@@ -150,7 +151,7 @@ static U4 getControlCount(void * modPtr)
   return MIXER_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, U4 id, R4 val)
+static void setControlVal(void * modPtr, ModularPortID id, R4 val)
 {
   if (id >= MIXER_CONTROLCOUNT) return;
 
@@ -158,7 +159,7 @@ static void setControlVal(void * modPtr, U4 id, R4 val)
   mix->controlsCurr[id] = val;
 }
 
-static R4 getControlVal(void * modPtr, U4 id)
+static R4 getControlVal(void * modPtr, ModularPortID id)
 {
   if (id >= MIXER_CONTROLCOUNT) return 0;
 
@@ -166,7 +167,7 @@ static R4 getControlVal(void * modPtr, U4 id)
   return mix->controlsCurr[id];
 }
 
-static void linkToInput(void * modPtr, U4 port, R4 * readAddr)
+static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr)
 {
   if (port >= MIXER_INCOUNT) return;
 

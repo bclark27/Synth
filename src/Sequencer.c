@@ -52,14 +52,14 @@
 static void free_seq(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
-static R4 * getOutputAddr(void * modPtr, U4 port);
-static R4 * getInputAddr(void * modPtr, U4 port);
+static R4 * getOutputAddr(void * modPtr, ModularPortID port);
+static R4 * getInputAddr(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, U4 id, R4 val);
-static R4 getControlVal(void * modPtr, U4 id);
-static void linkToInput(void * modPtr, U4 port, R4 * readAddr);
+static void setControlVal(void * modPtr, ModularPortID id, R4 val);
+static R4 getControlVal(void * modPtr, ModularPortID id);
+static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -86,12 +86,13 @@ static Module vtable = {
 // PUBLIC FUNCTIONS //
 //////////////////////
 
-Module * Sequencer_init(void)
+Module * Sequencer_init(char* name)
 {
   Sequencer * seq = calloc(1, sizeof(Sequencer));
 
   // set vtable
   seq->module = vtable;
+  seq->module.name = name;
 
   //set controls
   for (U4 i = 0; i < SEQ_NOTE_COUNT_TOTAL; i += 1)
@@ -204,14 +205,14 @@ static void pushCurrToPrev(void * modPtr)
   memcpy(seq->outputPortsPrev, seq->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * SEQ_OUTCOUNT);
 }
 
-static R4 * getOutputAddr(void * modPtr, U4 port)
+static R4 * getOutputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= SEQ_OUTCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
 }
 
-static R4 * getInputAddr(void * modPtr, U4 port)
+static R4 * getInputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= SEQ_INCOUNT) return NULL;
 
@@ -233,7 +234,7 @@ static U4 getControlCount(void * modPtr)
   return SEQ_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, U4 id, R4 val)
+static void setControlVal(void * modPtr, ModularPortID id, R4 val)
 {
   if (id >= SEQ_CONTROLCOUNT) return;
 
@@ -241,7 +242,7 @@ static void setControlVal(void * modPtr, U4 id, R4 val)
   seq->controlsCurr[id] = val;
 }
 
-static R4 getControlVal(void * modPtr, U4 id)
+static R4 getControlVal(void * modPtr, ModularPortID id)
 {
   if (id >= SEQ_CONTROLCOUNT) return 0;
 
@@ -249,7 +250,7 @@ static R4 getControlVal(void * modPtr, U4 id)
   return seq->controlsCurr[id];
 }
 
-static void linkToInput(void * modPtr, U4 port, R4 * readAddr)
+static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr)
 {
   if (port >= SEQ_INCOUNT) return;
 

@@ -38,14 +38,14 @@
 static void free_vco(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
-static R4 * getOutputAddr(void * modPtr, U4 port);
-static R4 * getInputAddr(void * modPtr, U4 port);
+static R4 * getOutputAddr(void * modPtr, ModularPortID port);
+static R4 * getInputAddr(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, U4 id, R4 val);
-static R4 getControlVal(void * modPtr, U4 id);
-static void linkToInput(void * modPtr, U4 port, R4 * readAddr);
+static void setControlVal(void * modPtr, ModularPortID id, R4 val);
+static R4 getControlVal(void * modPtr, ModularPortID id);
+static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
 
 static void createStrideTable(VCO * vco, R4 * table);
 static void createPwTable(VCO * vco, R4 * table);
@@ -53,6 +53,23 @@ static void createPwTable(VCO * vco, R4 * table);
 //////////////////////
 //  DEFAULT VALUES  //
 //////////////////////
+
+static char * inPortNames[] = {
+  "freq",
+  "pw",
+};
+
+static char * outPortNames[] = {
+  "sin",
+  "saw",
+  "sqr",
+  "tri",
+};
+
+static char * controlNames[] = {
+  "freq",
+  "pw",
+};
 
 static Module vtable = {
   .freeModule = free_vco,
@@ -66,6 +83,13 @@ static Module vtable = {
   .setControlVal = setControlVal,
   .getControlVal = getControlVal,
   .linkToInput = linkToInput,
+
+  .inPortNames = inPortNames,
+  .inPortNamesCount = ARRAY_LEN(inPortNames),
+  .outPortNames = outPortNames,
+  .outPortNamesCount = ARRAY_LEN(outPortNames),
+  .controlNames = controlNames,
+  .controlNamesCount = ARRAY_LEN(controlNames),
 };
 
 #define DEFAULT_CONTROL_FREQ    0
@@ -75,12 +99,15 @@ static Module vtable = {
 // PUBLIC FUNCTIONS //
 //////////////////////
 
-Module * VCO_init()
+Module * VCO_init(char* name)
 {
   VCO * vco = calloc(1, sizeof(VCO));
 
   // set vtable
   vco->module = vtable;
+
+  // set name of module
+  vco->module.name = name;
 
   // set all control values
   SET_CONTROL_CURR_FREQ(vco, DEFAULT_CONTROL_FREQ);
@@ -140,14 +167,14 @@ static void pushCurrToPrev(void * modPtr)
   memcpy(vco->outputPortsPrev, vco->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * VCO_OUTCOUNT);
 }
 
-static R4 * getOutputAddr(void * modPtr, U4 port)
+static R4 * getOutputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= VCO_OUTCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
 }
 
-static R4 * getInputAddr(void * modPtr, U4 port)
+static R4 * getInputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= VCO_INCOUNT) return NULL;
 
@@ -169,7 +196,7 @@ static U4 getControlCount(void * modPtr)
   return VCO_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, U4 id, R4 val)
+static void setControlVal(void * modPtr, ModularPortID id, R4 val)
 {
   if (id >= VCO_CONTROLCOUNT) return;
 
@@ -177,7 +204,7 @@ static void setControlVal(void * modPtr, U4 id, R4 val)
   vco->controlsCurr[id] = val;
 }
 
-static R4 getControlVal(void * modPtr, U4 id)
+static R4 getControlVal(void * modPtr, ModularPortID id)
 {
   if (id >= VCO_CONTROLCOUNT) return 0;
 
@@ -185,7 +212,7 @@ static R4 getControlVal(void * modPtr, U4 id)
   return vco->controlsCurr[id];
 }
 
-static void linkToInput(void * modPtr, U4 port, R4 * readAddr)
+static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr)
 {
   if (port >= VCO_INCOUNT) return;
 
@@ -200,6 +227,7 @@ static void createStrideTable(VCO * vco, R4 * table)
     for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
       R4 freqControlVolts = INTERP(GET_CONTROL_PREV_FREQ(vco), GET_CONTROL_CURR_FREQ(vco), MODULE_BUFFER_SIZE, i);
+      
       R4 totalFreqVolts = IN_PORT_FREQ(vco)[i] + freqControlVolts;
       table[i] = VoltUtils_voltToFreq(totalFreqVolts);
       table[i] /= SAMPLE_RATE;
