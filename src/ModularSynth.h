@@ -29,10 +29,11 @@ typedef struct ModularSynth
 {
   U2 modulesCount;
   Module * modules[MAX_RACK_SIZE];
-  U2 portConnectionsCount;
-  ModuleConnection portConnections[MAX_CONN_COUNT];
   U2 moduleIDtoIdx[MAX_RACK_SIZE];
   bool moduleIDAvailability[MAX_RACK_SIZE]; // 1=available, 0=not
+
+  U2 portConnectionsCount;
+  ModuleConnection portConnections[MAX_CONN_COUNT];
 
   R4 outputBufferLeft[STREAM_BUFFER_SIZE];
   R4 outputBufferRight[STREAM_BUFFER_SIZE];
@@ -55,6 +56,7 @@ void ModularSynth_update(ModularSynth * synth);
 
 ModularID ModularSynth_addModule(ModularSynth * synth, ModuleType type, char * name);
 bool ModularSynth_removeModule(ModularSynth * synth, ModularID id);
+bool ModularSynth_removeModuleByName(ModularSynth * synth, char* name);
 bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, ModularPortID srcPort, ModularID destId, ModularPortID destPort);
 bool ModularSynth_addConnectionByName(ModularSynth * synth, char* srcModuleName, char* srcPortName, char* destModuleName, char* destPortName);
 void ModularSynth_removeConnection(ModularSynth * synth, ModularID destId, ModularPortID destPort);

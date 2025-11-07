@@ -154,50 +154,50 @@ ModularID ModularSynth_addModule(ModularSynth * synth, ModuleType type, char * n
 
 bool ModularSynth_removeModule(ModularSynth * synth, ModularID id)
 {
-  // exclude output module from deletion
-  if (id == ModuleType_OutputModule) return 0;
-
-  // exclude out of bound id
-  if (id >= MAX_RACK_SIZE) return 0;
-
-  // check to see it is an unavailable id
-  // if the id is available, there is nothing to delete
-  if (synth->moduleIDAvailability[id]) return 0;
-
-  // get the idx
-  U2 idx = synth->moduleIDtoIdx[id];
-
-  // check the ptr is NULL
-  if (synth->modules[idx] == NULL) return 0;
-
+  Module * delMod = getModuleById(synth, id);
+  if (!delMod || delMod->type == ModuleType_OutputModule) return 0;
+  
+  int idx = 0;
+  for (int i = 0; i < synth->modulesCount; i++)
+  {
+    if (synth->modules[i] == delMod)
+    {
+      idx = i;
+      break;
+    }
+  }
+  
   // disconnect all other modules from this guys outputs
   // if other module was connected, set its input to NULL or a black space
 
-  Module * delMod = synth->modules[idx];
-
-  for (U2 i = 0; i < synth->modulesCount; i++)
+  // loop the connections in reverse so that deleting them does not affect us
+  int loopCount = synth->portConnectionsCount;
+  for (int i = loopCount - 1; i >= 0; i--)
   {
-    if (i == idx) continue;
+    // check if this connection has the mod involved
+    ModuleConnection* thisConnection = &synth->portConnections[i];
 
-    Module * thisMod = synth->modules[i];
-    for (U2 delModOutPort = 0; delModOutPort < delMod->getOutCount(delMod); delModOutPort++)
+    if (thisConnection->destMod == id || thisConnection->srcMod == id)
     {
-      for (U2 thisModInPort = 0; thisModInPort < thisMod->getOutCount(thisMod); thisModInPort++)
+      // if the destination was some other module (thedest module is pointing into the deleting module) tell that other module to connect to null
+      if (thisConnection->destMod != id)
       {
-        if (thisMod->getInputAddr(thisMod, thisModInPort) == delMod->getOutputAddr(delMod, delModOutPort))
+        Module* otherModule = getModuleById(synth, thisConnection->destMod);
+        if (otherModule)
         {
-          thisMod->linkToInput(thisMod, thisModInPort, NULL);
+          otherModule->linkToInput(otherModule, thisConnection->destPort, NULL);
         }
       }
+
+      ARRAY_SHIFT(synth->portConnections, ModuleConnection, i + 1, synth->portConnectionsCount - 1, i);
+      synth->portConnectionsCount--;
     }
-
   }
-  
-  // TODO: need to go in here and remove the book keeping about the connections
 
+  
   // free the module
   ModuleFactory_destroyModule(delMod);
-
+  
   // for all idx in the id->idx list that are graeter than idx, -=1
   for (U4 i = 0; i < MAX_RACK_SIZE; i++)
   {
@@ -206,20 +206,31 @@ bool ModularSynth_removeModule(ModularSynth * synth, ModularID id)
       synth->moduleIDtoIdx[i]--;
     }
   }
-
+  
   // shift all the modules in the module list above idx to down one idx
+  // decrement the total count
   for (U4 i = idx; i < synth->modulesCount - 1; i++)
   {
     synth->modules[i] = synth->modules[i + 1];
   }
 
+  synth->modulesCount--;
+
   // mark the id as available
   synth->moduleIDAvailability[id] = 1;
 
-  // decrement the total count
-  synth->modulesCount--;
-
   return 1;
+}
+
+bool ModularSynth_removeModuleByName(ModularSynth * synth, char* name)
+{
+  if (!name) return 0;
+  bool found;
+  ModularID id = getModuleIdByName(synth, name, &found);
+  
+  if (!found) return 0;
+
+  return ModularSynth_removeModule(synth, id);
 }
 
 bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, ModularPortID srcPort, ModularID destId, ModularPortID destPort)
@@ -258,7 +269,6 @@ bool ModularSynth_addConnectionByName(ModularSynth * synth, char* srcModuleName,
   
   ModularPortID srcPort = Module_GetOutPortId(srcMod, srcPortName, &srcFound);
   ModularPortID destPort = Module_GetInPortId(destMod, destPortName, &destFound);
-  printf("%d, %d\n", srcFound, destFound);
   if (!srcFound || !destFound) return 0;
 
 

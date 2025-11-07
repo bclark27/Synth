@@ -30,6 +30,27 @@ const char * const ModuleTypeNames[ModuleType_COUNT] = {
 // PUBLIC FUNCTIONS //
 //////////////////////
 
+ModuleType Module_GetModuleTypeByName(char* name, bool* found)
+{
+    if (!name)
+    {
+        *found = 0;
+        return 0;
+    }
+
+    for (int i = 0; i < ModuleType_COUNT; i++)
+    {
+        if (strcmp(name, ModuleTypeNames[i]) == 0)
+        {
+            *found = 1;
+            return i;
+        }
+    }
+
+    *found = 0;
+    return 0;
+}
+
 ModularPortID Module_GetInPortId(Module* mod, char* name, bool* found)
 {
     if (!mod || !name)
