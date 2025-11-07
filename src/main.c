@@ -199,9 +199,11 @@ int main(void)
     if (IsAudioStreamProcessed(synthStream))
     {
       ModularSynth_update();
+      // after ModularSynth_update is run, new audio is placed directly into 'signal'
       UpdateAudioStream(synthStream, signal, STREAM_BUFFER_SIZE);
     }
 
+    // TODO add in a swap buffer so that even as the audio stream is queing up we can still produce the next audio snippet
 
     // BeginDrawing();
     // ClearBackground(BLACK);
@@ -219,6 +221,7 @@ int main(void)
     // }
 
     // EndDrawing();
+
   }
 
   UnloadAudioStream(synthStream);

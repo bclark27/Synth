@@ -93,7 +93,7 @@ Module * OutputModule_init(char* name)
 static void free_outputModule(void * modPtr)
 {
   OutputModule * out = (OutputModule *)modPtr;
-  
+
   Module * mod = (Module*)modPtr;
   free(mod->name);
   
@@ -121,7 +121,7 @@ static void updateState(void * modPtr)
   }
   else
   {
-    memset(leftOut, MODULE_BUFFER_SIZE, sizeof(R4));
+    memset(leftOut, 0, MODULE_BUFFER_SIZE * sizeof(R4));
   }
 
   if (rightIn)
@@ -133,7 +133,7 @@ static void updateState(void * modPtr)
   }
   else
   {
-    memset(rightOut, MODULE_BUFFER_SIZE, sizeof(R4));
+    memset(rightOut, 0, MODULE_BUFFER_SIZE * sizeof(R4));
   }
 }
 

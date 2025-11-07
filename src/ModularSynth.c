@@ -108,7 +108,7 @@ void ModularSynth_update()
     // output module is always idx 0 of modules[]. cpy from output
     // to the left and right output channels
     memcpy(currOutputPtrLeft, synth->outModuleLeft, MODULE_BUFFER_SIZE * sizeof(R4));
-    memcpy(currOutputPtrRight, synth->outModuleLeft, MODULE_BUFFER_SIZE * sizeof(R4));
+    memcpy(currOutputPtrRight, synth->outModuleRight, MODULE_BUFFER_SIZE * sizeof(R4));
 
     // update the ptrs to the next spot in the out buffer
     currOutputPtrLeft += MODULE_BUFFER_SIZE;
