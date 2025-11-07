@@ -303,6 +303,21 @@ void ModularSynth_removeConnection(ModularSynth * synth, ModularID destId, Modul
   }
 }
 
+void ModularSynth_removeConnectionByName(ModularSynth * synth, char* destModuleName, char* destPortName)
+{
+  if (!destModuleName || !destPortName) return;
+
+  bool found;
+  ModularID id = getModuleIdByName(synth, destModuleName, &found);
+  if (!found) return;
+
+  Module* mod = getModuleById(synth, id);
+  ModularPortID port = Module_GetInPortId(mod, destPortName, &found);
+  if (!found) return;
+
+  ModularSynth_removeConnection(synth, id, port);
+}
+
 bool ModularSynth_setControl(ModularSynth * synth, ModularID id, ModularPortID controlID, R4 val)
 {
   Module * mod = getModuleById(synth, id);
@@ -331,19 +346,20 @@ bool ModularSynth_setControlByName(ModularSynth * synth, char * name, char * con
 char* ModularSynth_PrintFullModuleInfo(ModularSynth * synth, ModularID id)
 {
   Module * mod = getModuleById(synth, id);
-
+  
   if (!mod) return NULL;
-
+  
   // Estimate buffer size (roughly)
   size_t bufSize = 256;
   bufSize += 64 * (mod->inPortNamesCount + mod->outPortNamesCount + mod->controlNamesCount);
-
+  
   char* buffer = malloc(bufSize);
   if (!buffer) return NULL;
   buffer[0] = '\0';
-
+  
   // Compose
   snprintf(buffer, bufSize, "Name: %s\n", mod->name ? mod->name : "(unnamed)");
+  
 
   strcat(buffer, "In Ports:\n");
   for (ModularPortID i = 0; i < mod->inPortNamesCount; i++) {
@@ -367,7 +383,7 @@ char* ModularSynth_PrintFullModuleInfo(ModularSynth * synth, ModularID id)
       
       strcat(buffer, "\n");
   }
-
+  
   strcat(buffer, "Out Ports:\n");
   ModuleConnection connections[MAX_CONN_COUNT];
   for (ModularPortID i = 0; i < mod->outPortNamesCount; i++) {

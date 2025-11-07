@@ -150,10 +150,11 @@ int main(void)
   ModularSynth_addConnectionByName(synth, "vco0", "Sqr", "attn0", "Audio");
   ModularSynth_addConnectionByName(synth, "attn0", "Audio", "__OUTPUT__", "Left");
   ModularSynth_addConnectionByName(synth, "attn0", "Audio", "__OUTPUT__", "Right");
-  ModularSynth_removeModuleByName(synth, "attn0");
-  //ModularSynth_removeConnection(synth, vco1, VCO_IN_PORT_FREQ);
-  printf("%s\n", ModularSynth_PrintFullModuleInfo(synth, vco0));
-  // printf("%s\n", ModularSynth_PrintFullModuleInfo(synth, attn0));
+
+  ModularSynth_removeConnectionByName(synth, "__OUTPUT__", "Left");
+
+  //printf("%s\n", ModularSynth_PrintFullModuleInfo(synth, vco0));
+  printf("%s\n", ModularSynth_PrintFullModuleInfo(synth, attn0));
 
   R4 * signal = ModularSynth_getLeftChannel(synth);
 
