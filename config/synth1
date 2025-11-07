@@ -1,14 +1,17 @@
 osc1 VCO
-filter1 VCF
-amp1 VCA
+osc2 VCO
+mix1 Mixer
+__OUTPUT__ OutputModule
++++
+__OUTPUT__
+connect Left mix1 Mix
 +++
 osc1
-connect out filter1 in
-control freq 440.0
+control Freq 1
 +++
-filter1
-connect out amp1 in
-control cutoff 0.7
+osc2
+control Freq 2
 +++
-amp1
-control gain 0.8
+mix1
+connect Input0 osc1 Saw
+connect Input1 osc2 Sqr

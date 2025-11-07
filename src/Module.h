@@ -58,5 +58,6 @@ ModuleType Module_GetModuleTypeByName(char* name, bool* found);
 ModularPortID Module_GetInPortId(Module* mod, char* name, bool* found);
 ModularPortID Module_GetOutPortId(Module* mod, char* name, bool* found);
 ModularPortID Module_GetControlId(Module* mod, char* name, bool* found);
+void Module_RemoveAllIncomingConnections(Module* mod);
 
 #endif

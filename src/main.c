@@ -147,24 +147,28 @@ int main(void)
   
   */
 
+ 
+ 
   IPC_StartService("Controller"); 
   IPC_ConnectToService("PushEvents", OnPushEvent);
-
+  
   initColors();
-
+  
   synth = ModularSynth_init();
+  ModularSynth_readConfig(synth, "/home/ben/projects/github/my/Synth/config/synth1");
+  //return 0;
+ 
+  // ModularID vco0 = ModularSynth_addModuleByName(synth, "VCO", strdup("vco0"));
+  // ModularID attn0 = ModularSynth_addModuleByName(synth, "Attenuator", strdup("attn0"));
 
-  ModularID vco0 = ModularSynth_addModule(synth, ModuleType_VCO, strdup("vco0"));
-  ModularID attn0 = ModularSynth_addModule(synth, ModuleType_Attenuator, strdup("attn0"));
+  // ModularSynth_addConnectionByName(synth, "vco0", "Sqr", "attn0", "Audio");
+  // ModularSynth_addConnectionByName(synth, "attn0", "Audio", "__OUTPUT__", "Left");
+  // ModularSynth_addConnectionByName(synth, "attn0", "Audio", "__OUTPUT__", "Right");
 
-  ModularSynth_addConnectionByName(synth, "vco0", "Sqr", "attn0", "Audio");
-  ModularSynth_addConnectionByName(synth, "attn0", "Audio", "__OUTPUT__", "Left");
-  ModularSynth_addConnectionByName(synth, "attn0", "Audio", "__OUTPUT__", "Right");
+  // ModularSynth_removeConnectionByName(synth, "__OUTPUT__", "Right");
 
-  ModularSynth_removeConnectionByName(synth, "__OUTPUT__", "Left");
-
-  //printf("%s\n", ModularSynth_PrintFullModuleInfo(synth, vco0));
-  printf("%s\n", ModularSynth_PrintFullModuleInfo(synth, attn0));
+  // printf("%s\n", ModularSynth_PrintFullModuleInfo(synth, vco0));
+  // printf("%s\n", ModularSynth_PrintFullModuleInfo(synth, attn0));
 
   R4 * signal = ModularSynth_getLeftChannel(synth);
 

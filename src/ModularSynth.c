@@ -27,6 +27,8 @@ static bool addConnectionHelper(ModularSynth * synth, Module * srcMod, ModularID
 //  DEFAULT VALUES  //
 //////////////////////
 
+
+static FullConfig config;
 static const char * outModuleName = "__OUTPUT__";
 
 //////////////////////
@@ -351,6 +353,86 @@ bool ModularSynth_setControlByName(ModularSynth * synth, char * name, char * con
 
   mod->setControlVal(mod, controlID, val);
   return 1;
+}
+
+bool ModularSynth_readConfig(ModularSynth * synth, char * fname)
+{
+  // read in the config
+  bool success = ConfigParser_Parse(&config, fname);
+  if (!success) return 0;
+
+  // ok so first we want to make sure all the modules exist (special exception for output module. it is always where regardless)
+
+  // first step then is to add all the modules that do not exist
+  // and or change the ones with the same name to the right type
+  bool includedModuleIds[MAX_RACK_SIZE];
+  memset(includedModuleIds, 0, sizeof(includedModuleIds));
+  for (int i = 0; i < config.moduleCount; i++)
+  {
+    ModuleConfig* modConfig = &config.modules[i];
+
+    if (strcmp(modConfig->type, ModuleTypeNames[ModuleType_OutputModule]) == 0 ||
+        strcmp(modConfig->name, outModuleName) == 0) continue;
+
+    bool existingModFound;
+    ModularID existingModuleIdWithSameName = getModuleIdByName(synth, modConfig->name, &existingModFound);
+
+    // if it not exist, add it
+    if (!existingModFound)
+    {
+      includedModuleIds[ModularSynth_addModuleByName(synth, modConfig->type, strdup(modConfig->name))] = 1;
+    }
+    else
+    {
+      // else there is one with same name, so maybe we can leave it if same type too
+      Module * existingModuleWithSameName = getModuleById(synth, existingModuleIdWithSameName);
+      if (strcmp(ModuleTypeNames[existingModuleWithSameName->type], modConfig->type) != 0)
+      {
+        ModularSynth_removeModuleByName(synth, existingModuleWithSameName->name);
+        includedModuleIds[ModularSynth_addModuleByName(synth, modConfig->type, strdup(modConfig->name))] = 1;
+      }
+      else
+      {
+        // in here means there is a module with the same name and same type too
+        includedModuleIds[existingModuleIdWithSameName] = 1;
+      }
+    }
+  }
+  
+  // now delete all the modules that dont exist in the config (except the output)
+  for (int i = 0; i < MAX_RACK_SIZE; i++)
+  {
+    if (!synth->moduleIDAvailability[i] || includedModuleIds[i]) continue;
+    
+    ModularSynth_removeModule(synth, i);
+  }
+
+  // for remaining modules, remove all connections
+  for (int i = 0; i < synth->modulesCount; i++)
+  {
+    Module_RemoveAllIncomingConnections(synth->modules[i]);
+  }
+
+  // now just manually delete all the connection logs
+  synth->portConnectionsCount = 0;
+
+  // now for all the included modules, connect everything up
+  for (int i = 0; i < config.moduleCount; i++)
+  {
+    ModuleConfig* modConfig = &config.modules[i];
+    for (int k = 0; k < modConfig->connectionCount; k++)
+    {
+      ConnectionInfo* connInfo = &modConfig->connections[k];
+      printf("%s, %s, %s, %s\n", connInfo->otherModule, connInfo->otherOutPort, modConfig->name, connInfo->inPort);
+      ModularSynth_addConnectionByName(synth, connInfo->otherModule, connInfo->otherOutPort, modConfig->name, connInfo->inPort);
+    }
+
+    for (int k = 0; k < modConfig->controlCount; k++)
+    {
+      ControlInfo* ctrlInfo = &modConfig->controls[k];
+      ModularSynth_setControlByName(synth, modConfig->name, ctrlInfo->controlName, ctrlInfo->value);
+    }
+  }
 }
 
 char* ModularSynth_PrintFullModuleInfo(ModularSynth * synth, ModularID id)

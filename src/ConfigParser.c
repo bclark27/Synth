@@ -10,12 +10,14 @@
 
 #define LINEBUF_SIZE 512
 
-void ConfigParser_Parse(FullConfig* cfg, char* fname)
+bool ConfigParser_Parse(FullConfig* cfg, char* fname)
 {
+    if (!cfg || !fname) return 0;
+
     FILE* f = fopen(fname, "r");
     if (!f) {
         perror(fname);
-        return;
+        return false;
     }
 
     memset(cfg, 0, sizeof(*cfg));
@@ -126,10 +128,14 @@ void ConfigParser_Parse(FullConfig* cfg, char* fname)
     }
 
     fclose(f);
+
+    return true;
 }
 
 void ConfigParser_Write(FullConfig* cfg, char* fname)
 {
+    if (!cfg || !fname) return;
+
     FILE* f = fopen(fname, "w");
     if (!f) {
         perror("fopen");

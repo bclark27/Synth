@@ -45,7 +45,7 @@ typedef struct {
 //  PUBLIC FUNCTIONS  //
 ////////////////////////
 
-void ConfigParser_Parse(FullConfig* cfg, char* fname);
+bool ConfigParser_Parse(FullConfig* cfg, char* fname);
 void ConfigParser_Write(FullConfig* cfg, char* fname);
 void ConfigParser_Print(FullConfig* cfg);
 

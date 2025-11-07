@@ -113,3 +113,13 @@ ModularPortID Module_GetControlId(Module* mod, char* name, bool* found)
     *found = 0;
     return 0;
 }
+
+void Module_RemoveAllIncomingConnections(Module* mod)
+{
+    if (!mod) return;
+
+    for (int i = 0; i < mod->inPortNamesCount; i++)
+    {
+        mod->linkToInput(mod, i, NULL);
+    }
+}
