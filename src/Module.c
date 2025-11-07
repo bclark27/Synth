@@ -7,6 +7,21 @@
 // DEFINES  //
 //////////////
 
+//////////////////////
+//  DEFAULT VALUES  //
+//////////////////////
+
+const char * const ModuleTypeNames[ModuleType_COUNT] = {
+    "ADSR",
+    "Attenuator",
+    "Clock",
+    "ClockMult",
+    "Mixer",
+    "OutputModule",
+    "Sequencer",
+    "VCO",
+  };
+  
 /////////////////////////////
 //  FUNCTION DECLERATIONS  //
 /////////////////////////////

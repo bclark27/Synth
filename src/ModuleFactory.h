@@ -18,18 +18,6 @@
 // TYPES //
 ///////////
 
-typedef enum ModuleType
-{
-  ModuleType_ADSR,
-  ModuleType_Attenuator,
-  ModuleType_Clock,
-  ModuleType_ClockMult,
-  ModuleType_Mixer,
-  ModuleType_OutputModule,
-  ModuleType_Sequencer,
-  ModuleType_VCO,
-} ModuleType;
-
 ////////////////////////
 //  PUBLIC FUNCTIONS  //
 ////////////////////////

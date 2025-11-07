@@ -42,7 +42,19 @@ static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
 //  DEFAULT VALUES  //
 //////////////////////
 
+static char * inPortNames[CLOCK_INCOUNT] = {
+};
+
+static char * outPortNames[CLOCK_OUTCOUNT] = {
+  "Clock",
+};
+
+static char * controlNames[CLOCK_CONTROLCOUNT] = {
+  "Freq",
+};
+
 static Module vtable = {
+  .type = ModuleType_Clock,
   .freeModule = free_clock,
   .updateState = updateState,
   .pushCurrToPrev = pushCurrToPrev,
@@ -54,6 +66,12 @@ static Module vtable = {
   .setControlVal = setControlVal,
   .getControlVal = getControlVal,
   .linkToInput = linkToInput,
+  .inPortNames = inPortNames,
+  .inPortNamesCount = ARRAY_LEN(inPortNames),
+  .outPortNames = outPortNames,
+  .outPortNamesCount = ARRAY_LEN(outPortNames),
+  .controlNames = controlNames,
+  .controlNamesCount = ARRAY_LEN(controlNames),
 };
 
 #define DEFAULT_CONTROL_RATE    1
@@ -89,6 +107,10 @@ Module * Clock_init(char* name)
 static void free_clock(void * modPtr)
 {
   Clock * clk = (Clock*)modPtr;
+  
+  Module * mod = (Module*)modPtr;
+  free(mod->name);
+  
   free(clk);
 }
 

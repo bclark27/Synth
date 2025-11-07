@@ -41,7 +41,23 @@ static R4 divideHelper(ClockMult * clkMult, ModularPortID id);
 //  DEFAULT VALUES  //
 //////////////////////
 
+static char * inPortNames[CLKMULT_INCOUNT] = {
+  "Clock",
+};
+
+static char * outPortNames[CLKMULT_OUTCOUNT] = {
+  "Whole",
+  "Half",
+  "Quarter",
+  "Eighth",
+  "Sixtenth",
+};
+
+static char * controlNames[CLKMULT_CONTROLCOUNT] = {
+};
+
 static Module vtable = {
+  .type = ModuleType_ClockMult,
   .freeModule = free_clkMult,
   .updateState = updateState,
   .pushCurrToPrev = pushCurrToPrev,
@@ -53,6 +69,12 @@ static Module vtable = {
   .setControlVal = setControlVal,
   .getControlVal = getControlVal,
   .linkToInput = linkToInput,
+  .inPortNames = inPortNames,
+  .inPortNamesCount = ARRAY_LEN(inPortNames),
+  .outPortNames = outPortNames,
+  .outPortNamesCount = ARRAY_LEN(outPortNames),
+  .controlNames = controlNames,
+  .controlNamesCount = ARRAY_LEN(controlNames),
 };
 
 static const U4 halfsMode[CLKMULT_OUTCOUNT] = {1, 2, 4, 8, 16};
@@ -87,6 +109,10 @@ Module * ClockMult_init(char* name)
 
 static void free_clkMult(void * modPtr)
 {
+  
+  Module * mod = (Module*)modPtr;
+  free(mod->name);
+  
   free(modPtr);
 }
 

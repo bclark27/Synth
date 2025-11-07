@@ -28,6 +28,19 @@
 //  FUNCTION DECLERATIONS  //
 /////////////////////////////
 
+static char * inPortNames[ATTN_INCOUNT] = {
+  "Vol",
+  "Audio",
+};
+
+static char * outPortNames[ATTN_OUTCOUNT] = {
+  "Audio",
+};
+
+static char * controlNames[ATTN_CONTROLCOUNT] = {
+  "Vol",
+};
+
 static void free_attn(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
@@ -45,6 +58,7 @@ static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
 //////////////////////
 
 static Module vtable = {
+  .type = ModuleType_Attenuator,
   .freeModule = free_attn,
   .updateState = updateState,
   .pushCurrToPrev = pushCurrToPrev,
@@ -56,6 +70,12 @@ static Module vtable = {
   .setControlVal = setControlVal,
   .getControlVal = getControlVal,
   .linkToInput = linkToInput,
+  .inPortNames = inPortNames,
+  .inPortNamesCount = ARRAY_LEN(inPortNames),
+  .outPortNames = outPortNames,
+  .outPortNamesCount = ARRAY_LEN(outPortNames),
+  .controlNames = controlNames,
+  .controlNamesCount = ARRAY_LEN(controlNames),
 };
 
 #define DEFAULT_CONTROL_VOL   0//VOLTSTD_MOD_CV_MIN
@@ -87,6 +107,10 @@ Module * Attenuator_init(char* name)
 
 static void free_attn(void * modPtr)
 {
+  
+  Module * mod = (Module*)modPtr;
+  free(mod->name);
+  
   free(modPtr);
 }
 

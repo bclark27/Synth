@@ -49,6 +49,8 @@
 //  FUNCTION DECLERATIONS  //
 /////////////////////////////
 
+static char *strdup_printf(const char *fmt, ...);
+static void nameHelper();
 static void free_seq(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
@@ -65,7 +67,22 @@ static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
 //  DEFAULT VALUES  //
 //////////////////////
 
+static bool nameHelpDone = false;
+
+static char * inPortNames[SEQ_INCOUNT] = {
+  "Clock",
+};
+
+static char * outPortNames[SEQ_OUTCOUNT] = {
+  "Gate",
+  "Trigger",
+  "Pitch",
+};
+
+static char * controlNames[SEQ_CONTROLCOUNT];
+
 static Module vtable = {
+  .type = ModuleType_Sequencer,
   .freeModule = free_seq,
   .updateState = updateState,
   .pushCurrToPrev = pushCurrToPrev,
@@ -77,6 +94,12 @@ static Module vtable = {
   .setControlVal = setControlVal,
   .getControlVal = getControlVal,
   .linkToInput = linkToInput,
+  .inPortNames = inPortNames,
+  .inPortNamesCount = ARRAY_LEN(inPortNames),
+  .outPortNames = outPortNames,
+  .outPortNamesCount = ARRAY_LEN(outPortNames),
+  .controlNames = controlNames,
+  .controlNamesCount = ARRAY_LEN(controlNames),
 };
 
 #define DEFAULT_NOTE_LEN  0.1f
@@ -88,6 +111,8 @@ static Module vtable = {
 
 Module * Sequencer_init(char* name)
 {
+  nameHelper();
+
   Sequencer * seq = calloc(1, sizeof(Sequencer));
 
   // set vtable
@@ -133,8 +158,64 @@ Module * Sequencer_init(char* name)
 //  PRIVATE FUNCTIONS  //
 /////////////////////////
 
+static char *strdup_printf(const char *fmt, ...) 
+{
+  va_list args;
+  va_start(args, fmt);
+
+  // First, compute needed size
+  va_list args_copy;
+  va_copy(args_copy, args);
+  int len = vsnprintf(NULL, 0, fmt, args_copy);
+  va_end(args_copy);
+
+  if (len < 0) {
+      va_end(args);
+      return NULL;
+  }
+
+  // Allocate
+  char *buf = malloc(len + 1);
+  if (!buf) {
+      va_end(args);
+      return NULL;
+  }
+
+  // Write formatted string
+  vsnprintf(buf, len + 1, fmt, args);
+  va_end(args);
+  return buf; // caller must free()
+}
+
+static void nameHelper()
+{
+  if (nameHelpDone) return;
+  nameHelpDone = true;
+
+  int i = 0;
+  for (;i < SEQ_NOTE_COUNT_TOTAL * SEQ_CONTROL_PER_NOTE; i++)
+  {
+    if (i & 1)
+    {
+      controlNames[i] = strdup_printf("Pitch_%d", i / 2);
+    }
+    else
+    {
+      controlNames[i] = strdup_printf("NoteOn_%d", i / 2);
+    }
+  }
+
+  controlNames[i++] = strdup("NoteLen");
+  controlNames[i++] = strdup("SeqLen");
+  controlNames[i++] = strdup("Rand");
+}
+
 static void free_seq(void * modPtr)
 {
+  
+  Module * mod = (Module*)modPtr;
+  free(mod->name);
+  
   free(modPtr);
 }
 

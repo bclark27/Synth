@@ -63,7 +63,28 @@ static R4 sampleEnvelope(ADSR * adsr, R4 currA, R4 currD, R4 currS, R4 currR);
 //  DEFAULT VALUES  //
 //////////////////////
 
+static char * inPortNames[ADSR_INCOUNT] = {
+  "Gate",
+  "Trigger",
+  "Attack",
+  "Decay",
+  "Sustain",
+  "Release",
+};
+
+static char * outPortNames[ADSR_OUTCOUNT] = {
+  "Envelope",
+};
+
+static char * controlNames[ADSR_CONTROLCOUNT] = {
+  "Attack",
+  "Decay",
+  "Sustain",
+  "Release",
+};
+
 static Module vtable = {
+  .type = ModuleType_ADSR,
   .freeModule = free_adsr,
   .updateState = updateState,
   .pushCurrToPrev = pushCurrToPrev,
@@ -75,6 +96,12 @@ static Module vtable = {
   .setControlVal = setControlVal,
   .getControlVal = getControlVal,
   .linkToInput = linkToInput,
+  .inPortNames = inPortNames,
+  .inPortNamesCount = ARRAY_LEN(inPortNames),
+  .outPortNames = outPortNames,
+  .outPortNamesCount = ARRAY_LEN(outPortNames),
+  .controlNames = controlNames,
+  .controlNamesCount = ARRAY_LEN(controlNames),
 };
 
 #define DEFAULT_CONTROL_A   0.01f
@@ -113,6 +140,10 @@ Module * ADSR_init(char* name)
 static void free_adsr(void * modPtr)
 {
   ADSR * adsr = (ADSR *)modPtr;
+  
+  Module * mod = (Module*)modPtr;
+  free(mod->name);
+  
   free(adsr);
 }
 

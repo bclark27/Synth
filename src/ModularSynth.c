@@ -27,7 +27,7 @@ static bool addConnectionHelper(ModularSynth * synth, Module * srcMod, ModularID
 //  DEFAULT VALUES  //
 //////////////////////
 
-static const char * outModuleName = "OUT_MOD";
+static const char * outModuleName = "__OUTPUT__";
 
 //////////////////////
 // PUBLIC FUNCTIONS //
@@ -258,7 +258,9 @@ bool ModularSynth_addConnectionByName(ModularSynth * synth, char* srcModuleName,
   
   ModularPortID srcPort = Module_GetOutPortId(srcMod, srcPortName, &srcFound);
   ModularPortID destPort = Module_GetInPortId(destMod, destPortName, &destFound);
+  printf("%d, %d\n", srcFound, destFound);
   if (!srcFound || !destFound) return 0;
+
 
   return addConnectionHelper(synth, srcMod, srcId, srcPort, destMod, destId, destPort);
 }
@@ -296,6 +298,21 @@ bool ModularSynth_setControl(ModularSynth * synth, ModularID id, ModularPortID c
   Module * mod = getModuleById(synth, id);
 
   if (!mod) return 0;
+
+  mod->setControlVal(mod, controlID, val);
+  return 1;
+}
+
+bool ModularSynth_setControlByName(ModularSynth * synth, char * name, char * controlName, R4 val)
+{
+  if (!name || !controlName) return 0;
+
+  Module * mod = getModuleByName(synth, name);
+  if (!mod) return 0;
+
+  bool found;
+  ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
+  if (!found) return 0;
 
   mod->setControlVal(mod, controlID, val);
   return 1;

@@ -8,10 +8,25 @@
 // TYPES //
 ///////////
 
+typedef enum ModuleType
+{
+  ModuleType_ADSR=0,
+  ModuleType_Attenuator,
+  ModuleType_Clock,
+  ModuleType_ClockMult,
+  ModuleType_Mixer,
+  ModuleType_OutputModule,
+  ModuleType_Sequencer,
+  ModuleType_VCO,
+
+  ModuleType_COUNT,
+} ModuleType;
+
 typedef U2 ModularPortID;
 
 typedef struct Module
 {
+  ModuleType type;
   void (*freeModule)(void*);
   void (*updateState)(void*);
   void (*pushCurrToPrev)(void*);
@@ -32,6 +47,8 @@ typedef struct Module
   int controlNamesCount;
   char** controlNames;
 } Module;
+
+extern const char * const ModuleTypeNames[ModuleType_COUNT];
 
 ////////////////////////
 //  PUBLIC FUNCTIONS  //

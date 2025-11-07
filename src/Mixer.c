@@ -47,7 +47,24 @@ static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
 //  DEFAULT VALUES  //
 //////////////////////
 
+static char * inPortNames[MIXER_INCOUNT] = {
+  "Input0",
+  "Input1",
+  "Input2",
+  "Input3",
+  "Volume",
+};
+
+static char * outPortNames[MIXER_OUTCOUNT] = {
+  "Mix",
+};
+
+static char * controlNames[MIXER_CONTROLCOUNT] = {
+  "Volume",
+};
+
 static Module vtable = {
+  .type = ModuleType_Mixer,
   .freeModule = free_mixer,
   .updateState = updateState,
   .pushCurrToPrev = pushCurrToPrev,
@@ -59,6 +76,12 @@ static Module vtable = {
   .setControlVal = setControlVal,
   .getControlVal = getControlVal,
   .linkToInput = linkToInput,
+  .inPortNames = inPortNames,
+  .inPortNamesCount = ARRAY_LEN(inPortNames),
+  .outPortNames = outPortNames,
+  .outPortNamesCount = ARRAY_LEN(outPortNames),
+  .controlNames = controlNames,
+  .controlNamesCount = ARRAY_LEN(controlNames),
 };
 
 #define DEFAULT_CONTROL_VOL   VOLTSTD_MOD_CV_MID
@@ -90,6 +113,10 @@ Module * Mixer_init(char* name)
 static void free_mixer(void * modPtr)
 {
   Mixer * mix = (Mixer *)modPtr;
+  
+  Module * mod = (Module*)modPtr;
+  free(mod->name);
+  
   free(mix);
 }
 

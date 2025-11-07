@@ -37,7 +37,21 @@ static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
 //  DEFAULT VALUES  //
 //////////////////////
 
+static char * inPortNames[OUTPUT_INCOUNT] = {
+  "Left",
+  "Right",
+};
+
+static char * outPortNames[OUTPUT_OUTCOUNT] = {
+  "Left",
+  "Right",
+};
+
+static char * controlNames[OUTPUT_CONTROLCOUNT] = {
+};
+
 static Module vtable = {
+  .type = ModuleType_OutputModule,
   .freeModule = free_outputModule,
   .updateState = updateState,
   .pushCurrToPrev = pushCurrToPrev,
@@ -49,6 +63,12 @@ static Module vtable = {
   .setControlVal = setControlVal,
   .getControlVal = getControlVal,
   .linkToInput = linkToInput,
+  .inPortNames = inPortNames,
+  .inPortNamesCount = ARRAY_LEN(inPortNames),
+  .outPortNames = outPortNames,
+  .outPortNamesCount = ARRAY_LEN(outPortNames),
+  .controlNames = controlNames,
+  .controlNamesCount = ARRAY_LEN(controlNames),
 };
 
 
@@ -73,6 +93,10 @@ Module * OutputModule_init(char* name)
 static void free_outputModule(void * modPtr)
 {
   OutputModule * out = (OutputModule *)modPtr;
+  
+  Module * mod = (Module*)modPtr;
+  free(mod->name);
+  
   free(out);
 }
 

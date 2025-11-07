@@ -54,24 +54,25 @@ static void createPwTable(VCO * vco, R4 * table);
 //  DEFAULT VALUES  //
 //////////////////////
 
-static char * inPortNames[] = {
-  "freq",
-  "pw",
+static char * inPortNames[VCO_INCOUNT] = {
+  "Freq",
+  "PW",
 };
 
-static char * outPortNames[] = {
-  "sin",
-  "saw",
-  "sqr",
-  "tri",
+static char * outPortNames[VCO_OUTCOUNT] = {
+  "Sin",
+  "Saw",
+  "Sqr",
+  "Tri",
 };
 
-static char * controlNames[] = {
-  "freq",
-  "pw",
+static char * controlNames[VCO_CONTROLCOUNT] = {
+  "Freq",
+  "PW",
 };
 
 static Module vtable = {
+  .type = ModuleType_VCO,
   .freeModule = free_vco,
   .updateState = updateState,
   .pushCurrToPrev = pushCurrToPrev,
@@ -83,7 +84,6 @@ static Module vtable = {
   .setControlVal = setControlVal,
   .getControlVal = getControlVal,
   .linkToInput = linkToInput,
-
   .inPortNames = inPortNames,
   .inPortNamesCount = ARRAY_LEN(inPortNames),
   .outPortNames = outPortNames,
@@ -132,6 +132,10 @@ Module * VCO_init(char* name)
 static void free_vco(void * modPtr)
 {
   VCO * vco = (VCO *)modPtr;
+  
+  Module * mod = (Module*)modPtr;
+  free(mod->name);
+  
   free(vco);
 }
 

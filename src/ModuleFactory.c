@@ -1,8 +1,10 @@
 #include "ModuleFactory.h"
 
+
 //////////////////////
 // PUBLIC FUNCTIONS //
 //////////////////////
+
 
 Module * ModuleFactory_createModule(ModuleType type, char * name)
 {
