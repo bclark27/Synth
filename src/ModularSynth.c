@@ -133,6 +133,7 @@ ModularID ModularSynth_addModule(ModularSynth * synth, ModuleType type, char * n
 
   // create the module
   Module * module = ModuleFactory_createModule(type, name);
+  if (!module) return -1;
 
   // add ptr to the end of the list
   U2 idx = synth->modulesCount;
@@ -150,6 +151,15 @@ ModularID ModularSynth_addModule(ModularSynth * synth, ModuleType type, char * n
   printf("Adding Module\n\tName: %s\n", module->name);
 
   return id;
+}
+
+
+ModularID ModularSynth_addModuleByName(ModularSynth * synth, char* type, char * name)
+{
+  if (!type || !name) return -1;
+  bool found;
+  ModuleType typeId = Module_GetModuleTypeByName(type, &found);
+  return ModularSynth_addModule(synth, typeId, name);
 }
 
 bool ModularSynth_removeModule(ModularSynth * synth, ModularID id)

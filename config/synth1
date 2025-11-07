@@ -1,0 +1,14 @@
+osc1 VCO
+filter1 VCF
+amp1 VCA
++++
+osc1
+connect out filter1 in
+control freq 440.0
++++
+filter1
+connect out amp1 in
+control cutoff 0.7
++++
+amp1
+control gain 0.8

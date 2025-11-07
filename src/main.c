@@ -6,8 +6,8 @@
 #include "comm/IPC.h"
 #include <math.h>
 
-#define SCREEN_WIDTH        2048
-#define SCREEN_HEIGHT       786
+#define SCREEN_WIDTH        300
+#define SCREEN_HEIGHT       300
 #define FPS                 60
 ModularID vco1;
 ModularID vco2;
@@ -134,9 +134,19 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
 
 
 
+FullConfig cfg;
 
 int main(void)
 {
+  /*
+  ConfigParser_Parse(&cfg, "/home/ben/projects/github/my/Synth/config/synth2");
+  ConfigParser_Print(&cfg);
+  ConfigParser_Write(&cfg, "/home/ben/projects/github/my/Synth/config/synth3");
+  return 0;
+  
+  
+  */
+
   IPC_StartService("Controller"); 
   IPC_ConnectToService("PushEvents", OnPushEvent);
 
@@ -176,6 +186,9 @@ int main(void)
   InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Synth");
   SetTargetFPS(FPS);
 
+  BeginDrawing();
+  ClearBackground(BLACK);
+  EndDrawing();
 
   while (WindowShouldClose() == false)
   {
@@ -186,22 +199,22 @@ int main(void)
     }
 
 
-    BeginDrawing();
-    ClearBackground(BLACK);
+    // BeginDrawing();
+    // ClearBackground(BLACK);
 
-    DrawText(TextFormat("Freq: %f", 100), 100, 100, 20, RED);
+    // DrawText(TextFormat("Freq: %f", 100), 100, 100, 20, RED);
 
-    for (U4 t = 0; t < MIN(SCREEN_WIDTH, STREAM_BUFFER_SIZE); t++)
-    {
-      const int upper = SCREEN_HEIGHT / 4;
-      const int lower = 3 * SCREEN_HEIGHT / 4;
-      int y = MAP(-1, 1, lower, upper, signal[t]);
+    // for (U4 t = 0; t < MIN(SCREEN_WIDTH, STREAM_BUFFER_SIZE); t++)
+    // {
+    //   const int upper = SCREEN_HEIGHT / 4;
+    //   const int lower = 3 * SCREEN_HEIGHT / 4;
+    //   int y = MAP(-1, 1, lower, upper, signal[t]);
 
-      DrawPixel(t, y, GREEN);
-      DrawPixel(t, MAP(-1, 1, lower, upper, 0), RED);
-    }
+    //   DrawPixel(t, y, GREEN);
+    //   DrawPixel(t, MAP(-1, 1, lower, upper, 0), RED);
+    // }
 
-    EndDrawing();
+    // EndDrawing();
   }
 
   UnloadAudioStream(synthStream);

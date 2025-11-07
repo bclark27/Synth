@@ -3,13 +3,11 @@
 
 #include "Module.h"
 #include "ModuleFactory.h"
+#include "ConfigParser.h"
 
 //////////////
 // DEFINES  //
 //////////////
-
-#define MAX_RACK_SIZE   1000
-#define MAX_CONN_COUNT  5000
 
 /////////////
 //  TYPES  //
@@ -55,6 +53,7 @@ R4 * ModularSynth_getRightChannel(ModularSynth * synth);
 void ModularSynth_update(ModularSynth * synth);
 
 ModularID ModularSynth_addModule(ModularSynth * synth, ModuleType type, char * name);
+ModularID ModularSynth_addModuleByName(ModularSynth * synth, char* type, char * name);
 bool ModularSynth_removeModule(ModularSynth * synth, ModularID id);
 bool ModularSynth_removeModuleByName(ModularSynth * synth, char* name);
 bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, ModularPortID srcPort, ModularID destId, ModularPortID destPort);
