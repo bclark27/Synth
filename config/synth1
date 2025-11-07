@@ -1,17 +1,21 @@
+__OUTPUT__ OutputModule
 osc1 VCO
 osc2 VCO
 mix1 Mixer
-__OUTPUT__ OutputModule
 +++
 __OUTPUT__
 connect Left mix1 Mix
 +++
 osc1
-control Freq 1
+control Freq 1.000000
+control PW 0.500000
 +++
 osc2
-control Freq 2
+control Freq -1.000000
+control PW 0.500000
 +++
 mix1
 connect Input0 osc1 Saw
 connect Input1 osc2 Sqr
+control Volume 0.000000
++++

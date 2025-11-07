@@ -63,6 +63,7 @@ void ModularSynth_removeConnectionByName(ModularSynth * synth, char* destModuleN
 bool ModularSynth_setControl(ModularSynth * synth, ModularID id, ModularPortID controlID, R4 val);
 bool ModularSynth_setControlByName(ModularSynth * synth, char * name, char * controlName, R4 val);
 bool ModularSynth_readConfig(ModularSynth * synth, char * fname);
+bool ModularSynth_exportConfig(ModularSynth * synth, char * fname);
 char* ModularSynth_PrintFullModuleInfo(ModularSynth * synth, ModularID id);
 
 #endif

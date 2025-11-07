@@ -12,6 +12,7 @@
 /////////////////////////////
 
 static Module * getModuleByName(ModularSynth * synth, char * name);
+static ModularID getModuleIdByIdx(ModularSynth * synth, int idx);
 static ModularID getModuleIdByName(ModularSynth * synth, char * name, bool* found);
 static Module * getModuleById(ModularSynth * synth, ModularID id);
 static bool connectionLogEq(ModuleConnection a, ModuleConnection b);
@@ -398,7 +399,7 @@ bool ModularSynth_readConfig(ModularSynth * synth, char * fname)
       }
     }
   }
-  
+
   // now delete all the modules that dont exist in the config (except the output)
   for (int i = 0; i < MAX_RACK_SIZE; i++)
   {
@@ -433,6 +434,49 @@ bool ModularSynth_readConfig(ModularSynth * synth, char * fname)
       ModularSynth_setControlByName(synth, modConfig->name, ctrlInfo->controlName, ctrlInfo->value);
     }
   }
+}
+
+bool ModularSynth_exportConfig(ModularSynth * synth, char * fname)
+{
+  memset(&config, 0, sizeof(config));
+
+  // first get in the raw number of modules
+  config.moduleCount = synth->modulesCount;
+
+  for (int i = 0; i < synth->modulesCount; i++)
+  {
+    Module * mod = synth->modules[i];
+    ModularID id = getModuleIdByIdx(synth, i);
+    ModuleConfig* modConfig = &config.modules[i];
+
+    memcpy(modConfig->name, mod->name, strlen(mod->name) + 1);
+    memcpy(modConfig->type, ModuleTypeNames[mod->type], strlen(ModuleTypeNames[mod->type]) + 1);
+
+    for (int k = 0; k < synth->portConnectionsCount; k++)
+    {
+      ModuleConnection* conn = &synth->portConnections[k];
+      if (conn->destMod == id)
+      {
+        ConnectionInfo* connInfo = &modConfig->connections[modConfig->connectionCount];
+        modConfig->connectionCount++;
+
+        Module * otherMod = getModuleById(synth, conn->srcMod);
+        memcpy(connInfo->inPort, mod->inPortNames[conn->destPort], strlen(mod->inPortNames[conn->destPort]) + 1);
+        memcpy(connInfo->otherModule, otherMod->name, strlen(otherMod->name) + 1);
+        memcpy(connInfo->otherOutPort, otherMod->outPortNames[conn->srcPort], strlen(otherMod->outPortNames[conn->srcPort]) + 1);
+      }
+    }
+
+    modConfig->controlCount = mod->controlNamesCount;
+    for (int k = 0; k < mod->controlNamesCount; k++)
+    {
+      ControlInfo* ctrlInfo = &modConfig->controls[k];
+      memcpy(ctrlInfo->controlName, mod->controlNames[k], strlen(mod->controlNames[k]) + 1);
+      ctrlInfo->value = mod->getControlVal(mod, k);
+    }
+  }
+
+  ConfigParser_Write(&config, fname);
 }
 
 char* ModularSynth_PrintFullModuleInfo(ModularSynth * synth, ModularID id)
@@ -529,6 +573,16 @@ static Module * getModuleByName(ModularSynth * synth, char * name)
   }
 
   return NULL;
+}
+
+static ModularID getModuleIdByIdx(ModularSynth * synth, int idx)
+{
+  for (int i = 0; i < MAX_RACK_SIZE; i++)
+  {
+    if (!synth->moduleIDAvailability[i] && synth->moduleIDtoIdx[i] == idx) return i;
+  }
+
+  return -1;
 }
 
 static ModularID getModuleIdByName(ModularSynth * synth, char * name, bool* found)
