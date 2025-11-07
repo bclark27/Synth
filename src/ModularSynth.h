@@ -46,24 +46,24 @@ typedef struct ModularSynth
 ////////////////////////
 
 ModularSynth * ModularSynth_init(void);
-void ModularSynth_free(ModularSynth * synth);
+void ModularSynth_free();
 
-R4 * ModularSynth_getLeftChannel(ModularSynth * synth);
-R4 * ModularSynth_getRightChannel(ModularSynth * synth);
-void ModularSynth_update(ModularSynth * synth);
+R4 * ModularSynth_getLeftChannel();
+R4 * ModularSynth_getRightChannel();
+void ModularSynth_update();
 
-ModularID ModularSynth_addModule(ModularSynth * synth, ModuleType type, char * name);
-ModularID ModularSynth_addModuleByName(ModularSynth * synth, char* type, char * name);
-bool ModularSynth_removeModule(ModularSynth * synth, ModularID id);
-bool ModularSynth_removeModuleByName(ModularSynth * synth, char* name);
-bool ModularSynth_addConnection(ModularSynth * synth, ModularID srcId, ModularPortID srcPort, ModularID destId, ModularPortID destPort);
-bool ModularSynth_addConnectionByName(ModularSynth * synth, char* srcModuleName, char* srcPortName, char* destModuleName, char* destPortName);
-void ModularSynth_removeConnection(ModularSynth * synth, ModularID destId, ModularPortID destPort);
-void ModularSynth_removeConnectionByName(ModularSynth * synth, char* destModuleName, char* destPortName);
-bool ModularSynth_setControl(ModularSynth * synth, ModularID id, ModularPortID controlID, R4 val);
-bool ModularSynth_setControlByName(ModularSynth * synth, char * name, char * controlName, R4 val);
-bool ModularSynth_readConfig(ModularSynth * synth, char * fname);
-bool ModularSynth_exportConfig(ModularSynth * synth, char * fname);
-char* ModularSynth_PrintFullModuleInfo(ModularSynth * synth, ModularID id);
+ModularID ModularSynth_addModule(ModuleType type, char * name);
+ModularID ModularSynth_addModuleByName(char* type, char * name);
+bool ModularSynth_removeModule(ModularID id);
+bool ModularSynth_removeModuleByName(char* name);
+bool ModularSynth_addConnection(ModularID srcId, ModularPortID srcPort, ModularID destId, ModularPortID destPort);
+bool ModularSynth_addConnectionByName(char* srcModuleName, char* srcPortName, char* destModuleName, char* destPortName);
+void ModularSynth_removeConnection(ModularID destId, ModularPortID destPort);
+void ModularSynth_removeConnectionByName(char* destModuleName, char* destPortName);
+bool ModularSynth_setControl(ModularID id, ModularPortID controlID, R4 val);
+bool ModularSynth_setControlByName(char * name, char * controlName, R4 val);
+bool ModularSynth_readConfig(char * fname);
+bool ModularSynth_exportConfig(char * fname);
+char* ModularSynth_PrintFullModuleInfo(ModularID id);
 
 #endif

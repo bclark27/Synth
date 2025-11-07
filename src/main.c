@@ -99,7 +99,7 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
     if (knob->id == 0)
     {
       vco1freq += knob->direction / div;
-      ModularSynth_setControl(synth, vco1, VCO_CONTROL_FREQ, vco1freq);
+      ModularSynth_setControl(vco1, VCO_CONTROL_FREQ, vco1freq);
 
       char* str = malloc(68);
       int size = snprintf(str, 68, "%.3f", vco1freq);
@@ -116,7 +116,7 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
     if (knob->id == 1)
     {
       vco2freq += knob->direction / div;
-      ModularSynth_setControl(synth, vco2, VCO_CONTROL_FREQ, vco2freq);
+      ModularSynth_setControl(vco2, VCO_CONTROL_FREQ, vco2freq);
 
       char* str = malloc(68);
       int size = snprintf(str, 68, "%.3f", vco2freq);
@@ -155,7 +155,7 @@ int main(void)
   initColors();
   
   synth = ModularSynth_init();
-  ModularSynth_readConfig(synth, "/home/ben/projects/github/my/Synth/config/synth1");
+  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth1");
   //return 0;
  
   // ModularID vco0 = ModularSynth_addModuleByName(synth, "VCO", strdup("vco0"));
@@ -170,7 +170,7 @@ int main(void)
   // printf("%s\n", ModularSynth_PrintFullModuleInfo(synth, vco0));
   // printf("%s\n", ModularSynth_PrintFullModuleInfo(synth, attn0));
 
-  R4 * signal = ModularSynth_getLeftChannel(synth);
+  R4 * signal = ModularSynth_getLeftChannel();
 
 
 
@@ -198,7 +198,7 @@ int main(void)
   {
     if (IsAudioStreamProcessed(synthStream))
     {
-      ModularSynth_update(synth);
+      ModularSynth_update();
       UpdateAudioStream(synthStream, signal, STREAM_BUFFER_SIZE);
     }
 
@@ -225,5 +225,5 @@ int main(void)
   CloseAudioDevice();
   CloseWindow();
 
-  ModularSynth_free(synth);
+  ModularSynth_free();
 }
