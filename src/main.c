@@ -62,6 +62,9 @@ void* synthThread(void* arg) {
 
 void timetest()
 {
+  ModularSynth_init();
+  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth1");
+
   struct timeval stop, start;
   gettimeofday(&start, NULL);
   
@@ -205,18 +208,17 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
 
 int main(void)
 {
- 
+  // timetest();
+  // return 0;
+
   IPC_StartService("Controller"); 
   IPC_ConnectToService("PushEvents", OnPushEvent);
   
   initColors();
   
   ModularSynth_init();
-  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth1");
-  ModularSynth_exportConfig("/home/ben/projects/github/my/Synth/config/synth2");
-  timetest();
-  return 0;
-
+  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth2");
+  
   InitAudioDevice();
 
   SetAudioStreamBufferSizeDefault(STREAM_BUFFER_SIZE);

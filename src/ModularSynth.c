@@ -115,7 +115,6 @@ R4 * ModularSynth_getRightChannel()
 
 void ModularSynth_update()
 {
-
 // update all states, then push to out
 
   Module * module;
@@ -126,7 +125,7 @@ void ModularSynth_update()
 
   for (U4 i = 0; i < MODULE_BUFS_PER_STREAM_BUF; i++)
   {
-
+#ifdef MULTITHREAD_UPDATE_LOOP
     atomic_store(&synth->threadpool.moduleCount, synth->modulesCount);
     atomic_store(&synth->threadpool.phase, UPDATE_MOD_PHASE);
     pthread_barrier_wait(&synth->threadpool.barrier);
@@ -135,6 +134,19 @@ void ModularSynth_update()
     atomic_store(&synth->threadpool.phase, PUSH_BUFFERS_PHASE);
     pthread_barrier_wait(&synth->threadpool.barrier);
     pthread_barrier_wait(&synth->threadpool.barrier);
+#endif
+#ifndef MULTITHREAD_UPDATE_LOOP
+    for (int m = 0; m < modulesCount; m++)
+    {
+      module = synth->modules[m];
+      module->updateState(module);
+    }
+    for (int m = 0; m < modulesCount; m++) 
+    {
+      module = synth->modules[m];
+      module->pushCurrToPrev(module);
+    }
+#endif
     // output module is always idx 0 of modules[]. cpy from output
     // to the left and right output channels
     memcpy(currOutputPtrLeft, synth->outModuleLeft, MODULE_BUFFER_SIZE * sizeof(R4));

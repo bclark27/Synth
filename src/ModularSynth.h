@@ -11,6 +11,7 @@
 // DEFINES  //
 //////////////
 
+#undef MULTITHREAD_UPDATE_LOOP
 #define MAX_SYNTH_THREADS 1
 
 /////////////

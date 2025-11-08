@@ -71,6 +71,42 @@ control Freq 1.000000
 control PW 0.500000
 +++
 osc2
+connect Freq osc1 Tri
+control Freq -1.000000
+control PW 0.500000
++++
+osc3
+connect Freq osc2 Tri
+control Freq -1.000000
+control PW 0.500000
++++
+osc4
+connect Freq osc3 Tri
+control Freq -1.000000
+control PW 0.500000
++++
+osc5
+connect Freq osc4 Tri
+control Freq -1.000000
+control PW 0.500000
++++
+osc6
+connect Freq osc5 Tri
+control Freq -1.000000
+control PW 0.500000
++++
+osc7
+connect Freq osc6 Tri
+control Freq -1.000000
+control PW 0.500000
++++
+osc8
+connect Freq osc7 Tri
+control Freq -1.000000
+control PW 0.500000
++++
+osc9
+connect Freq osc8 Tri
 control Freq -1.000000
 control PW 0.500000
 +++
