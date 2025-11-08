@@ -18,47 +18,6 @@ memcpy(signalBuffers[idx], synthOutput, sizeof(R4) * STREAM_BUFFER_SIZE);
 #define SCREEN_WIDTH        300
 #define SCREEN_HEIGHT       300
 #define FPS                 60
-#define NUM_BUFFERS         2    // 3-lookahead
-
-typedef struct {
-  float buffers[NUM_BUFFERS][STREAM_BUFFER_SIZE];
-  _Atomic int bufferReadyCount;
-  _Atomic int writeIndex;
-  _Atomic int readIndex;
-  pthread_mutex_t mutex;
-  pthread_cond_t cond;
-  int running;
-  float phase;
-} SynthData;
-
-SynthData synth;
-
-
-void* synthThread(void* arg) {
-  SynthData* s = (SynthData*)arg;
-  R4* synthOutput = ModularSynth_getLeftChannel();
-  while (s->running) {
-    // Wait until there is room to write
-    pthread_mutex_lock(&s->mutex);
-    while (s->bufferReadyCount == NUM_BUFFERS)
-      pthread_cond_wait(&s->cond, &s->mutex);
-
-    int idx = s->writeIndex;
-    pthread_mutex_unlock(&s->mutex);
-
-    ModularSynth_update();
-    memcpy(s->buffers[idx], synthOutput, sizeof(R4) * STREAM_BUFFER_SIZE);
-
-    // Mark buffer ready
-    pthread_mutex_lock(&s->mutex);
-    s->bufferReadyCount++;
-    s->writeIndex = (s->writeIndex + 1) % NUM_BUFFERS;
-    pthread_cond_signal(&s->cond);
-    pthread_mutex_unlock(&s->mutex);
-  }
-
-  return NULL;
-}
 
 void timetest()
 {
@@ -238,42 +197,16 @@ int main(void)
   ClearBackground(BLACK);
   EndDrawing();
 
-  pthread_mutex_init(&synth.mutex, NULL);
-  pthread_cond_init(&synth.cond, NULL);
-  synth.bufferReadyCount = 0;
-  synth.writeIndex = 0;
-  synth.readIndex = 0;
-  synth.running = 1;
-  synth.phase = 0;
-
-  pthread_t thread;
-  pthread_create(&thread, NULL, synthThread, &synth);
+  R4 * audioBuffer = ModularSynth_getLeftChannel();
 
   while (!WindowShouldClose()) 
   {
-    // Feed audio stream if ready
     if (IsAudioStreamProcessed(synthStream))
     {
-      pthread_mutex_lock(&synth.mutex);
-      while (synth.bufferReadyCount == 0)
-          pthread_cond_wait(&synth.cond, &synth.mutex);
-
-      int idx = synth.readIndex;
-      synth.bufferReadyCount--;
-      synth.readIndex = (synth.readIndex + 1) % NUM_BUFFERS;
-
-      pthread_cond_signal(&synth.cond);
-      pthread_mutex_unlock(&synth.mutex);
-
-      UpdateAudioStream(synthStream, synth.buffers[idx], STREAM_BUFFER_SIZE);
+      UpdateAudioStream(synthStream, audioBuffer, STREAM_BUFFER_SIZE);
+      ModularSynth_update();
     }
   }
-
-  synth.running = 0;
-  pthread_cond_broadcast(&synth.cond); // wake synth thread
-  pthread_join(thread, NULL);
-  pthread_mutex_destroy(&synth.mutex);
-  pthread_cond_destroy(&synth.cond);
 
   UnloadAudioStream(synthStream);
   CloseAudioDevice();
