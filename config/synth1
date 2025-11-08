@@ -1,7 +1,67 @@
 __OUTPUT__ OutputModule
 osc1 VCO
 osc2 VCO
+osc3 VCO
+osc4 VCO
+osc5 VCO
+osc6 VCO
+osc7 VCO
+osc8 VCO
+osc9 VCO
+osc10 VCO
+osc20 VCO
+osc30 VCO
+osc40 VCO
+osc50 VCO
+osc60 VCO
+osc70 VCO
+osc80 VCO
+osc90 VCO
+osc11 VCO
+osc21 VCO
+osc31 VCO
+osc41 VCO
+osc51 VCO
+osc61 VCO
+osc71 VCO
+osc81 VCO
+osc91 VCO
 mix1 Mixer
+mix2 Mixer
+mix3 Mixer
+mix4 Mixer
+mix5 Mixer
+mix6 Mixer
+mix7 Mixer
+mix8 Mixer
+mix9 Mixer
+mix10 Mixer
+mix20 Mixer
+mix30 Mixer
+mix40 Mixer
+mix50 Mixer
+mix60 Mixer
+mix70 Mixer
+mix80 Mixer
+mix90 Mixer
+adsr1 ADSR
+adsr2 ADSR
+adsr3 ADSR
+adsr4 ADSR
+adsr5 ADSR
+adsr6 ADSR
+adsr7 ADSR
+adsr8 ADSR
+seq9 Sequencer
+seq1 Sequencer
+seq2 Sequencer
+seq3 Sequencer
+seq4 Sequencer
+seq5 Sequencer
+seq6 Sequencer
+seq7 Sequencer
+seq8 Sequencer
+seq9 Sequencer
 +++
 __OUTPUT__
 connect Left mix1 Mix
@@ -15,7 +75,6 @@ control Freq -1.000000
 control PW 0.500000
 +++
 mix1
-connect Input0 osc1 Saw
-connect Input1 osc2 Sqr
+connect Input1 osc2 Sin
 control Volume 0.000000
 +++

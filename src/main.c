@@ -7,7 +7,7 @@
 #include <math.h>
 #include <pthread.h>
 #include <stdatomic.h>
-
+#include <sys/time.h>
 
 /*
 ModularSynth_update();
@@ -18,7 +18,7 @@ memcpy(signalBuffers[idx], synthOutput, sizeof(R4) * STREAM_BUFFER_SIZE);
 #define SCREEN_WIDTH        300
 #define SCREEN_HEIGHT       300
 #define FPS                 60
-#define NUM_BUFFERS         1    // 3-lookahead
+#define NUM_BUFFERS         2    // 3-lookahead
 
 typedef struct {
   float buffers[NUM_BUFFERS][STREAM_BUFFER_SIZE];
@@ -58,6 +58,28 @@ void* synthThread(void* arg) {
   }
 
   return NULL;
+}
+
+void timetest()
+{
+  struct timeval stop, start;
+  gettimeofday(&start, NULL);
+  
+  int iters = 1000;
+  for (int i = 0; i < iters; i++)
+  {
+    ModularSynth_update();
+  }
+
+  gettimeofday(&stop, NULL);
+  long unsigned int t = (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec;
+  double s = t / 1000000.0;
+  printf("took %lf seconds\n", s);
+  double speed = s / iters;
+  printf("seconds per iter: %lf\n", speed);
+  double timeToBeat = STREAM_BUFFER_SIZE / (double)SAMPLE_RATE;
+  printf("time to beat: %lf\n", timeToBeat);
+  printf("went %.3lfx faster then needed\n", timeToBeat / speed);
 }
 
 
@@ -191,6 +213,9 @@ int main(void)
   
   ModularSynth_init();
   ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth1");
+  ModularSynth_exportConfig("/home/ben/projects/github/my/Synth/config/synth2");
+  timetest();
+  return 0;
 
   InitAudioDevice();
 
@@ -225,7 +250,7 @@ int main(void)
   while (!WindowShouldClose()) 
   {
     // Feed audio stream if ready
-    if (IsAudioStreamProcessed(synthStream)) 
+    if (IsAudioStreamProcessed(synthStream))
     {
       pthread_mutex_lock(&synth.mutex);
       while (synth.bufferReadyCount == 0)

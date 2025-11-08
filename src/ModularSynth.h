@@ -11,7 +11,7 @@
 // DEFINES  //
 //////////////
 
-#define MAX_SYNTH_THREADS 4
+#define MAX_SYNTH_THREADS 1
 
 /////////////
 //  TYPES  //
