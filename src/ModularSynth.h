@@ -9,9 +9,21 @@
 // DEFINES  //
 //////////////
 
+#define MAX_SYNTH_THREADS 4
+
 /////////////
 //  TYPES  //
 /////////////
+
+typedef struct {
+  pthread_t threads[MAX_SYNTH_THREADS];
+  pthread_barrier_t barrier;
+  pthread_mutex_t mutex;
+  pthread_cond_t cond;
+  int running;
+  int phase;
+  U4 moduleCount;
+} SynthThreadPool;
 
 typedef U2 ModularID;
 
@@ -38,6 +50,8 @@ typedef struct ModularSynth
 
   R4 * outModuleLeft;
   R4 * outModuleRight;
+
+  SynthThreadPool threadpool;
 
 } ModularSynth;
 

@@ -2,10 +2,21 @@
 
 #include "AudioSettings.h"
 #include "ModuleFactory.h"
+#include <pthread.h>
+#include <stdatomic.h>
 
 //////////////
 // DEFINES  //
 //////////////
+
+#define UPDATE_MOD_PHASE  0
+#define PUSH_BUFFERS_PHASE  1
+#define SHUTDOWN_PHASE  2
+
+/////////////
+//  TYPES  //
+/////////////
+
 
 /////////////////////////////
 //  FUNCTION DECLERATIONS  //
@@ -23,6 +34,7 @@ static void getAllInPortConnections(ModularID id, ModuleConnection * connections
 static void getAllOutPortConnections(ModularID id, ModularPortID port, ModuleConnection * connections, U4 * connectionsCount);
 static ModuleConnection getConnectionToDestInPort(ModularID id, ModularPortID port, bool* found);
 static bool addConnectionHelper(Module * srcMod, ModularID srcId, ModularPortID srcPort, Module * destMod, ModularID destId, ModularPortID destPort);
+void* updateWorkerThread(void *arg);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -34,12 +46,19 @@ static ModularSynth* synth = &synthInst;
 static FullConfig config;
 static const char * outModuleName = "__OUTPUT__";
 
+static bool initDone = false;
+
 //////////////////////
 // PUBLIC FUNCTIONS //
 //////////////////////
 
+
+
 ModularSynth * ModularSynth_init(void)
 {
+  if (initDone) return synth;
+  initDone = true;
+
   memset(synth, 0, sizeof(ModularSynth));
 
   synth->modulesCount = 1;
@@ -54,11 +73,25 @@ ModularSynth * ModularSynth_init(void)
   synth->outModuleLeft = outMod->getOutputAddr(outMod, OUTPUT_OUT_PORT_LEFT);
   synth->outModuleRight = outMod->getOutputAddr(outMod, OUTPUT_OUT_PORT_RIGHT);
 
+  memset(&synth->threadpool, 0, sizeof(SynthThreadPool));
+  synth->threadpool.running = 1;
+  pthread_barrier_init(&synth->threadpool.barrier, NULL, MAX_SYNTH_THREADS + 1);
+  pthread_mutex_init(&synth->threadpool.mutex, NULL);
+  for (intptr_t i = 0; i < MAX_SYNTH_THREADS; i++)
+  {
+      pthread_create(&synth->threadpool.threads[i], NULL, updateWorkerThread, (void*)i);
+  }
   return synth;
 }
 
 void ModularSynth_free()
 {
+  atomic_store(&synth->threadpool.phase, SHUTDOWN_PHASE);
+  atomic_store(&synth->threadpool.running, true);
+  pthread_barrier_wait(&synth->threadpool.barrier);
+  pthread_barrier_wait(&synth->threadpool.barrier);
+  pthread_barrier_destroy(&synth->threadpool.barrier);
+
   for (U4 i = 0; i < synth->modulesCount; i++)
   {
     Module * module = synth->modules[i];
@@ -81,30 +114,26 @@ R4 * ModularSynth_getRightChannel()
 
 void ModularSynth_update()
 {
-  // update all states, then push to out
+
+// update all states, then push to out
 
   Module * module;
   U4 modulesCount = synth->modulesCount;
   R4 * currOutputPtrLeft = synth->outputBufferLeft;
   R4 * currOutputPtrRight = synth->outputBufferRight;
-
+  
 
   for (U4 i = 0; i < MODULE_BUFS_PER_STREAM_BUF; i++)
   {
-    // update the modules
-    for (U4 m = 0; m < modulesCount; m++)
-    {
-      module = synth->modules[m];
-      module->updateState(module);
-    }
 
-    // push updates
-    for (U4 m = 0; m < modulesCount; m++)
-    {
-      module = synth->modules[m];
-      module->pushCurrToPrev(module);
-    }
+    atomic_store(&synth->threadpool.moduleCount, synth->modulesCount);
+    atomic_store(&synth->threadpool.phase, UPDATE_MOD_PHASE);
+    pthread_barrier_wait(&synth->threadpool.barrier);
+    pthread_barrier_wait(&synth->threadpool.barrier);
 
+    atomic_store(&synth->threadpool.phase, PUSH_BUFFERS_PHASE);
+    pthread_barrier_wait(&synth->threadpool.barrier);
+    pthread_barrier_wait(&synth->threadpool.barrier);
     // output module is always idx 0 of modules[]. cpy from output
     // to the left and right output channels
     memcpy(currOutputPtrLeft, synth->outModuleLeft, MODULE_BUFFER_SIZE * sizeof(R4));
@@ -114,6 +143,7 @@ void ModularSynth_update()
     currOutputPtrLeft += MODULE_BUFFER_SIZE;
     currOutputPtrRight += MODULE_BUFFER_SIZE;
   }
+
 }
 
 ModularID ModularSynth_addModule(ModuleType type, char * name)
@@ -718,4 +748,50 @@ static bool addConnectionHelper(Module * srcMod, ModularID srcId, ModularPortID 
     });
 
   return 1;
+}
+
+void* updateWorkerThread(void *arg)
+{
+  int id = (intptr_t)arg;
+  while (synth->threadpool.running) 
+  {
+      pthread_barrier_wait(&synth->threadpool.barrier);  // wait for frame start signal
+
+      if (!synth->threadpool.running) break;
+
+      int phase = atomic_load(&synth->threadpool.phase);
+      U4 moduleCount = atomic_load(&synth->threadpool.moduleCount);
+
+      switch (phase)
+      {
+        case UPDATE_MOD_PHASE:
+        {
+          for (int m = id; m < moduleCount; m += MAX_SYNTH_THREADS)
+          {
+            Module *module = synth->modules[m];
+            module->updateState(module);
+          }
+          break;
+        }
+
+        case PUSH_BUFFERS_PHASE:
+        {
+          for (int m = id; m < moduleCount; m += MAX_SYNTH_THREADS) 
+          {
+            Module *module = synth->modules[m];
+            module->pushCurrToPrev(module);
+          }
+          break;
+        }
+
+        case SHUTDOWN_PHASE:
+        {
+          return NULL;
+        }
+      }
+
+      pthread_barrier_wait(&synth->threadpool.barrier);  // sync at frame end
+  }
+
+  return NULL;
 }
