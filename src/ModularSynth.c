@@ -54,9 +54,9 @@ static bool initDone = false;
 
 
 
-ModularSynth * ModularSynth_init(void)
+void ModularSynth_init(void)
 {
-  if (initDone) return synth;
+  if (initDone) return;
   initDone = true;
 
   memset(synth, 0, sizeof(ModularSynth));
@@ -79,9 +79,8 @@ ModularSynth * ModularSynth_init(void)
   pthread_mutex_init(&synth->threadpool.mutex, NULL);
   for (intptr_t i = 0; i < MAX_SYNTH_THREADS; i++)
   {
-      pthread_create(&synth->threadpool.threads[i], NULL, updateWorkerThread, (void*)i);
+    pthread_create(&synth->threadpool.threads[i], NULL, updateWorkerThread, (void*)i);
   }
-  return synth;
 }
 
 void ModularSynth_free()
@@ -100,6 +99,8 @@ void ModularSynth_free()
       module->freeModule(module);
     }
   }
+
+  initDone = false;
 }
 
 R4 * ModularSynth_getLeftChannel()

@@ -4,6 +4,8 @@
 #include "Module.h"
 #include "ModuleFactory.h"
 #include "ConfigParser.h"
+#include <pthread.h>
+#include <stdatomic.h>
 
 //////////////
 // DEFINES  //
@@ -59,7 +61,7 @@ typedef struct ModularSynth
 //  PUBLIC FUNCTIONS  //
 ////////////////////////
 
-ModularSynth * ModularSynth_init(void);
+void ModularSynth_init(void);
 void ModularSynth_free();
 
 R4 * ModularSynth_getLeftChannel();

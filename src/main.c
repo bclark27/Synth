@@ -5,15 +5,60 @@
 #include "AudioSettings.h"
 #include "comm/IPC.h"
 #include <math.h>
+#include <pthread.h>
+#include <stdatomic.h>
+
+
+/*
+ModularSynth_update();
+memcpy(signalBuffers[idx], synthOutput, sizeof(R4) * STREAM_BUFFER_SIZE);
+*/
+
 
 #define SCREEN_WIDTH        300
 #define SCREEN_HEIGHT       300
 #define FPS                 60
-ModularID vco1;
-ModularID vco2;
-ModularSynth * synth;
-float vco1freq = 0;
-float vco2freq = 0;
+#define NUM_BUFFERS         1    // 3-lookahead
+
+typedef struct {
+  float buffers[NUM_BUFFERS][STREAM_BUFFER_SIZE];
+  _Atomic int bufferReadyCount;
+  _Atomic int writeIndex;
+  _Atomic int readIndex;
+  pthread_mutex_t mutex;
+  pthread_cond_t cond;
+  int running;
+  float phase;
+} SynthData;
+
+SynthData synth;
+
+
+void* synthThread(void* arg) {
+  SynthData* s = (SynthData*)arg;
+  R4* synthOutput = ModularSynth_getLeftChannel();
+  while (s->running) {
+    // Wait until there is room to write
+    pthread_mutex_lock(&s->mutex);
+    while (s->bufferReadyCount == NUM_BUFFERS)
+      pthread_cond_wait(&s->cond, &s->mutex);
+
+    int idx = s->writeIndex;
+    pthread_mutex_unlock(&s->mutex);
+
+    ModularSynth_update();
+    memcpy(s->buffers[idx], synthOutput, sizeof(R4) * STREAM_BUFFER_SIZE);
+
+    // Mark buffer ready
+    pthread_mutex_lock(&s->mutex);
+    s->bufferReadyCount++;
+    s->writeIndex = (s->writeIndex + 1) % NUM_BUFFERS;
+    pthread_cond_signal(&s->cond);
+    pthread_mutex_unlock(&s->mutex);
+  }
+
+  return NULL;
+}
 
 
 ColorStates defaultPadColor(int x, int y)
@@ -49,6 +94,9 @@ void initColors()
       IPC_PostMessage(MSG_TYPE_ABL_CMD_PAD, &cmd_p, sizeof(AbletonPkt_Cmd_Pad));
     }
 }
+
+float osc1freq = 0;
+float osc2freq = 0;
 
 void OnPushEvent(MessageType t, void* d, MessageSize s)
 {
@@ -98,11 +146,11 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
     float div = 36.0f;
     if (knob->id == 0)
     {
-      vco1freq += knob->direction / div;
-      ModularSynth_setControl(vco1, VCO_CONTROL_FREQ, vco1freq);
+      osc1freq += knob->direction / div;
+      ModularSynth_setControlByName("osc1", "Freq", osc1freq);
 
       char* str = malloc(68);
-      int size = snprintf(str, 68, "%.3f", vco1freq);
+      int size = snprintf(str, 68, "%.3f", osc1freq);
       AbletonPkt_Cmd_Text cmd_t =
       {
         .x=0,
@@ -115,11 +163,11 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
 
     if (knob->id == 1)
     {
-      vco2freq += knob->direction / div;
-      ModularSynth_setControl(vco2, VCO_CONTROL_FREQ, vco2freq);
+      osc2freq += knob->direction / div;
+      ModularSynth_setControlByName("osc2", "Freq", osc2freq);
 
       char* str = malloc(68);
-      int size = snprintf(str, 68, "%.3f", vco2freq);
+      int size = snprintf(str, 68, "%.3f", osc2freq);
       AbletonPkt_Cmd_Text cmd_t =
       {
         .x=9,
@@ -133,47 +181,16 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
 }
 
 
-
-FullConfig cfg;
-
 int main(void)
 {
-  /*
-  ConfigParser_Parse(&cfg, "/home/ben/projects/github/my/Synth/config/synth2");
-  ConfigParser_Print(&cfg);
-  ConfigParser_Write(&cfg, "/home/ben/projects/github/my/Synth/config/synth3");
-  return 0;
-  
-  
-  */
-
- 
  
   IPC_StartService("Controller"); 
   IPC_ConnectToService("PushEvents", OnPushEvent);
   
   initColors();
   
-  synth = ModularSynth_init();
+  ModularSynth_init();
   ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth1");
-  //return 0;
- 
-  // ModularID vco0 = ModularSynth_addModuleByName(synth, "VCO", strdup("vco0"));
-  // ModularID attn0 = ModularSynth_addModuleByName(synth, "Attenuator", strdup("attn0"));
-
-  // ModularSynth_addConnectionByName(synth, "vco0", "Sqr", "attn0", "Audio");
-  // ModularSynth_addConnectionByName(synth, "attn0", "Audio", "__OUTPUT__", "Left");
-  // ModularSynth_addConnectionByName(synth, "attn0", "Audio", "__OUTPUT__", "Right");
-
-  // ModularSynth_removeConnectionByName(synth, "__OUTPUT__", "Right");
-
-  // printf("%s\n", ModularSynth_PrintFullModuleInfo(synth, vco0));
-  // printf("%s\n", ModularSynth_PrintFullModuleInfo(synth, attn0));
-
-  R4 * signal = ModularSynth_getLeftChannel();
-
-
-
 
   InitAudioDevice();
 
@@ -194,35 +211,42 @@ int main(void)
   ClearBackground(BLACK);
   EndDrawing();
 
-  while (WindowShouldClose() == false)
+  pthread_mutex_init(&synth.mutex, NULL);
+  pthread_cond_init(&synth.cond, NULL);
+  synth.bufferReadyCount = 0;
+  synth.writeIndex = 0;
+  synth.readIndex = 0;
+  synth.running = 1;
+  synth.phase = 0;
+
+  pthread_t thread;
+  pthread_create(&thread, NULL, synthThread, &synth);
+
+  while (!WindowShouldClose()) 
   {
-    if (IsAudioStreamProcessed(synthStream))
+    // Feed audio stream if ready
+    if (IsAudioStreamProcessed(synthStream)) 
     {
-      ModularSynth_update();
-      // after ModularSynth_update is run, new audio is placed directly into 'signal'
-      UpdateAudioStream(synthStream, signal, STREAM_BUFFER_SIZE);
+      pthread_mutex_lock(&synth.mutex);
+      while (synth.bufferReadyCount == 0)
+          pthread_cond_wait(&synth.cond, &synth.mutex);
+
+      int idx = synth.readIndex;
+      synth.bufferReadyCount--;
+      synth.readIndex = (synth.readIndex + 1) % NUM_BUFFERS;
+
+      pthread_cond_signal(&synth.cond);
+      pthread_mutex_unlock(&synth.mutex);
+
+      UpdateAudioStream(synthStream, synth.buffers[idx], STREAM_BUFFER_SIZE);
     }
-
-    // TODO add in a swap buffer so that even as the audio stream is queing up we can still produce the next audio snippet
-
-    // BeginDrawing();
-    // ClearBackground(BLACK);
-
-    // DrawText(TextFormat("Freq: %f", 100), 100, 100, 20, RED);
-
-    // for (U4 t = 0; t < MIN(SCREEN_WIDTH, STREAM_BUFFER_SIZE); t++)
-    // {
-    //   const int upper = SCREEN_HEIGHT / 4;
-    //   const int lower = 3 * SCREEN_HEIGHT / 4;
-    //   int y = MAP(-1, 1, lower, upper, signal[t]);
-
-    //   DrawPixel(t, y, GREEN);
-    //   DrawPixel(t, MAP(-1, 1, lower, upper, 0), RED);
-    // }
-
-    // EndDrawing();
-
   }
+
+  synth.running = 0;
+  pthread_cond_broadcast(&synth.cond); // wake synth thread
+  pthread_join(thread, NULL);
+  pthread_mutex_destroy(&synth.mutex);
+  pthread_cond_destroy(&synth.cond);
 
   UnloadAudioStream(synthStream);
   CloseAudioDevice();
