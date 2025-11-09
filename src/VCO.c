@@ -69,7 +69,7 @@ static char * inPortNames[VCO_INCOUNT] = {
 };
 
 static char * outPortNames[VCO_OUTCOUNT] = {
-  "Aud",
+  "Audio",
 };
 
 static char * controlNames[VCO_CONTROLCOUNT] = {

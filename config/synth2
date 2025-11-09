@@ -1,18 +1,27 @@
 __OUTPUT__ OutputModule
 osc1 VCO
+lfo VCO
+attn Attenuator
 mix1 Mixer
 +++
 __OUTPUT__
 connect Left mix1 Mix
 +++
-osc1
-control Freq 1.0
-control PW 0.5
+lfo
+control Freq -5
 control Waveform 0.6
-control Unison 7
-control Detune 1.03
++++
+attn
+control Vol -2
+connect Audio lfo Audio
++++
+osc1
+connect Freq attn Audio
+control Waveform 0.6
+control Unison 5
+control Detune 1.08
 +++
 mix1
-connect Input0 osc1 Aud
+connect Input0 osc1 Audio
 control Volume 0.0
 +++

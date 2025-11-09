@@ -8320,7 +8320,6 @@ void Oscillator_sampleWithStrideAndPWTable(Oscillator * osc, R4 * samples, U4 sa
     R4 detuneTable[unison];
     detune = MAX(detune, 1);
     fillDetuneTable(detuneTable, unison, detune);
-    
     R4 thisSample;
     switch (osc->waveform)
     {
