@@ -79,6 +79,7 @@ void ModularSynth_removeConnection(ModularID destId, ModularPortID destPort);
 void ModularSynth_removeConnectionByName(char* destModuleName, char* destPortName);
 bool ModularSynth_setControl(ModularID id, ModularPortID controlID, R4 val);
 bool ModularSynth_setControlByName(char * name, char * controlName, R4 val);
+R4 ModularSynth_getControlByName(char * name, char * controlName);
 bool ModularSynth_readConfig(char * fname);
 bool ModularSynth_exportConfig(char * fname);
 char* ModularSynth_PrintFullModuleInfo(ModularID id);

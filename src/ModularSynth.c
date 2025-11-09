@@ -399,6 +399,20 @@ bool ModularSynth_setControlByName(char * name, char * controlName, R4 val)
   return 1;
 }
 
+R4 ModularSynth_getControlByName(char * name, char * controlName)
+{
+  if (!name || !controlName) return 0;
+
+  Module * mod = getModuleByName(name);
+  if (!mod) return 0;
+
+  bool found;
+  ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
+  if (!found) return 0;
+
+  return mod->getControlVal(mod, controlID);
+}
+
 bool ModularSynth_readConfig(char * fname)
 {
   // read in the config

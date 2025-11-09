@@ -79,10 +79,26 @@ void initColors()
     }
 }
 
-float knob0 = 0;
-float knob1 = 0;
-float knob2 = 0;
-float knob3 = 0;
+float knobs[9] = {0,0,0,0,0,0,0,0,0};
+
+void knobHelper(char* modName, char* cvName, int knobNum, int direction)
+{
+  knobs[knobNum] = ModularSynth_getControlByName(modName, cvName);
+  knobs[knobNum] += direction / 36.0f;
+  ModularSynth_setControlByName(modName, cvName, knobs[knobNum]);
+
+  char* str = malloc(68);
+  int size = snprintf(str, 68, "%.3f", knobs[knobNum]);
+  AbletonPkt_Cmd_Text cmd_t =
+  {
+    .x=knobNum*9,
+    .y=0,
+  };
+  memcpy(cmd_t.text, str, size);
+  free(str);
+  cmd_t.length = size;
+  IPC_PostMessage(MSG_TYPE_ABL_CMD_TEXT, &cmd_t, sizeof(AbletonPkt_Cmd_Text));
+}
 
 void OnPushEvent(MessageType t, void* d, MessageSize s)
 {
@@ -129,73 +145,45 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
   if (t == MSG_TYPE_ABL_KNOB)
   {
     AbletonPkt_knob* knob = d;
-    float div = 36.0f;
-    if (knob->id == 0)
+    int id = knob->id;
+    int dir = knob->direction;
+
+    switch (id)
     {
-      knob0 += knob->direction / div;
-      ModularSynth_setControlByName("osc1", "Freq", knob0);
-
-      char* str = malloc(68);
-      int size = snprintf(str, 68, "%.3f", knob0);
-      AbletonPkt_Cmd_Text cmd_t =
+      case 0:
       {
-        .x=knob->id*9,
-        .y=0,
-      };
-      memcpy(cmd_t.text, str, size);
-      cmd_t.length = size;
-      IPC_PostMessage(MSG_TYPE_ABL_CMD_TEXT, &cmd_t, sizeof(AbletonPkt_Cmd_Text));
-    }
-
-    if (knob->id == 1)
-    {
-      knob1 += knob->direction / div;
-      ModularSynth_setControlByName("osc1", "Waveform", knob1);
-
-      char* str = malloc(68);
-      int size = snprintf(str, 68, "%.3f", knob1);
-      AbletonPkt_Cmd_Text cmd_t =
+        knobHelper("osc1", "Freq", id, dir);
+        break;
+      }
+      case 1:
       {
-        .x=knob->id*9,
-        .y=0,
-      };
-      memcpy(cmd_t.text, str, size);
-      cmd_t.length = size;
-      IPC_PostMessage(MSG_TYPE_ABL_CMD_TEXT, &cmd_t, sizeof(AbletonPkt_Cmd_Text));
-    }
-
-    if (knob->id == 2)
-    {
-      knob2 += knob->direction / div;
-      ModularSynth_setControlByName("osc1", "Unison", knob2);
-
-      char* str = malloc(68);
-      int size = snprintf(str, 68, "%.3f", knob2);
-      AbletonPkt_Cmd_Text cmd_t =
+        knobHelper("osc1", "Waveform", id, dir);
+        break;
+      }
+      case 2:
       {
-        .x=knob->id*9,
-        .y=0,
-      };
-      memcpy(cmd_t.text, str, size);
-      cmd_t.length = size;
-      IPC_PostMessage(MSG_TYPE_ABL_CMD_TEXT, &cmd_t, sizeof(AbletonPkt_Cmd_Text));
-    }
-
-    if (knob->id == 3)
-    {
-      knob3 += knob->direction / div;
-      ModularSynth_setControlByName("osc1", "Detune", knob3);
-
-      char* str = malloc(68);
-      int size = snprintf(str, 68, "%.3f", knob3);
-      AbletonPkt_Cmd_Text cmd_t =
+        knobHelper("osc1", "Unison", id, dir);
+        break;
+      }
+      case 3:
       {
-        .x=knob->id*9,
-        .y=0,
-      };
-      memcpy(cmd_t.text, str, size);
-      cmd_t.length = size;
-      IPC_PostMessage(MSG_TYPE_ABL_CMD_TEXT, &cmd_t, sizeof(AbletonPkt_Cmd_Text));
+        knobHelper("osc1", "Detune", id, dir);
+        break;
+      }
+      case 4:
+      {
+        knobHelper("f1", "Freq", id, dir);
+        break;
+      }
+      case 5:
+      {
+        knobHelper("f1", "Q", id, dir);
+        break;
+      }
+      default:
+      {
+        break;
+      }
     }
   }
 }
