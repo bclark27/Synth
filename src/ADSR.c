@@ -214,14 +214,13 @@ static void updateState(void * modPtr)
     OUT_PORT_ENV(adsr)[i] = finalVal;
   }
 
-  // push curr to prev
-  CONTROL_PUSH_TO_PREV(adsr);
 }
 
 static void pushCurrToPrev(void * modPtr)
 {
   ADSR * adsr = (ADSR *)modPtr;
   memcpy(adsr->outputPortsPrev, adsr->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * ADSR_OUTCOUNT);
+  CONTROL_PUSH_TO_PREV(adsr);
 }
 
 static R4 * getOutputAddr(void * modPtr, ModularPortID port)

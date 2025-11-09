@@ -140,14 +140,13 @@ static void updateState(void * modPtr)
     sum[i] *= VoltUtils_voltDbToAmpl(rawVolts);
 
   }
-
-  CONTROL_PUSH_TO_PREV(mix);
 }
 
 static void pushCurrToPrev(void * modPtr)
 {
   Mixer * mix = (Mixer *)modPtr;
   memcpy(mix->outputPortsPrev, mix->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * MIXER_OUTCOUNT);
+  CONTROL_PUSH_TO_PREV(mix);
 }
 
 static R4 * getOutputAddr(void * modPtr, ModularPortID port)

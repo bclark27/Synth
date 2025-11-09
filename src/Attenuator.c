@@ -146,6 +146,7 @@ static void pushCurrToPrev(void * modPtr)
 {
   Attenuator * attn = (Attenuator *)modPtr;
   memcpy(attn->outputPortsPrev, attn->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * ATTN_OUTCOUNT);
+  CONTROL_PUSH_TO_PREV(attn);
 }
 
 static R4 * getOutputAddr(void * modPtr, ModularPortID port)

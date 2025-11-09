@@ -167,15 +167,13 @@ static void updateState(void * modPtr)
 
   U1 unison = MAX(MIN((int)GET_CONTROL_PREV_UNI(vco), MAX_UNISON), 1);
   Oscillator_sampleWithStrideAndPWTable(&vco->osc, OUT_PORT_AUD(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, unison, GET_CONTROL_PREV_DET(vco));
-
-  // push curr to prev
-  CONTROL_PUSH_TO_PREV(vco);
 }
 
 static void pushCurrToPrev(void * modPtr)
 {
   VCO * vco = (VCO *)modPtr;
   memcpy(vco->outputPortsPrev, vco->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * VCO_OUTCOUNT);
+  CONTROL_PUSH_TO_PREV(vco);
 }
 
 static R4 * getOutputAddr(void * modPtr, ModularPortID port)

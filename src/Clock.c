@@ -138,14 +138,13 @@ static void updateState(void * modPtr)
     }
   }
 
-  // push curr to prev
-  CONTROL_PUSH_TO_PREV(clk);
 }
 
 static void pushCurrToPrev(void * modPtr)
 {
   Clock * clk = (Clock *)modPtr;
   memcpy(clk->outputPortsPrev, clk->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * CLOCK_OUTCOUNT);
+  CONTROL_PUSH_TO_PREV(clk);
 }
 
 static R4 * getOutputAddr(void * modPtr, ModularPortID port)

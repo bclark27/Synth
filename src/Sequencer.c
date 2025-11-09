@@ -275,15 +275,13 @@ static void updateState(void * modPtr)
 
   }
 
-  // push curr to prev
-  CONTROL_PUSH_TO_PREV(seq);
-
 }
 
 static void pushCurrToPrev(void * modPtr)
 {
   Sequencer * seq = (Sequencer *)modPtr;
   memcpy(seq->outputPortsPrev, seq->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * SEQ_OUTCOUNT);
+  CONTROL_PUSH_TO_PREV(seq);
 }
 
 static R4 * getOutputAddr(void * modPtr, ModularPortID port)

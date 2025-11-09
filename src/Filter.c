@@ -157,7 +157,6 @@ static void updateState(void * modPtr)
     memset(OUT_PORT_AUD(flt), 0, sizeof(R4) * MODULE_BUFFER_SIZE);
     return;
   }
-
   for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
   {
     // get the input voltage
@@ -197,6 +196,7 @@ static void pushCurrToPrev(void * modPtr)
 {
   Filter * flt = (Filter *)modPtr;
   memcpy(flt->outputPortsPrev, flt->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * FITLER_OUTCOUNT);
+  CONTROL_PUSH_TO_PREV(flt);
 }
 
 static R4 * getOutputAddr(void * modPtr, ModularPortID port)
