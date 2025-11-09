@@ -22,7 +22,7 @@ memcpy(signalBuffers[idx], synthOutput, sizeof(R4) * STREAM_BUFFER_SIZE);
 void timetest()
 {
   ModularSynth_init();
-  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth1");
+  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth2");
 
   struct timeval stop, start;
   gettimeofday(&start, NULL);
@@ -81,10 +81,10 @@ void initColors()
 
 float knobs[9] = {0,0,0,0,0,0,0,0,0};
 
-void knobHelper(char* modName, char* cvName, int knobNum, int direction)
+void knobHelper(char* modName, char* cvName, int knobNum, int direction, float div)
 {
   knobs[knobNum] = ModularSynth_getControlByName(modName, cvName);
-  knobs[knobNum] += direction / 36.0f;
+  knobs[knobNum] += direction / div;
   ModularSynth_setControlByName(modName, cvName, knobs[knobNum]);
 
   char* str = malloc(68);
@@ -152,32 +152,32 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
     {
       case 0:
       {
-        knobHelper("osc1", "Freq", id, dir);
+        knobHelper("osc1", "Freq", id, dir, 100);
         break;
       }
       case 1:
       {
-        knobHelper("osc1", "Waveform", id, dir);
+        knobHelper("osc1", "Waveform", id, dir, 10);
         break;
       }
       case 2:
       {
-        knobHelper("osc1", "Unison", id, dir);
+        knobHelper("osc1", "Unison", id, dir, 10);
         break;
       }
       case 3:
       {
-        knobHelper("osc1", "Detune", id, dir);
+        knobHelper("osc1", "Detune", id, dir, 1000);
         break;
       }
       case 4:
       {
-        knobHelper("f1", "Freq", id, dir);
+        knobHelper("f1", "Freq", id, dir, 10);
         break;
       }
       case 5:
       {
-        knobHelper("f1", "Q", id, dir);
+        knobHelper("f1", "Q", id, dir, 10);
         break;
       }
       default:

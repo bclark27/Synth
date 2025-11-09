@@ -194,8 +194,6 @@ ModularID ModularSynth_addModule(ModuleType type, char * name)
   // mark the id as unavailable
   synth->moduleIDAvailability[id] = 0;
 
-  printf("Adding Module\n\tName: %s\n", module->name);
-
   return id;
 }
 
