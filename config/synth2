@@ -1,21 +1,18 @@
 __OUTPUT__ OutputModule
 osc1 VCO
-osc2 VCO
 mix1 Mixer
 +++
 __OUTPUT__
 connect Left mix1 Mix
 +++
 osc1
-control Freq 3.000000
-control PW 0.500000
-+++
-osc2
-control Freq -1.000000
-control PW 0.500000
+control Freq 1.0
+control PW 0.5
+control Waveform 0.6
+control Unison 7
+control Detune 1.03
 +++
 mix1
-connect Input0 osc1 Sin
-#connect Input1 osc2 Sqr
-control Volume 0.000000
+connect Input0 osc1 Aud
+control Volume 0.0
 +++

@@ -13,6 +13,7 @@
 #include "OutputModule.h"
 #include "Sequencer.h"
 #include "VCO.h"
+#include "Filter.h"
 
 ///////////
 // TYPES //

@@ -22,7 +22,7 @@ memcpy(signalBuffers[idx], synthOutput, sizeof(R4) * STREAM_BUFFER_SIZE);
 void timetest()
 {
   ModularSynth_init();
-  ModularSynth_readConfig("/home/ben/projects/github/Synth/config/synth1");
+  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth1");
 
   struct timeval stop, start;
   gettimeofday(&start, NULL);
@@ -176,7 +176,7 @@ int main(void)
   initColors();
   
   ModularSynth_init();
-  ModularSynth_readConfig("/home/ben/projects/github/Synth/config/synth2");
+  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth2");
   
   InitAudioDevice();
 

@@ -15,30 +15,28 @@
   1: pulse width: cv mod range [-10v - 10v]
 
   Outputs:
-  0: sin wave: audio volt range
-  1: saw wave: audio volt range
-  2: sqr wave: audio volt range
-  3: tri wave: audio volt range
+  0: audio: audio volt range
 
   Controls:
   0: freq
   1: pulse width
+  2: waveform [0 - 1] for sin tri sqr saw
 */
 
 #define VCO_INCOUNT         2
-#define VCO_OUTCOUNT        4
-#define VCO_CONTROLCOUNT    2
+#define VCO_OUTCOUNT        1
+#define VCO_CONTROLCOUNT    5
 
 #define VCO_IN_PORT_FREQ    0
 #define VCO_IN_PORT_PW      1
 
-#define VCO_OUT_PORT_SIN    0
-#define VCO_OUT_PORT_SAW    1
-#define VCO_OUT_PORT_SQR    2
-#define VCO_OUT_PORT_TRI    3
+#define VCO_OUT_PORT_AUD    0
 
 #define VCO_CONTROL_FREQ    0
 #define VCO_CONTROL_PW      1
+#define VCO_CONTROL_WAVE    2
+#define VCO_CONTROL_UNI     3
+#define VCO_CONTROL_DET     4
 
 ///////////
 // TYPES //
@@ -58,11 +56,7 @@ typedef struct VCO
   R4 controlsCurr[VCO_CONTROLCOUNT];
   R4 controlsPrev[VCO_CONTROLCOUNT];
 
-  Oscillator oscSin;
-  Oscillator oscSqr;
-  Oscillator oscSaw;
-  Oscillator oscTri;
-  Oscillator oscWht;
+  Oscillator osc;
 
 } VCO;
 

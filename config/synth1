@@ -1,28 +1,48 @@
 __OUTPUT__ OutputModule
-osc1 VCO
-osc2 VCO
-osc3 VCO
-osc4 VCO
-osc5 VCO
-osc6 VCO
-osc7 VCO
-osc8 VCO
-osc9 VCO
-osc10 VCO
-osc20 VCO
-osc30 VCO
-osc40 VCO
-osc50 VCO
-osc60 VCO
-osc70 VCO
-osc80 VCO
-osc90 VCO
+osc01 VCO
+osc02 VCO
+osc03 VCO
+osc04 VCO
+osc05 VCO
+
 osc11 VCO
+osc12 VCO
+osc13 VCO
+osc14 VCO
+osc15 VCO
+
 osc21 VCO
+osc22 VCO
+osc23 VCO
+osc24 VCO
+osc25 VCO
+
 osc31 VCO
+osc32 VCO
+osc33 VCO
+osc34 VCO
+osc35 VCO
+
 osc41 VCO
+osc42 VCO
+osc43 VCO
+osc44 VCO
+osc45 VCO
+
 osc51 VCO
+osc52 VCO
+osc53 VCO
+osc54 VCO
+osc55 VCO
+
 osc61 VCO
+osc62 VCO
+osc63 VCO
+osc64 VCO
+osc65 VCO
+
 osc71 VCO
-osc81 VCO
-osc91 VCO
+osc72 VCO
+osc73 VCO
+osc74 VCO
+osc75 VCO

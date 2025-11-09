@@ -20,6 +20,7 @@ const char * const ModuleTypeNames[ModuleType_COUNT] = {
     "OutputModule",
     "Sequencer",
     "VCO",
+    "Filter",
   };
   
 /////////////////////////////

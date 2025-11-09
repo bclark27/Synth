@@ -14,20 +14,29 @@
 #define IN_PORT_FREQ(vco)                 ((vco)->inputPorts[VCO_IN_PORT_FREQ])
 #define IN_PORT_PW(vco)                   ((vco)->inputPorts[VCO_IN_PORT_PW])
 
-#define OUT_PORT_SIN(vco)                 (CURR_PORT_ADDR(vco, VCO_OUT_PORT_SIN))
-#define OUT_PORT_SAW(vco)                 (CURR_PORT_ADDR(vco, VCO_OUT_PORT_SAW))
-#define OUT_PORT_SQR(vco)                 (CURR_PORT_ADDR(vco, VCO_OUT_PORT_SQR))
-#define OUT_PORT_TRI(vco)                 (CURR_PORT_ADDR(vco, VCO_OUT_PORT_TRI))
+#define OUT_PORT_AUD(vco)                 (CURR_PORT_ADDR(vco, VCO_OUT_PORT_AUD))
 
 #define GET_CONTROL_CURR_FREQ(vco)        ((vco)->controlsCurr[VCO_CONTROL_FREQ])
 #define GET_CONTROL_PREV_FREQ(vco)        ((vco)->controlsPrev[VCO_CONTROL_FREQ])
 #define GET_CONTROL_CURR_PW(vco)          ((vco)->controlsCurr[VCO_CONTROL_PW])
 #define GET_CONTROL_PREV_PW(vco)          ((vco)->controlsPrev[VCO_CONTROL_PW])
+#define GET_CONTROL_CURR_WAVE(vco)          ((vco)->controlsCurr[VCO_CONTROL_WAVE])
+#define GET_CONTROL_PREV_WAVE(vco)          ((vco)->controlsPrev[VCO_CONTROL_WAVE])
+#define GET_CONTROL_CURR_UNI(vco)          ((vco)->controlsCurr[VCO_CONTROL_UNI])
+#define GET_CONTROL_PREV_UNI(vco)          ((vco)->controlsPrev[VCO_CONTROL_UNI])
+#define GET_CONTROL_CURR_DET(vco)          ((vco)->controlsCurr[VCO_CONTROL_DET])
+#define GET_CONTROL_PREV_DET(vco)          ((vco)->controlsPrev[VCO_CONTROL_DET])
 
 #define SET_CONTROL_CURR_FREQ(vco, freq)  ((vco)->controlsCurr[VCO_CONTROL_FREQ] = (freq))
 #define SET_CONTROL_PREV_FREQ(vco, freq)  ((vco)->controlsPrev[VCO_CONTROL_FREQ] = (freq))
 #define SET_CONTROL_CURR_PW(vco, pw)      ((vco)->controlsCurr[VCO_CONTROL_PW] = (pw))
 #define SET_CONTROL_PREV_PW(vco, pw)      ((vco)->controlsPrev[VCO_CONTROL_PW] = (pw))
+#define SET_CONTROL_CURR_WAVE(vco, w)      ((vco)->controlsCurr[VCO_CONTROL_WAVE] = (w))
+#define SET_CONTROL_PREV_WAVE(vco, w)      ((vco)->controlsPrev[VCO_CONTROL_WAVE] = (w))
+#define SET_CONTROL_CURR_UNI(vco, u)      ((vco)->controlsCurr[VCO_CONTROL_UNI] = (u))
+#define SET_CONTROL_PREV_UNI(vco, u)      ((vco)->controlsPrev[VCO_CONTROL_UNI] = (u))
+#define SET_CONTROL_CURR_DET(vco, d)      ((vco)->controlsCurr[VCO_CONTROL_DET] = (d))
+#define SET_CONTROL_PREV_DET(vco, d)      ((vco)->controlsPrev[VCO_CONTROL_DET] = (d))
 
 #define CONTROL_PUSH_TO_PREV(vco)         for (U4 i = 0; i < VCO_CONTROLCOUNT; i++) {(vco)->controlsPrev[i] = (vco)->controlsCurr[i];}
 
@@ -60,15 +69,15 @@ static char * inPortNames[VCO_INCOUNT] = {
 };
 
 static char * outPortNames[VCO_OUTCOUNT] = {
-  "Sin",
-  "Saw",
-  "Sqr",
-  "Tri",
+  "Aud",
 };
 
 static char * controlNames[VCO_CONTROLCOUNT] = {
   "Freq",
   "PW",
+  "Waveform",
+  "Unison",
+  "Detune",
 };
 
 static Module vtable = {
@@ -94,6 +103,9 @@ static Module vtable = {
 
 #define DEFAULT_CONTROL_FREQ    0
 #define DEFAULT_CONTROL_PW      0.5f
+#define DEFAULT_CONTROL_WAVE    0
+#define DEFAULT_CONTROL_UNI     1
+#define DEFAULT_CONTROL_DET     1.03
 
 //////////////////////
 // PUBLIC FUNCTIONS //
@@ -112,15 +124,15 @@ Module * VCO_init(char* name)
   // set all control values
   SET_CONTROL_CURR_FREQ(vco, DEFAULT_CONTROL_FREQ);
   SET_CONTROL_CURR_PW(vco, DEFAULT_CONTROL_PW);
+  SET_CONTROL_CURR_WAVE(vco, DEFAULT_CONTROL_WAVE);
+  SET_CONTROL_CURR_UNI(vco, DEFAULT_CONTROL_UNI);
+  SET_CONTROL_CURR_DET(vco, DEFAULT_CONTROL_DET);
 
   // push curr to prev
   CONTROL_PUSH_TO_PREV(vco);
 
   // init other structs
-  Oscillator_initInPlace(&vco->oscSin, Waveform_sin);
-  Oscillator_initInPlace(&vco->oscSqr, Waveform_sqr);
-  Oscillator_initInPlace(&vco->oscSaw, Waveform_saw);
-  Oscillator_initInPlace(&vco->oscTri, Waveform_tri);
+  Oscillator_initInPlace(&vco->osc, Waveform_sin);
 
   return (Module*)vco;
 }
@@ -149,10 +161,12 @@ static void updateState(void * modPtr)
   createStrideTable(vco, strideTable);
   createPwTable(vco, pwTable);
 
-  Oscillator_sampleWithStrideAndPWTable(&vco->oscSin, OUT_PORT_SIN(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, 1, 0);
-  Oscillator_sampleWithStrideAndPWTable(&vco->oscSaw, OUT_PORT_SAW(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, 1, 0);
-  Oscillator_sampleWithStrideAndPWTable(&vco->oscSqr, OUT_PORT_SQR(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, 1, 0);
-  Oscillator_sampleWithStrideAndPWTable(&vco->oscTri, OUT_PORT_TRI(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, 1, 0);
+  // now lets change the wave form based on the control
+  Waveform wave = (Waveform)(int)MAX(MIN(GET_CONTROL_PREV_WAVE(vco) * 4, 3), 0);
+  vco->osc.waveform = wave;
+
+  U1 unison = MAX(MIN((int)GET_CONTROL_PREV_UNI(vco), MAX_UNISON), 1);
+  Oscillator_sampleWithStrideAndPWTable(&vco->osc, OUT_PORT_AUD(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, unison, GET_CONTROL_PREV_DET(vco));
 
   // push curr to prev
   CONTROL_PUSH_TO_PREV(vco);
