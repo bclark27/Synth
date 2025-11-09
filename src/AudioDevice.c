@@ -1,47 +1,71 @@
 #include "soundio/soundio.h"
-
+#include "AudioSettings.h"
+#include "ModularSynth.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-static const float PI = 3.1415926535f;
-static float seconds_offset = 0.0f;
+
+static float synth_buffer[STREAM_BUFFER_SIZE * 2]; // stereo interleaved
+static int synth_pos = 0;        // current playback position in frames
+
+// ---- Your synth update ----
+// This fills synth_buffer with SYNTH_BUFFER_FRAMES of stereo samples.
+static void update_synth() {
+    
+    R4* left = ModularSynth_getLeftChannel();
+    ModularSynth_update();
+
+    for (int i = 0; i < STREAM_BUFFER_SIZE; i++)
+    {
+      synth_buffer[i * 2] = left[i];
+      synth_buffer[i * 2 + 1] = left[i];
+    }
+
+    synth_pos = 0;
+}
+
+// ---- SoundIO callback ----
 static void write_callback(struct SoundIoOutStream *outstream,
-        int frame_count_min, int frame_count_max)
+                           int frame_count_min, int frame_count_max)
 {
     const struct SoundIoChannelLayout *layout = &outstream->layout;
-    float float_sample_rate = outstream->sample_rate;
-    float seconds_per_frame = 1.0f / float_sample_rate;
     struct SoundIoChannelArea *areas;
     int frames_left = frame_count_max;
     int err;
 
     while (frames_left > 0) {
         int frame_count = frames_left;
-
         if ((err = soundio_outstream_begin_write(outstream, &areas, &frame_count))) {
-            fprintf(stderr, "%s\n", soundio_strerror(err));
+            fprintf(stderr, "begin_write: %s\n", soundio_strerror(err));
             exit(1);
         }
-
         if (!frame_count)
             break;
 
-        float pitch = 440.0f;
-        float radians_per_second = pitch * 2.0f * PI;
-        for (int frame = 0; frame < frame_count; frame += 1) {
-            float sample = sinf((seconds_offset + frame * seconds_per_frame) * radians_per_second);
-            for (int channel = 0; channel < layout->channel_count; channel += 1) {
-                float *ptr = (float*)(areas[channel].ptr + areas[channel].step * frame);
-                *ptr = sample;
+        float *left_ptr, *right_ptr;
+        for (int frame = 0; frame < frame_count; frame++) {
+            // if synth buffer empty, refill it
+            if (synth_pos >= STREAM_BUFFER_SIZE)
+            {
+              update_synth();
+              synth_pos = 0;
+            }
+
+            float left = synth_buffer[synth_pos * 2 + 0];
+            float right = synth_buffer[synth_pos * 2 + 1];
+            synth_pos++;
+
+            // write to all channels
+            for (int ch = 0; ch < layout->channel_count; ch++) {
+                float *ptr = (float *)(areas[ch].ptr + areas[ch].step * frame);
+                *ptr = (ch == 0) ? left : right;
             }
         }
-        seconds_offset = fmodf(seconds_offset +
-            seconds_per_frame * frame_count, 1.0f);
 
         if ((err = soundio_outstream_end_write(outstream))) {
-            fprintf(stderr, "%s\n", soundio_strerror(err));
+            fprintf(stderr, "end_write: %s\n", soundio_strerror(err));
             exit(1);
         }
 
@@ -49,7 +73,11 @@ static void write_callback(struct SoundIoOutStream *outstream,
     }
 }
 
-int audiotest() {
+int main() {
+
+    ModularSynth_init();
+    ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth2");
+
     int err;
     struct SoundIo *soundio = soundio_create();
     if (!soundio) {
@@ -81,6 +109,8 @@ int audiotest() {
     struct SoundIoOutStream *outstream = soundio_outstream_create(device);
     outstream->format = SoundIoFormatFloat32NE;
     outstream->write_callback = write_callback;
+    outstream->sample_rate = SAMPLE_RATE;
+    outstream->software_latency = (double)STREAM_BUFFER_SIZE / SAMPLE_RATE;
 
     if ((err = soundio_outstream_open(outstream))) {
         fprintf(stderr, "unable to open device: %s", soundio_strerror(err));
