@@ -138,6 +138,7 @@ static void updateState(void * modPtr)
     rawVolts += IN_PORT_VOL(mix) ? IN_PORT_VOL(mix)[i] : 0;
     rawVolts += INTERP(GET_CONTROL_PREV_VOL(mix), GET_CONTROL_CURR_VOL(mix), MODULE_BUFFER_SIZE, i);
     sum[i] *= VoltUtils_voltDbToAmpl(rawVolts);
+
   }
 
   CONTROL_PUSH_TO_PREV(mix);
