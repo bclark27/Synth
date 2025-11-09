@@ -8318,6 +8318,7 @@ void Oscillator_sampleWithStrideAndPWTable(Oscillator * osc, R4 * samples, U4 sa
   else
   {
     R4 detuneTable[unison];
+    detune = MAX(detune, 1);
     fillDetuneTable(detuneTable, unison, detune);
     
     R4 thisSample;
@@ -8348,7 +8349,7 @@ void Oscillator_sampleWithStrideAndPWTable(Oscillator * osc, R4 * samples, U4 sa
           thisSample = 0;
           for (int k = 0; k < unison; k++)
           {
-            thisSample += (osc->phase[0] < pwTable[i]);
+            thisSample += (osc->phase[k] < pwTable[i]);
             osc->phase[k] += strideTable[i] * detuneTable[k];
             if (osc->phase[k] >= 1.0f)
                 osc->phase[k] -= 1.0f;
