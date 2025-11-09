@@ -117,10 +117,10 @@ Module * VCO_init(char* name)
   CONTROL_PUSH_TO_PREV(vco);
 
   // init other structs
-  Oscillator_initInPlace(&vco->oscSin, GET_CONTROL_CURR_FREQ(vco), Waveform_sin);
-  Oscillator_initInPlace(&vco->oscSqr, GET_CONTROL_CURR_FREQ(vco), Waveform_sqr);
-  Oscillator_initInPlace(&vco->oscSaw, GET_CONTROL_CURR_FREQ(vco), Waveform_saw);
-  Oscillator_initInPlace(&vco->oscTri, GET_CONTROL_CURR_FREQ(vco), Waveform_tri);
+  Oscillator_initInPlace(&vco->oscSin, Waveform_sin);
+  Oscillator_initInPlace(&vco->oscSqr, Waveform_sqr);
+  Oscillator_initInPlace(&vco->oscSaw, Waveform_saw);
+  Oscillator_initInPlace(&vco->oscTri, Waveform_tri);
 
   return (Module*)vco;
 }
@@ -149,17 +149,10 @@ static void updateState(void * modPtr)
   createStrideTable(vco, strideTable);
   createPwTable(vco, pwTable);
 
-  Oscillator_sampleWithStrideAndPWTable(&vco->oscSin, OUT_PORT_SIN(vco), MODULE_BUFFER_SIZE, strideTable, pwTable);
-  Oscillator_sampleWithStrideAndPWTable(&vco->oscSaw, OUT_PORT_SAW(vco), MODULE_BUFFER_SIZE, strideTable, pwTable);
-  Oscillator_sampleWithStrideAndPWTable(&vco->oscSqr, OUT_PORT_SQR(vco), MODULE_BUFFER_SIZE, strideTable, pwTable);
-  Oscillator_sampleWithStrideAndPWTable(&vco->oscTri, OUT_PORT_TRI(vco), MODULE_BUFFER_SIZE, strideTable, pwTable);
-
-
-  // scale osc output to min and max volt range
-  for (U4 i = 0; i < MODULE_BUFFER_SIZE * VCO_OUTCOUNT; i++)
-  {
-    vco->outputPortsCurr[i] = (VOLTSTD_AUD_RANGE * vco->outputPortsCurr[i]) - VOLTSTD_AUD_MAX;
-  }
+  Oscillator_sampleWithStrideAndPWTable(&vco->oscSin, OUT_PORT_SIN(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, 1, 0);
+  Oscillator_sampleWithStrideAndPWTable(&vco->oscSaw, OUT_PORT_SAW(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, 1, 0);
+  Oscillator_sampleWithStrideAndPWTable(&vco->oscSqr, OUT_PORT_SQR(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, 1, 0);
+  Oscillator_sampleWithStrideAndPWTable(&vco->oscTri, OUT_PORT_TRI(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, 1, 0);
 
   // push curr to prev
   CONTROL_PUSH_TO_PREV(vco);
