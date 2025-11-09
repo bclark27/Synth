@@ -12,7 +12,6 @@
   Inputs:
   0: audio: audio range [-5v - 5v]
   1: freq: cv mod [-10v - 10v]
-  2: Q: cv mod [-10v - 10v]
 
   Outputs:
   0: audio out: audio range [-5v - 5v]
@@ -23,19 +22,20 @@
   2: db fitler type: cv mod [-10v - 10v]
 */
 
-#define FITLER_INCOUNT          3
+#define FITLER_INCOUNT          2
 #define FITLER_OUTCOUNT         1
-#define FITLER_CONTROLCOUNT     3
+#define FITLER_CONTROLCOUNT     5
 
 #define FITLER_IN_PORT_AUD      0
-#define FITLER_IN_PORT_FREQ     2
-#define FITLER_IN_PORT_Q        3
+#define FITLER_IN_PORT_FREQ     1
 
 #define FITLER_OUT_PORT_AUD     0
 
 #define FITLER_CONTROL_FREQ     0
 #define FITLER_CONTROL_Q        1
 #define FITLER_CONTROL_DB       2
+#define FITLER_CONTROL_ENV      3
+#define FITLER_CONTROL_TYPE     4
 
 ///////////
 // TYPES //
@@ -54,6 +54,10 @@ typedef struct Filter
 
   R4 controlsCurr[FITLER_CONTROLCOUNT];
   R4 controlsPrev[FITLER_CONTROLCOUNT];
+
+  float b0, b1, b2, a1, a2;
+  float x1, x2;  // past inputs
+  float y1, y2;  // past outputs
 
 } Filter;
 
