@@ -34,6 +34,10 @@
 #define OUTPUT_OUT_PORT_LEFT  0
 #define OUTPUT_OUT_PORT_RIGHT 1
 
+#define OUTPUT_MIDI_INCOUNT    0
+#define OUTPUT_MIDI_OUTCOUNT    0
+#define OUTPUT_MIDI_CONTROLCOUNT    0
+
 
 ///////////
 // TYPES //
@@ -52,6 +56,17 @@ typedef struct OutputModule
 
   R4 controlsCurr[OUTPUT_CONTROLCOUNT];
   R4 controlsPrev[OUTPUT_CONTROLCOUNT];
+
+  // input ports
+  MIDISataStream inputMIDIPorts[OUTPUT_MIDI_INCOUNT];
+
+  // output ports
+  MIDIData outputMIDIPortsPrev[OUTPUT_MIDI_OUTCOUNT];
+  MIDIData outputMIDIPortsCurr[OUTPUT_MIDI_OUTCOUNT];
+
+  MIDIData midiControlsCurr[OUTPUT_MIDI_CONTROLCOUNT];
+  MIDIData midiControlsPrev[OUTPUT_MIDI_CONTROLCOUNT];
+
 } OutputModule;
 
 ////////////////////////

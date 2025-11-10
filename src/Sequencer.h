@@ -56,6 +56,10 @@
 
 #define SEQ_CONTROLCOUNT      (SEQ_NOTE_COUNT_TOTAL * SEQ_CONTROL_PER_NOTE + SEQ_OTHER_CONTROL_TOTAL)
 
+#define SEQ_MIDI_INCOUNT    0
+#define SEQ_MIDI_OUTCOUNT    0
+#define SEQ_MIDI_CONTROLCOUNT    0
+
 ///////////
 // TYPES //
 ///////////
@@ -73,6 +77,17 @@ typedef struct Sequencer
 
   R4 controlsCurr[SEQ_CONTROLCOUNT];
   R4 controlsPrev[SEQ_CONTROLCOUNT];
+
+  // input ports
+  MIDISataStream inputMIDIPorts[SEQ_MIDI_INCOUNT];
+
+  // output ports
+  MIDIData outputMIDIPortsPrev[SEQ_MIDI_OUTCOUNT];
+  MIDIData outputMIDIPortsCurr[SEQ_MIDI_OUTCOUNT];
+
+  MIDIData midiControlsCurr[SEQ_MIDI_CONTROLCOUNT];
+  MIDIData midiControlsPrev[SEQ_MIDI_CONTROLCOUNT];
+
 
   U4 currentStepNum;
   R4 gateOpenTime;

@@ -372,7 +372,7 @@ void ModularSynth_removeConnectionByName(char* destModuleName, char* destPortNam
   ModularSynth_removeConnection(id, port);
 }
 
-bool ModularSynth_setControl(ModularID id, ModularPortID controlID, R4 val)
+bool ModularSynth_setControl(ModularID id, ModularPortID controlID, void* val)
 {
   Module * mod = getModuleById(id);
 
@@ -382,7 +382,7 @@ bool ModularSynth_setControl(ModularID id, ModularPortID controlID, R4 val)
   return 1;
 }
 
-bool ModularSynth_setControlByName(char * name, char * controlName, R4 val)
+bool ModularSynth_setControlByName(char * name, char * controlName, void* val)
 {
   if (!name || !controlName) return 0;
 
@@ -397,7 +397,21 @@ bool ModularSynth_setControlByName(char * name, char * controlName, R4 val)
   return 1;
 }
 
-R4 ModularSynth_getControlByName(char * name, char * controlName)
+void ModularSynth_getControlByName(char * name, char * controlName, void* ret)
+{
+  if (!name || !controlName) return;
+
+  Module * mod = getModuleByName(name);
+  if (!mod) return;
+
+  bool found;
+  ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
+  if (!found) return;
+
+  mod->getControlVal(mod, controlID, ret);
+}
+
+ModulePortType ModularSynth_getControlTypeByName(char * name, char * controlName)
 {
   if (!name || !controlName) return 0;
 
@@ -408,7 +422,7 @@ R4 ModularSynth_getControlByName(char * name, char * controlName)
   ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
   if (!found) return 0;
 
-  return mod->getControlVal(mod, controlID);
+  return mod->getControlType(mod, controlID);
 }
 
 bool ModularSynth_readConfig(char * fname)
@@ -479,14 +493,13 @@ bool ModularSynth_readConfig(char * fname)
     for (int k = 0; k < modConfig->connectionCount; k++)
     {
       ConnectionInfo* connInfo = &modConfig->connections[k];
-      printf("%s, %s, %s, %s\n", connInfo->otherModule, connInfo->otherOutPort, modConfig->name, connInfo->inPort);
       ModularSynth_addConnectionByName(connInfo->otherModule, connInfo->otherOutPort, modConfig->name, connInfo->inPort);
     }
 
     for (int k = 0; k < modConfig->controlCount; k++)
     {
       ControlInfo* ctrlInfo = &modConfig->controls[k];
-      ModularSynth_setControlByName(modConfig->name, ctrlInfo->controlName, ctrlInfo->value);
+      ModularSynth_setControlByName(modConfig->name, ctrlInfo->controlName, &ctrlInfo->value);
     }
   }
 }
@@ -527,7 +540,12 @@ bool ModularSynth_exportConfig(char * fname)
     {
       ControlInfo* ctrlInfo = &modConfig->controls[k];
       memcpy(ctrlInfo->controlName, mod->controlNames[k], strlen(mod->controlNames[k]) + 1);
-      ctrlInfo->value = mod->getControlVal(mod, k);
+      bool found;
+      ModularPortID portid = Module_GetControlId(mod, ctrlInfo->controlName, &found);
+      if (found && mod->getControlType(mod, portid) == ModulePortType_VoltControl)
+      {
+        mod->getControlVal(mod, k, &ctrlInfo->value);
+      }
     }
   }
 
@@ -760,6 +778,11 @@ static bool addConnectionHelper(Module * srcMod, ModularID srcId, ModularPortID 
   bool found;
   ModuleConnection connection = getConnectionToDestInPort(destId, destPort, &found);
   if (found) return 0;
+
+  ModulePortType destType = destMod->getInputType(destMod, destPort);
+  ModulePortType srcType = srcMod->getOutputType(srcMod, srcPort);
+
+  if (destType != srcType || srcType == ModulePortType_None || destType == ModulePortType_None) return 0;
 
   // they exist and ports are good! link them
   destMod->linkToInput(destMod, destPort, srcMod->getOutputAddr(srcMod, srcPort));

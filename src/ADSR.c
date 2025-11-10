@@ -38,7 +38,7 @@
 #define SET_CONTROL_CURR_R(adsr, val)     ((adsr)->controlsCurr[ADSR_CONTROL_R] = (val))
 #define SET_CONTROL_PREV_R(adsr, val)     ((adsr)->controlsPrev[ADSR_CONTROL_R] = (val))
 
-#define CONTROL_PUSH_TO_PREV(vco)         for (U4 i = 0; i < ADSR_CONTROLCOUNT; i++) {(vco)->controlsPrev[i] = (vco)->controlsCurr[i];}
+#define CONTROL_PUSH_TO_PREV(vco)         for (U4 i = 0; i < ADSR_CONTROLCOUNT; i++) {(vco)->controlsPrev[i] = (vco)->controlsCurr[i];} for (U4 i = 0; i < ADSR_MIDI_CONTROLCOUNT; i++) {(vco)->midiControlsPrev[i] = (vco)->midiControlsCurr[i];}
 
 /////////////////////////////
 //  FUNCTION DECLERATIONS  //
@@ -47,14 +47,17 @@
 static void free_adsr(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
-static R4 * getOutputAddr(void * modPtr, ModularPortID port);
-static R4 * getInputAddr(void * modPtr, ModularPortID port);
+static void * getOutputAddr(void * modPtr, ModularPortID port);
+static void * getInputAddr(void * modPtr, ModularPortID port);
+static ModulePortType getInputType(void * modPtr, ModularPortID port);
+static ModulePortType getOutputType(void * modPtr, ModularPortID port);
+static ModulePortType getControlType(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, ModularPortID id, R4 val);
-static R4 getControlVal(void * modPtr, ModularPortID id);
-static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
+static void setControlVal(void * modPtr, ModularPortID id, void* val);
+static void getControlVal(void * modPtr, ModularPortID id, void* ret);
+static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 
 static void progressEnvelope(ADSR * adsr, R4 currA, R4 currD, R4 currS, R4 currR);
 static R4 sampleEnvelope(ADSR * adsr, R4 currA, R4 currD, R4 currS, R4 currR);
@@ -90,6 +93,9 @@ static Module vtable = {
   .pushCurrToPrev = pushCurrToPrev,
   .getOutputAddr = getOutputAddr,
   .getInputAddr = getInputAddr,
+  .getInputType = getInputType,
+  .getOutputType = getOutputType,
+  .getControlType = getControlType,
   .getInCount = getInCount,
   .getOutCount = getOutCount,
   .getContolCount = getControlCount,
@@ -219,22 +225,42 @@ static void pushCurrToPrev(void * modPtr)
 {
   ADSR * adsr = (ADSR *)modPtr;
   memcpy(adsr->outputPortsPrev, adsr->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * ADSR_OUTCOUNT);
+  memcpy(adsr->outputMIDIPortsPrev, adsr->outputMIDIPortsCurr, sizeof(MIDIData) * ADSR_MIDI_OUTCOUNT);
   CONTROL_PUSH_TO_PREV(adsr);
 }
 
-static R4 * getOutputAddr(void * modPtr, ModularPortID port)
+static void * getOutputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= ADSR_OUTCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
 }
 
-static R4 * getInputAddr(void * modPtr, ModularPortID port)
+static void * getInputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= ADSR_INCOUNT) return NULL;
 
   return IN_PORT_ADDR(modPtr, port);
 }
+
+static ModulePortType getInputType(void * modPtr, ModularPortID port)
+{
+  if (port < ADSR_INCOUNT) return ModulePortType_VoltStream;
+  return ModulePortType_None;
+}
+
+static ModulePortType getOutputType(void * modPtr, ModularPortID port)
+{
+  if (port < ADSR_OUTCOUNT) return ModulePortType_VoltStream;
+  return ModulePortType_None;
+}
+
+static ModulePortType getControlType(void * modPtr, ModularPortID port)
+{
+  if (port < ADSR_CONTROLCOUNT) return ModulePortType_VoltControl;
+  return ModulePortType_None;
+}
+
 
 static U4 getInCount(void * modPtr)
 {
@@ -251,23 +277,23 @@ static U4 getControlCount(void * modPtr)
   return ADSR_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, ModularPortID id, R4 val)
+static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
   if (id >= ADSR_CONTROLCOUNT) return;
 
-  ADSR * adsr = (ADSR *)modPtr;
-  adsr->controlsCurr[id] = val;
+  ADSR * vco = (ADSR *)modPtr;
+  memcpy(&vco->controlsCurr[id], val, sizeof(Volt));
 }
 
-static R4 getControlVal(void * modPtr, ModularPortID id)
+static void getControlVal(void * modPtr, ModularPortID id, void* ret)
 {
-  if (id >= ADSR_CONTROLCOUNT) return 0;
+  if (id >= ADSR_CONTROLCOUNT) return;
 
-  ADSR * adsr = (ADSR *)modPtr;
-  return adsr->controlsCurr[id];
+  ADSR * vco = (ADSR *)modPtr;
+  *((Volt*)ret) = vco->controlsCurr[id];
 }
 
-static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr)
+static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
 {
   if (port >= ADSR_INCOUNT) return;
 

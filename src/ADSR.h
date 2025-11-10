@@ -44,6 +44,10 @@
 #define ADSR_CONTROL_S          2
 #define ADSR_CONTROL_R          3
 
+#define ADSR_MIDI_INCOUNT    0
+#define ADSR_MIDI_OUTCOUNT    0
+#define ADSR_MIDI_CONTROLCOUNT    0
+
 ///////////
 // TYPES //
 ///////////
@@ -70,6 +74,17 @@ typedef struct ADSR
 
   R4 controlsCurr[ADSR_CONTROLCOUNT];
   R4 controlsPrev[ADSR_CONTROLCOUNT];
+
+  // input ports
+  MIDISataStream inputMIDIPorts[ADSR_MIDI_INCOUNT];
+
+  // output ports
+  MIDIData outputMIDIPortsPrev[ADSR_MIDI_OUTCOUNT];
+  MIDIData outputMIDIPortsCurr[ADSR_MIDI_OUTCOUNT];
+
+  MIDIData midiControlsCurr[ADSR_MIDI_CONTROLCOUNT];
+  MIDIData midiControlsPrev[ADSR_MIDI_CONTROLCOUNT];
+
 
   ADSR_section section;
   R4 timeSinceSectionStart;

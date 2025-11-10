@@ -25,7 +25,7 @@
 #define SET_CONTROL_CURR_VOL(mix, vol)    ((mix)->controlsCurr[MIXER_CONTROL_VOL] = (vol))
 #define SET_CONTROL_PREV_VOL(mix, vol)    ((mix)->controlsPrev[MIXER_CONTROL_VOL] = (vol))
 
-#define CONTROL_PUSH_TO_PREV(vco)         for (U4 i = 0; i < MIXER_CONTROLCOUNT; i++) {(vco)->controlsPrev[i] = (vco)->controlsCurr[i];}
+#define CONTROL_PUSH_TO_PREV(vco)         for (U4 i = 0; i < MIXER_CONTROLCOUNT; i++) {(vco)->controlsPrev[i] = (vco)->controlsCurr[i];} for (U4 i = 0; i < MIXER_MIDI_CONTROLCOUNT; i++) {(vco)->midiControlsPrev[i] = (vco)->midiControlsCurr[i];}
 
 /////////////////////////////
 //  FUNCTION DECLERATIONS  //
@@ -34,14 +34,17 @@
 static void free_mixer(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
-static R4 * getOutputAddr(void * modPtr, ModularPortID port);
-static R4 * getInputAddr(void * modPtr, ModularPortID port);
+static void * getOutputAddr(void * modPtr, ModularPortID port);
+static void * getInputAddr(void * modPtr, ModularPortID port);
+static ModulePortType getInputType(void * modPtr, ModularPortID port);
+static ModulePortType getOutputType(void * modPtr, ModularPortID port);
+static ModulePortType getControlType(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, ModularPortID id, R4 val);
-static R4 getControlVal(void * modPtr, ModularPortID id);
-static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
+static void setControlVal(void * modPtr, ModularPortID id, void* val);
+static void getControlVal(void * modPtr, ModularPortID id, void* ret);
+static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -70,6 +73,9 @@ static Module vtable = {
   .pushCurrToPrev = pushCurrToPrev,
   .getOutputAddr = getOutputAddr,
   .getInputAddr = getInputAddr,
+  .getInputType = getInputType,
+  .getOutputType = getOutputType,
+  .getControlType = getControlType,
   .getInCount = getInCount,
   .getOutCount = getOutCount,
   .getContolCount = getControlCount,
@@ -146,22 +152,42 @@ static void pushCurrToPrev(void * modPtr)
 {
   Mixer * mix = (Mixer *)modPtr;
   memcpy(mix->outputPortsPrev, mix->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * MIXER_OUTCOUNT);
+  memcpy(mix->outputMIDIPortsPrev, mix->outputMIDIPortsCurr, sizeof(MIDIData) * MIXER_MIDI_OUTCOUNT);
   CONTROL_PUSH_TO_PREV(mix);
 }
 
-static R4 * getOutputAddr(void * modPtr, ModularPortID port)
+static void * getOutputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= MIXER_OUTCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
 }
 
-static R4 * getInputAddr(void * modPtr, ModularPortID port)
+static void * getInputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= MIXER_INCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
 }
+
+static ModulePortType getInputType(void * modPtr, ModularPortID port)
+{
+  if (port < MIXER_INCOUNT) return ModulePortType_VoltStream;
+  return ModulePortType_None;
+}
+
+static ModulePortType getOutputType(void * modPtr, ModularPortID port)
+{
+  if (port < MIXER_OUTCOUNT) return ModulePortType_VoltStream;
+  return ModulePortType_None;
+}
+
+static ModulePortType getControlType(void * modPtr, ModularPortID port)
+{
+  if (port < MIXER_CONTROLCOUNT) return ModulePortType_VoltControl;
+  return ModulePortType_None;
+}
+
 
 static U4 getInCount(void * modPtr)
 {
@@ -178,23 +204,23 @@ static U4 getControlCount(void * modPtr)
   return MIXER_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, ModularPortID id, R4 val)
+static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
   if (id >= MIXER_CONTROLCOUNT) return;
 
-  Mixer * mix = (Mixer *)modPtr;
-  mix->controlsCurr[id] = val;
+  Mixer * vco = (Mixer *)modPtr;
+  memcpy(&vco->controlsCurr[id], val, sizeof(Volt));
 }
 
-static R4 getControlVal(void * modPtr, ModularPortID id)
+static void getControlVal(void * modPtr, ModularPortID id, void* ret)
 {
-  if (id >= MIXER_CONTROLCOUNT) return 0;
+  if (id >= MIXER_CONTROLCOUNT) return;
 
-  Mixer * mix = (Mixer *)modPtr;
-  return mix->controlsCurr[id];
+  Mixer * vco = (Mixer *)modPtr;
+  *((Volt*)ret) = vco->controlsCurr[id];
 }
 
-static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr)
+static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
 {
   if (port >= MIXER_INCOUNT) return;
 

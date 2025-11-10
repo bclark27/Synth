@@ -31,6 +31,10 @@
 
 #define ATTN_CONTROL_VOL    0
 
+#define ATTN_MIDI_INCOUNT    0
+#define ATTN_MIDI_OUTCOUNT    0
+#define ATTN_MIDI_CONTROLCOUNT    0
+
 ///////////
 // TYPES //
 ///////////
@@ -48,6 +52,17 @@ typedef struct Attenuator
 
   R4 controlsCurr[ATTN_CONTROLCOUNT];
   R4 controlsPrev[ATTN_CONTROLCOUNT];
+
+  // input ports
+  MIDISataStream inputMIDIPorts[ATTN_MIDI_INCOUNT];
+
+  // output ports
+  MIDIData outputMIDIPortsPrev[ATTN_MIDI_OUTCOUNT];
+  MIDIData outputMIDIPortsCurr[ATTN_MIDI_OUTCOUNT];
+
+  MIDIData midiControlsCurr[ATTN_MIDI_CONTROLCOUNT];
+  MIDIData midiControlsPrev[ATTN_MIDI_CONTROLCOUNT];
+
 
 } Attenuator;
 

@@ -38,6 +38,10 @@
 #define VCO_CONTROL_UNI     3
 #define VCO_CONTROL_DET     4
 
+#define VCO_MIDI_INCOUNT    0
+#define VCO_MIDI_OUTCOUNT    0
+#define VCO_MIDI_CONTROLCOUNT    0
+
 ///////////
 // TYPES //
 ///////////
@@ -47,14 +51,24 @@ typedef struct VCO
   Module module;
 
   // input ports
-  R4 * inputPorts[VCO_INCOUNT];
+  VoltStream inputPorts[VCO_INCOUNT];
 
   // output ports
-  R4 outputPortsPrev[MODULE_BUFFER_SIZE * VCO_OUTCOUNT];
-  R4 outputPortsCurr[MODULE_BUFFER_SIZE * VCO_OUTCOUNT];
+  Volt outputPortsPrev[MODULE_BUFFER_SIZE * VCO_OUTCOUNT];
+  Volt outputPortsCurr[MODULE_BUFFER_SIZE * VCO_OUTCOUNT];
 
-  R4 controlsCurr[VCO_CONTROLCOUNT];
-  R4 controlsPrev[VCO_CONTROLCOUNT];
+  Volt controlsCurr[VCO_CONTROLCOUNT];
+  Volt controlsPrev[VCO_CONTROLCOUNT];
+
+  // input ports
+  MIDISataStream inputMIDIPorts[VCO_MIDI_INCOUNT];
+
+  // output ports
+  MIDIData outputMIDIPortsPrev[VCO_MIDI_OUTCOUNT];
+  MIDIData outputMIDIPortsCurr[VCO_MIDI_OUTCOUNT];
+
+  MIDIData midiControlsCurr[VCO_MIDI_CONTROLCOUNT];
+  MIDIData midiControlsPrev[VCO_MIDI_CONTROLCOUNT];
 
   Oscillator osc;
 

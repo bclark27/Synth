@@ -26,14 +26,17 @@
 static void free_clkMult(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
-static R4 * getOutputAddr(void * modPtr, ModularPortID port);
-static R4 * getInputAddr(void * modPtr, ModularPortID port);
+static void * getOutputAddr(void * modPtr, ModularPortID port);
+static void * getInputAddr(void * modPtr, ModularPortID port);
+static ModulePortType getInputType(void * modPtr, ModularPortID port);
+static ModulePortType getOutputType(void * modPtr, ModularPortID port);
+static ModulePortType getControlType(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, ModularPortID id, R4 val);
-static R4 getControlVal(void * modPtr, ModularPortID id);
-static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
+static void setControlVal(void * modPtr, ModularPortID id, void* val);
+static void getControlVal(void * modPtr, ModularPortID id, void* ret);
+static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 
 static R4 divideHelper(ClockMult * clkMult, ModularPortID id);
 
@@ -63,6 +66,9 @@ static Module vtable = {
   .pushCurrToPrev = pushCurrToPrev,
   .getOutputAddr = getOutputAddr,
   .getInputAddr = getInputAddr,
+  .getInputType = getInputType,
+  .getOutputType = getOutputType,
+  .getControlType = getControlType,
   .getInCount = getInCount,
   .getOutCount = getOutCount,
   .getContolCount = getControlCount,
@@ -155,21 +161,41 @@ static void pushCurrToPrev(void * modPtr)
 {
   ClockMult * clkMult = (ClockMult *)modPtr;
   memcpy(clkMult->outputPortsPrev, clkMult->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * CLKMULT_OUTCOUNT);
+  memcpy(clkMult->outputMIDIPortsPrev, clkMult->outputMIDIPortsCurr, sizeof(MIDIData) * CLKMULT_MIDI_OUTCOUNT);
 }
 
-static R4 * getOutputAddr(void * modPtr, ModularPortID port)
+static void * getOutputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= CLKMULT_OUTCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
 }
 
-static R4 * getInputAddr(void * modPtr, ModularPortID port)
+static void * getInputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= CLKMULT_INCOUNT) return NULL;
 
   return IN_PORT_ADDR(modPtr, port);
 }
+
+static ModulePortType getInputType(void * modPtr, ModularPortID port)
+{
+  if (port < CLKMULT_INCOUNT) return ModulePortType_VoltStream;
+  return ModulePortType_None;
+}
+
+static ModulePortType getOutputType(void * modPtr, ModularPortID port)
+{
+  if (port < CLKMULT_OUTCOUNT) return ModulePortType_VoltStream;
+  return ModulePortType_None;
+}
+
+static ModulePortType getControlType(void * modPtr, ModularPortID port)
+{
+  if (port < CLKMULT_CONTROLCOUNT) return ModulePortType_VoltControl;
+  return ModulePortType_None;
+}
+
 
 static U4 getInCount(void * modPtr)
 {
@@ -186,29 +212,30 @@ static U4 getControlCount(void * modPtr)
   return CLKMULT_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, ModularPortID id, R4 val)
+static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
   if (id >= CLKMULT_CONTROLCOUNT) return;
 
-  ClockMult * clkMult = (ClockMult *)modPtr;
-  clkMult->controlsCurr[id] = val;
+  ClockMult * vco = (ClockMult *)modPtr;
+  memcpy(&vco->controlsCurr[id], val, sizeof(Volt));
 }
 
-static R4 getControlVal(void * modPtr, ModularPortID id)
+static void getControlVal(void * modPtr, ModularPortID id, void* ret)
 {
-  if (id >= CLKMULT_CONTROLCOUNT) return 0;
+  if (id >= CLKMULT_CONTROLCOUNT) return;
 
-  ClockMult * clkMult = (ClockMult *)modPtr;
-  return clkMult->controlsCurr[id];
+  ClockMult * vco = (ClockMult *)modPtr;
+  *((Volt*)ret) = vco->controlsCurr[id];
 }
 
-static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr)
+static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
 {
   if (port >= CLKMULT_INCOUNT) return;
 
-  ClockMult * clkMult = (ClockMult *)modPtr;
-  clkMult->inputPorts[port] = readAddr;
+  ClockMult * clk = (ClockMult *)modPtr;
+  clk->inputPorts[port] = readAddr;
 }
+
 
 static R4 divideHelper(ClockMult * clkMult, ModularPortID id)
 {

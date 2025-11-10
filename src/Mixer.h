@@ -38,6 +38,10 @@
 
 #define MIXER_CONTROL_VOL     0
 
+#define MIXER_MIDI_INCOUNT    0
+#define MIXER_MIDI_OUTCOUNT    0
+#define MIXER_MIDI_CONTROLCOUNT    0
+
 ///////////
 // TYPES //
 ///////////
@@ -55,6 +59,17 @@ typedef struct Mixer
 
   R4 controlsCurr[MIXER_CONTROLCOUNT];
   R4 controlsPrev[MIXER_CONTROLCOUNT];
+
+  // input ports
+  MIDISataStream inputMIDIPorts[MIXER_MIDI_INCOUNT];
+
+  // output ports
+  MIDIData outputMIDIPortsPrev[MIXER_MIDI_OUTCOUNT];
+  MIDIData outputMIDIPortsCurr[MIXER_MIDI_OUTCOUNT];
+
+  MIDIData midiControlsCurr[MIXER_MIDI_CONTROLCOUNT];
+  MIDIData midiControlsPrev[MIXER_MIDI_CONTROLCOUNT];
+
 } Mixer;
 
 ////////////////////////

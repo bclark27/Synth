@@ -5,6 +5,10 @@
 #include "AudioSettings.h"
 #include "MIDI.h"
 
+///////////////
+//  DEFINES  //
+///////////////
+
 ///////////
 // TYPES //
 ///////////
@@ -24,6 +28,20 @@ typedef enum ModuleType
   ModuleType_COUNT,
 } ModuleType;
 
+typedef enum ModulePortType
+{
+  ModulePortType_None=0,
+  ModulePortType_VoltStream,
+  ModulePortType_VoltControl,
+  ModulePortType_MIDIStream,
+  ModulePortType_MIDIControl,
+  ModulePortType_Count,
+} ModulePortType;
+
+typedef R4* VoltStream;
+typedef R4 Volt;
+typedef MIDIData* MIDISataStream;
+
 typedef U2 ModularPortID;
 
 typedef struct Module
@@ -32,14 +50,17 @@ typedef struct Module
   void (*freeModule)(void*);
   void (*updateState)(void*);
   void (*pushCurrToPrev)(void*);
-  R4* (*getOutputAddr)(void*,ModularPortID);
-  R4* (*getInputAddr)(void*,ModularPortID);
+  void* (*getOutputAddr)(void*,ModularPortID);
+  void* (*getInputAddr)(void*,ModularPortID);
+  ModulePortType (*getInputType)(void*,ModularPortID);
+  ModulePortType (*getOutputType)(void*,ModularPortID);
+  ModulePortType (*getControlType)(void*,ModularPortID);
   U4 (*getInCount)(void*);
   U4 (*getOutCount)(void*);
   U4 (*getContolCount)(void*);
-  void (*setControlVal)(void*,ModularPortID,R4);
-  R4 (*getControlVal)(void*,ModularPortID);
-  void (*linkToInput)(void*,ModularPortID,R4*);
+  void (*setControlVal)(void*,ModularPortID,void*);
+  void (*getControlVal)(void*,ModularPortID,void*); // caller should provide a buffer large enough
+  void (*linkToInput)(void*,ModularPortID,void*);
 
   char* name;
   int inPortNamesCount;

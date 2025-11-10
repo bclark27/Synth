@@ -20,7 +20,7 @@
 #define SET_CONTROL_CURR_CLOCK(clk, rate) ((clk)->controlsCurr[CLOCK_CONTROL_RATE] = (rate))
 #define SET_CONTROL_PREV_CLOCK(clk, rate) ((clk)->controlsPrev[CLOCK_CONTROL_RATE] = (rate))
 
-#define CONTROL_PUSH_TO_PREV(clk)         for (U4 i = 0; i < CLOCK_CONTROLCOUNT; i++) {(clk)->controlsPrev[i] = (clk)->controlsCurr[i];}
+#define CONTROL_PUSH_TO_PREV(vco)         for (U4 i = 0; i < CLOCK_CONTROLCOUNT; i++) {(vco)->controlsPrev[i] = (vco)->controlsCurr[i];}// for (U4 i = 0; i < CLOCK_MIDI_CONTROLCOUNT; i++) {(vco)->midiControlsPrev[i] = (vco)->midiControlsCurr[i];}
 
 /////////////////////////////
 //  FUNCTION DECLERATIONS  //
@@ -29,14 +29,17 @@
 static void free_clock(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
-static R4 * getOutputAddr(void * modPtr, ModularPortID port);
-static R4 * getInputAddr(void * modPtr, ModularPortID port);
+static void * getOutputAddr(void * modPtr, ModularPortID port);
+static void * getInputAddr(void * modPtr, ModularPortID port);
+static ModulePortType getInputType(void * modPtr, ModularPortID port);
+static ModulePortType getOutputType(void * modPtr, ModularPortID port);
+static ModulePortType getControlType(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, ModularPortID id, R4 val);
-static R4 getControlVal(void * modPtr, ModularPortID id);
-static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
+static void setControlVal(void * modPtr, ModularPortID id, void* val);
+static void getControlVal(void * modPtr, ModularPortID id, void* ret);
+static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -60,6 +63,9 @@ static Module vtable = {
   .pushCurrToPrev = pushCurrToPrev,
   .getOutputAddr = getOutputAddr,
   .getInputAddr = getInputAddr,
+  .getInputType = getInputType,
+  .getOutputType = getOutputType,
+  .getControlType = getControlType,
   .getInCount = getInCount,
   .getOutCount = getOutCount,
   .getContolCount = getControlCount,
@@ -144,22 +150,42 @@ static void pushCurrToPrev(void * modPtr)
 {
   Clock * clk = (Clock *)modPtr;
   memcpy(clk->outputPortsPrev, clk->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * CLOCK_OUTCOUNT);
+  memcpy(clk->outputMIDIPortsPrev, clk->outputMIDIPortsCurr, sizeof(MIDIData) * 0);
   CONTROL_PUSH_TO_PREV(clk);
 }
 
-static R4 * getOutputAddr(void * modPtr, ModularPortID port)
+static void * getOutputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= CLOCK_OUTCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
 }
 
-static R4 * getInputAddr(void * modPtr, ModularPortID port)
+static void * getInputAddr(void * modPtr, ModularPortID port)
 {
   if (port >= CLOCK_INCOUNT) return NULL;
 
   return IN_PORT_ADDR(modPtr, port);
 }
+
+static ModulePortType getInputType(void * modPtr, ModularPortID port)
+{
+  if (port < CLOCK_INCOUNT) return ModulePortType_VoltStream;
+  return ModulePortType_None;
+}
+
+static ModulePortType getOutputType(void * modPtr, ModularPortID port)
+{
+  if (port < CLOCK_OUTCOUNT) return ModulePortType_VoltStream;
+  return ModulePortType_None;
+}
+
+static ModulePortType getControlType(void * modPtr, ModularPortID port)
+{
+  if (port < CLOCK_CONTROLCOUNT) return ModulePortType_VoltControl;
+  return ModulePortType_None;
+}
+
 
 static U4 getInCount(void * modPtr)
 {
@@ -176,23 +202,24 @@ static U4 getControlCount(void * modPtr)
   return CLOCK_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, ModularPortID id, R4 val)
+
+static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
   if (id >= CLOCK_CONTROLCOUNT) return;
 
-  Clock * clk = (Clock *)modPtr;
-  clk->controlsCurr[id] = val;
+  Clock * vco = (Clock *)modPtr;
+  memcpy(&vco->controlsCurr[id], val, sizeof(Volt));
 }
 
-static R4 getControlVal(void * modPtr, ModularPortID id)
+static void getControlVal(void * modPtr, ModularPortID id, void* ret)
 {
-  if (id >= CLOCK_CONTROLCOUNT) return 0;
+  if (id >= CLOCK_CONTROLCOUNT) return;
 
-  Clock * clk = (Clock *)modPtr;
-  return clk->controlsCurr[id];
+  Clock * vco = (Clock *)modPtr;
+  *((Volt*)ret) = vco->controlsCurr[id];
 }
 
-static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr)
+static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
 {
   if (port >= CLOCK_INCOUNT) return;
 

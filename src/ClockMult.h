@@ -35,6 +35,10 @@
 #define CLKMULT_OUT_PORT_EGHT     3
 #define CLKMULT_OUT_PORT_SIXT     4
 
+#define CLKMULT_MIDI_INCOUNT    0
+#define CLKMULT_MIDI_OUTCOUNT    0
+#define CLKMULT_MIDI_CONTROLCOUNT    0
+
 ///////////
 // TYPES //
 ///////////
@@ -52,6 +56,17 @@ typedef struct ClockMult
 
   R4 controlsCurr[CLKMULT_CONTROLCOUNT];
   R4 controlsPrev[CLKMULT_CONTROLCOUNT];
+
+  // input ports
+  MIDISataStream inputMIDIPorts[CLKMULT_MIDI_INCOUNT];
+
+  // output ports
+  MIDIData outputMIDIPortsPrev[CLKMULT_MIDI_OUTCOUNT];
+  MIDIData outputMIDIPortsCurr[CLKMULT_MIDI_OUTCOUNT];
+
+  MIDIData midiControlsCurr[CLKMULT_MIDI_CONTROLCOUNT];
+  MIDIData midiControlsPrev[CLKMULT_MIDI_CONTROLCOUNT];
+
 
   U8 currCount;
   U8 lastHighToHighCount;

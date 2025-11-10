@@ -78,9 +78,11 @@ float knobs[9] = {0,0,0,0,0,0,0,0,0};
 
 void knobHelper(char* modName, char* cvName, int knobNum, int direction, float div)
 {
-  knobs[knobNum] = ModularSynth_getControlByName(modName, cvName);
+  if (ModularSynth_getControlTypeByName(modName, cvName) != ModulePortType_VoltControl) return;
+
+  ModularSynth_getControlByName(modName, cvName, &knobs[knobNum]);
   knobs[knobNum] += direction / div;
-  ModularSynth_setControlByName(modName, cvName, knobs[knobNum]);
+  ModularSynth_setControlByName(modName, cvName, &knobs[knobNum]);
 
   const int spacing = 8;
   char* str = malloc(68);

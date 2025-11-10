@@ -11,35 +11,35 @@
 #define PREV_PORT_ADDR(mod, port)         (((Filter*)(mod))->outputPortsPrev + MODULE_BUFFER_SIZE * (port))
 #define CURR_PORT_ADDR(mod, port)         (((Filter*)(mod))->outputPortsCurr + MODULE_BUFFER_SIZE * (port))
 
-#define IN_PORT_AUD(flt)                 ((flt)->inputPorts[FITLER_IN_PORT_AUD])
-#define IN_PORT_FREQ(flt)                 ((flt)->inputPorts[FITLER_IN_PORT_FREQ])
-#define IN_PORT_Q(flt)                 ((flt)->inputPorts[FITLER_IN_PORT_Q])
+#define IN_PORT_AUD(flt)                 ((flt)->inputPorts[FILTER_IN_PORT_AUD])
+#define IN_PORT_FREQ(flt)                 ((flt)->inputPorts[FILTER_IN_PORT_FREQ])
+#define IN_PORT_Q(flt)                 ((flt)->inputPorts[FILTER_IN_PORT_Q])
 
-#define OUT_PORT_AUD(flt)                (CURR_PORT_ADDR(flt, FITLER_OUT_PORT_AUD))
+#define OUT_PORT_AUD(flt)                (CURR_PORT_ADDR(flt, FILTER_OUT_PORT_AUD))
 
-#define GET_CONTROL_CURR_FREQ(flt)        ((flt)->controlsCurr[FITLER_CONTROL_FREQ])
-#define GET_CONTROL_PREV_FREQ(flt)        ((flt)->controlsPrev[FITLER_CONTROL_FREQ])
-#define GET_CONTROL_CURR_DB(flt)        ((flt)->controlsCurr[FITLER_CONTROL_DB])
-#define GET_CONTROL_PREV_DB(flt)        ((flt)->controlsPrev[FITLER_CONTROL_DB])
-#define GET_CONTROL_CURR_Q(flt)        ((flt)->controlsCurr[FITLER_CONTROL_Q])
-#define GET_CONTROL_PREV_Q(flt)        ((flt)->controlsPrev[FITLER_CONTROL_Q])
-#define GET_CONTROL_CURR_ENV(flt)        ((flt)->controlsCurr[FITLER_CONTROL_ENV])
-#define GET_CONTROL_PREV_ENV(flt)        ((flt)->controlsPrev[FITLER_CONTROL_ENV])
-#define GET_CONTROL_CURR_TYPE(flt)        ((flt)->controlsCurr[FITLER_CONTROL_TYPE])
-#define GET_CONTROL_PREV_TYPE(flt)        ((flt)->controlsPrev[FITLER_CONTROL_TYPE])
+#define GET_CONTROL_CURR_FREQ(flt)        ((flt)->controlsCurr[FILTER_CONTROL_FREQ])
+#define GET_CONTROL_PREV_FREQ(flt)        ((flt)->controlsPrev[FILTER_CONTROL_FREQ])
+#define GET_CONTROL_CURR_DB(flt)        ((flt)->controlsCurr[FILTER_CONTROL_DB])
+#define GET_CONTROL_PREV_DB(flt)        ((flt)->controlsPrev[FILTER_CONTROL_DB])
+#define GET_CONTROL_CURR_Q(flt)        ((flt)->controlsCurr[FILTER_CONTROL_Q])
+#define GET_CONTROL_PREV_Q(flt)        ((flt)->controlsPrev[FILTER_CONTROL_Q])
+#define GET_CONTROL_CURR_ENV(flt)        ((flt)->controlsCurr[FILTER_CONTROL_ENV])
+#define GET_CONTROL_PREV_ENV(flt)        ((flt)->controlsPrev[FILTER_CONTROL_ENV])
+#define GET_CONTROL_CURR_TYPE(flt)        ((flt)->controlsCurr[FILTER_CONTROL_TYPE])
+#define GET_CONTROL_PREV_TYPE(flt)        ((flt)->controlsPrev[FILTER_CONTROL_TYPE])
 
-#define SET_CONTROL_CURR_FREQ(flt, v)     ((flt)->controlsCurr[FITLER_CONTROL_FREQ] = (v))
-#define SET_CONTROL_PREV_FREQ(flt, v)     ((flt)->controlsPrev[FITLER_CONTROL_FREQ] = (v))
-#define SET_CONTROL_CURR_DB(flt, v)     ((flt)->controlsCurr[FITLER_CONTROL_DB] = (v))
-#define SET_CONTROL_PREV_DB(flt, v)     ((flt)->controlsPrev[FITLER_CONTROL_DB] = (v))
-#define SET_CONTROL_CURR_Q(flt, q)     ((flt)->controlsCurr[FITLER_CONTROL_Q] = (q))
-#define SET_CONTROL_PREV_Q(flt, q)     ((flt)->controlsPrev[FITLER_CONTROL_Q] = (q))
-#define SET_CONTROL_CURR_ENV(flt, e)     ((flt)->controlsCurr[FITLER_CONTROL_ENV] = (e))
-#define SET_CONTROL_PREV_ENV(flt, e)     ((flt)->controlsPrev[FITLER_CONTROL_ENV] = (e))
-#define SET_CONTROL_CURR_TYPE(flt, t)     ((flt)->controlsCurr[FITLER_CONTROL_TYPE] = (t))
-#define SET_CONTROL_PREV_TYPE(flt, t)     ((flt)->controlsPrev[FITLER_CONTROL_TYPE] = (t))
+#define SET_CONTROL_CURR_FREQ(flt, v)     ((flt)->controlsCurr[FILTER_CONTROL_FREQ] = (v))
+#define SET_CONTROL_PREV_FREQ(flt, v)     ((flt)->controlsPrev[FILTER_CONTROL_FREQ] = (v))
+#define SET_CONTROL_CURR_DB(flt, v)     ((flt)->controlsCurr[FILTER_CONTROL_DB] = (v))
+#define SET_CONTROL_PREV_DB(flt, v)     ((flt)->controlsPrev[FILTER_CONTROL_DB] = (v))
+#define SET_CONTROL_CURR_Q(flt, q)     ((flt)->controlsCurr[FILTER_CONTROL_Q] = (q))
+#define SET_CONTROL_PREV_Q(flt, q)     ((flt)->controlsPrev[FILTER_CONTROL_Q] = (q))
+#define SET_CONTROL_CURR_ENV(flt, e)     ((flt)->controlsCurr[FILTER_CONTROL_ENV] = (e))
+#define SET_CONTROL_PREV_ENV(flt, e)     ((flt)->controlsPrev[FILTER_CONTROL_ENV] = (e))
+#define SET_CONTROL_CURR_TYPE(flt, t)     ((flt)->controlsCurr[FILTER_CONTROL_TYPE] = (t))
+#define SET_CONTROL_PREV_TYPE(flt, t)     ((flt)->controlsPrev[FILTER_CONTROL_TYPE] = (t))
 
-#define CONTROL_PUSH_TO_PREV(vco)         for (U4 i = 0; i < FITLER_CONTROLCOUNT; i++) {(vco)->controlsPrev[i] = (vco)->controlsCurr[i];}
+#define CONTROL_PUSH_TO_PREV(vco)         for (U4 i = 0; i < FILTER_CONTROLCOUNT; i++) {(vco)->controlsPrev[i] = (vco)->controlsCurr[i];} for (U4 i = 0; i < FILTER_MIDI_CONTROLCOUNT; i++) {(vco)->midiControlsPrev[i] = (vco)->midiControlsCurr[i];}
 
 /////////////////////////////
 //  FUNCTION DECLERATIONS  //
@@ -50,16 +50,16 @@ static inline void setHighpass(Filter *f, float cutoff, float q);
 static inline float processFilter(Filter *f, float x);
 static inline float voltToMoogQ(float volts);
 
-static char * inPortNames[FITLER_INCOUNT] = {
+static char * inPortNames[FILTER_INCOUNT] = {
   "Audio",
   "Freq",
 };
 
-static char * outPortNames[FITLER_OUTCOUNT] = {
+static char * outPortNames[FILTER_OUTCOUNT] = {
   "Audio",
 };
 
-static char * controlNames[FITLER_CONTROLCOUNT] = {
+static char * controlNames[FILTER_CONTROLCOUNT] = {
   "Freq",
   "Q",
   "DB",
@@ -70,14 +70,17 @@ static char * controlNames[FITLER_CONTROLCOUNT] = {
 static void free_attn(void * modPtr);
 static void updateState(void * modPtr);
 static void pushCurrToPrev(void * modPtr);
-static R4 * getOutputAddr(void * modPtr, ModularPortID port);
-static R4 * getInputAddr(void * modPtr, ModularPortID port);
+static void * getOutputAddr(void * modPtr, ModularPortID port);
+static void * getInputAddr(void * modPtr, ModularPortID port);
+static ModulePortType getInputType(void * modPtr, ModularPortID port);
+static ModulePortType getOutputType(void * modPtr, ModularPortID port);
+static ModulePortType getControlType(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, ModularPortID id, R4 val);
-static R4 getControlVal(void * modPtr, ModularPortID id);
-static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr);
+static void setControlVal(void * modPtr, ModularPortID id, void* val);
+static void getControlVal(void * modPtr, ModularPortID id, void* ret);
+static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -90,6 +93,9 @@ static Module vtable = {
   .pushCurrToPrev = pushCurrToPrev,
   .getOutputAddr = getOutputAddr,
   .getInputAddr = getInputAddr,
+  .getInputType = getInputType,
+  .getOutputType = getOutputType,
+  .getControlType = getControlType,
   .getInCount = getInCount,
   .getOutCount = getOutCount,
   .getContolCount = getControlCount,
@@ -195,58 +201,78 @@ static void updateState(void * modPtr)
 static void pushCurrToPrev(void * modPtr)
 {
   Filter * flt = (Filter *)modPtr;
-  memcpy(flt->outputPortsPrev, flt->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * FITLER_OUTCOUNT);
+  memcpy(flt->outputPortsPrev, flt->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * FILTER_OUTCOUNT);
+  memcpy(flt->outputMIDIPortsPrev, flt->outputMIDIPortsCurr, sizeof(MIDIData) * FILTER_MIDI_OUTCOUNT);
   CONTROL_PUSH_TO_PREV(flt);
 }
 
-static R4 * getOutputAddr(void * modPtr, ModularPortID port)
+static void * getOutputAddr(void * modPtr, ModularPortID port)
 {
-  if (port >= FITLER_OUTCOUNT) return NULL;
+  if (port >= FILTER_OUTCOUNT) return NULL;
 
   return PREV_PORT_ADDR(modPtr, port);
 }
 
-static R4 * getInputAddr(void * modPtr, ModularPortID port)
+static void * getInputAddr(void * modPtr, ModularPortID port)
 {
-  if (port >= FITLER_INCOUNT) return NULL;
+  if (port >= FILTER_INCOUNT) return NULL;
 
   return IN_PORT_ADDR(modPtr, port);
 }
 
+static ModulePortType getInputType(void * modPtr, ModularPortID port)
+{
+  if (port < FILTER_INCOUNT) return ModulePortType_VoltStream;
+  return ModulePortType_None;
+}
+
+static ModulePortType getOutputType(void * modPtr, ModularPortID port)
+{
+  if (port < FILTER_OUTCOUNT) return ModulePortType_VoltStream;
+  return ModulePortType_None;
+}
+
+static ModulePortType getControlType(void * modPtr, ModularPortID port)
+{
+  if (port < FILTER_CONTROLCOUNT) return ModulePortType_VoltControl;
+  return ModulePortType_None;
+}
+
+
 static U4 getInCount(void * modPtr)
 {
-  return FITLER_INCOUNT;
+  return FILTER_INCOUNT;
 }
 
 static U4 getOutCount(void * modPtr)
 {
-  return FITLER_OUTCOUNT;
+  return FILTER_OUTCOUNT;
 }
 
 static U4 getControlCount(void * modPtr)
 {
-  return FITLER_CONTROLCOUNT;
+  return FILTER_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, ModularPortID id, R4 val)
+static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
-  if (id >= FITLER_CONTROLCOUNT) return;
+  if (id >= FILTER_CONTROLCOUNT) return;
 
-  Filter * flt = (Filter *)modPtr;
-  flt->controlsCurr[id] = val;
+  Filter * vco = (Filter *)modPtr;
+  memcpy(&vco->controlsCurr[id], val, sizeof(Volt));
 }
 
-static R4 getControlVal(void * modPtr, ModularPortID id)
+static void getControlVal(void * modPtr, ModularPortID id, void* ret)
 {
-  if (id >= FITLER_CONTROLCOUNT) return 0;
+  if (id >= FILTER_CONTROLCOUNT) return;
 
-  Filter * flt = (Filter *)modPtr;
-  return flt->controlsCurr[id];
+  Filter * vco = (Filter *)modPtr;
+  *((Volt*)ret) = vco->controlsCurr[id];
 }
 
-static void linkToInput(void * modPtr, ModularPortID port, R4 * readAddr)
+static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
 {
-  if (port >= FITLER_INCOUNT) return;
+  if (port >= FILTER_INCOUNT) return;
 
   Filter * flt = (Filter *)modPtr;
   flt->inputPorts[port] = readAddr;
