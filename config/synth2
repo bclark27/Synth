@@ -23,7 +23,7 @@ control Detune 1.03
 +++
 f1
 connect Audio osc1 Audio
-control Freq 3
+control Freq 9
 control Q -10
 +++
 mix1

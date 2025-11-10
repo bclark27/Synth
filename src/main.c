@@ -1,14 +1,8 @@
-
-#include "raylib/raylib.h"
 #include "comm/Common.h"
 #include "ModularSynth.h"
 #include "AudioSettings.h"
 #include "AudioDevice.h"
 #include "comm/IPC.h"
-#include <math.h>
-#include <pthread.h>
-#include <stdatomic.h>
-#include <sys/time.h>
 
 /*
 ModularSynth_update();
@@ -23,7 +17,7 @@ memcpy(signalBuffers[idx], synthOutput, sizeof(R4) * STREAM_BUFFER_SIZE);
 void timetest()
 {
   ModularSynth_init();
-  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth2");
+  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth1");
 
   struct timeval stop, start;
   gettimeofday(&start, NULL);
@@ -192,6 +186,8 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
 
 int main(void)
 {
+  // timetest();
+  // return 0;
   IPC_StartService("Controller"); 
   IPC_ConnectToService("PushEvents", OnPushEvent);
   ModularSynth_init();
@@ -199,46 +195,6 @@ int main(void)
   AudioDevice_init();
   AudioDevice_LoopForever();
   return 0;
-  // timetest();
-  // return 0;
-
-  
-  
-  initColors();
-  
-  InitAudioDevice();
-
-  SetAudioStreamBufferSizeDefault(STREAM_BUFFER_SIZE);
-  AudioStream synthStream = LoadAudioStream(
-    SAMPLE_RATE,
-    sizeof(float) * 8,
-    1
-  );
-
-  SetMasterVolume(0.5);
-  PlayAudioStream(synthStream);
-
-  InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Synth");
-  SetTargetFPS(FPS);
-
-  BeginDrawing();
-  ClearBackground(BLACK);
-  EndDrawing();
-
-  R4 * audioBuffer = ModularSynth_getLeftChannel();
-
-  while (!WindowShouldClose()) 
-  {
-    if (IsAudioStreamProcessed(synthStream))
-    {
-      UpdateAudioStream(synthStream, audioBuffer, STREAM_BUFFER_SIZE);
-      ModularSynth_update();
-    }
-  }
-
-  UnloadAudioStream(synthStream);
-  CloseAudioDevice();
-  CloseWindow();
 
   ModularSynth_free();
 }
