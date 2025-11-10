@@ -3,6 +3,7 @@
 #include "comm/Common.h"
 #include "ModularSynth.h"
 #include "AudioSettings.h"
+#include "AudioDevice.h"
 #include "comm/IPC.h"
 #include <math.h>
 #include <pthread.h>
@@ -191,16 +192,19 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
 
 int main(void)
 {
+  IPC_StartService("Controller"); 
+  IPC_ConnectToService("PushEvents", OnPushEvent);
+  ModularSynth_init();
+  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth2");
+  AudioDevice_init();
+  AudioDevice_LoopForever();
+  return 0;
   // timetest();
   // return 0;
 
-  IPC_StartService("Controller"); 
-  IPC_ConnectToService("PushEvents", OnPushEvent);
+  
   
   initColors();
-  
-  ModularSynth_init();
-  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth2");
   
   InitAudioDevice();
 
