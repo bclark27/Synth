@@ -120,6 +120,8 @@ static void update_synth() {
     synth_pos = 0;
 }
 
+// TODO: if ever got crackle or pop sounds, just start double buffering this guy here
+
 // ---- SoundIO callback ----
 static void write_callback(struct SoundIoOutStream *outstream,
                            int frame_count_min, int frame_count_max)

@@ -73,7 +73,7 @@ static char * inPortNames[ADSR_INCOUNT] = {
 };
 
 static char * outPortNames[ADSR_OUTCOUNT] = {
-  "Envelope",
+  "Env",
 };
 
 static char * controlNames[ADSR_CONTROLCOUNT] = {
@@ -169,7 +169,6 @@ static void updateState(void * modPtr)
     currR = MAX(0, currR);
 
     R4 gateVal = IN_PORT_GATE(adsr) ? IN_PORT_GATE(adsr)[i] : 0;
-
     bool isNewHigh = adsr->prevSampleValue < VOLTSTD_GATE_HIGH_THRESH &&
                       gateVal > VOLTSTD_GATE_HIGH_THRESH;
 
@@ -210,7 +209,7 @@ static void updateState(void * modPtr)
 
     adsr->prevADSRStop = finalVal;
     finalVal = (VOLTSTD_MOD_CV_RANGE * finalVal) - VOLTSTD_MOD_CV_MAX;
-
+    
     OUT_PORT_ENV(adsr)[i] = finalVal;
   }
 

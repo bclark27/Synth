@@ -82,17 +82,42 @@ void knobHelper(char* modName, char* cvName, int knobNum, int direction, float d
   knobs[knobNum] += direction / div;
   ModularSynth_setControlByName(modName, cvName, knobs[knobNum]);
 
+  const int spacing = 8;
   char* str = malloc(68);
   int size = snprintf(str, 68, "%.3f", knobs[knobNum]);
   AbletonPkt_Cmd_Text cmd_t =
   {
-    .x=knobNum*9,
+    .x=knobNum*spacing,
     .y=0,
   };
   memcpy(cmd_t.text, str, size);
   free(str);
   cmd_t.length = size;
   IPC_PostMessage(MSG_TYPE_ABL_CMD_TEXT, &cmd_t, sizeof(AbletonPkt_Cmd_Text));
+
+  str = malloc(68);
+  size = snprintf(str, 68, "%s", modName);
+  AbletonPkt_Cmd_Text cmd_t2 =
+  {
+    .x=knobNum*spacing,
+    .y=1,
+  };
+  memcpy(cmd_t2.text, str, size);
+  free(str);
+  cmd_t2.length = size;
+  IPC_PostMessage(MSG_TYPE_ABL_CMD_TEXT, &cmd_t2, sizeof(AbletonPkt_Cmd_Text));
+
+  str = malloc(68);
+  size = snprintf(str, 68, "%s", cvName);
+  AbletonPkt_Cmd_Text cmd_t3 =
+  {
+    .x=knobNum*spacing,
+    .y=2,
+  };
+  memcpy(cmd_t3.text, str, size);
+  free(str);
+  cmd_t3.length = size;
+  IPC_PostMessage(MSG_TYPE_ABL_CMD_TEXT, &cmd_t3, sizeof(AbletonPkt_Cmd_Text));
 }
 
 void OnPushEvent(MessageType t, void* d, MessageSize s)
@@ -172,7 +197,17 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
       }
       case 5:
       {
-        knobHelper("f1", "Q", id, dir, 10);
+        knobHelper("f1", "Env", id, dir, 10);
+        break;
+      }
+      case 6:
+      {
+        knobHelper("lfo", "Freq", id, dir, 100);
+        break;
+      }
+      case 7:
+      {
+        knobHelper("adsr", "Decay", id, dir, 100);
         break;
       }
       default:
@@ -190,6 +225,7 @@ int main(void)
   // return 0;
   IPC_StartService("Controller"); 
   IPC_ConnectToService("PushEvents", OnPushEvent);
+  initColors();
   ModularSynth_init();
   ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth2");
   AudioDevice_init();

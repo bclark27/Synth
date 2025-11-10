@@ -130,11 +130,11 @@ static void updateState(void * modPtr)
     if (clk->phase >= 1)
     {
       clk->phase = 0;
-      CURR_PORT_ADDR(clk, CLOCK_OUT_PORT_CLOCK)[i] = VOLTSTD_GATE_HIGH;
+      OUT_PORT_CLOCK(clk)[i] = VOLTSTD_GATE_HIGH;
     }
     else
     {
-      CURR_PORT_ADDR(clk, CLOCK_OUT_PORT_CLOCK)[i] = VOLTSTD_GATE_LOW;
+      OUT_PORT_CLOCK(clk)[i] = VOLTSTD_GATE_LOW;
     }
   }
 
