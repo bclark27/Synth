@@ -15,15 +15,13 @@
 // TYPES //
 ///////////
 
-typedef U2 MIDIPortID;
-
-typedef struct MIDIUpdate
+typedef struct MIDIData
 {
     R4 note[MAX_NOTES];
     bool noteIsOn[MAX_NOTES];
     bool noteIsNewlyOn[MAX_NOTES];
     R4 velocity[MAX_NOTES];
-} MIDIUpdate;
+} MIDIData;
 
 ////////////////////////
 //  PUBLIC FUNCTIONS  //

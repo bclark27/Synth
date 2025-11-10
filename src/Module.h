@@ -3,6 +3,7 @@
 
 #include "comm/Common.h"
 #include "AudioSettings.h"
+#include "MIDI.h"
 
 ///////////
 // TYPES //
