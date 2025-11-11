@@ -21,6 +21,7 @@ const char * const ModuleTypeNames[ModuleType_COUNT] = {
     "Sequencer",
     "VCO",
     "Filter",
+    "MidiInput",
   };
   
 /////////////////////////////

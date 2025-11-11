@@ -388,11 +388,11 @@ bool ModularSynth_setControlByName(char * name, char * controlName, void* val)
 
   Module * mod = getModuleByName(name);
   if (!mod) return 0;
-
+  
   bool found;
   ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
   if (!found) return 0;
-
+  
   mod->setControlVal(mod, controlID, val);
   return 1;
 }

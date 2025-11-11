@@ -27,9 +27,9 @@
 
 #define CLOCK_CONTROL_RATE      0
 
-#define CLK_MIDI_INCOUNT    0
-#define CLK_MIDI_OUTCOUNT    0
-#define CLK_MIDI_CONTROLCOUNT    0
+#define CLOCK_MIDI_INCOUNT    0
+#define CLOCK_MIDI_OUTCOUNT    0
+#define CLOCK_MIDI_CONTROLCOUNT    0
 
 ///////////
 // TYPES //
@@ -50,14 +50,14 @@ typedef struct Clock
   R4 controlsPrev[CLOCK_CONTROLCOUNT];
 
   // input ports
-  MIDISataStream inputMIDIPorts[CLK_MIDI_INCOUNT];
+  MIDISataStream inputMIDIPorts[CLOCK_MIDI_INCOUNT];
 
   // output ports
-  MIDIData outputMIDIPortsPrev[CLK_MIDI_OUTCOUNT];
-  MIDIData outputMIDIPortsCurr[CLK_MIDI_OUTCOUNT];
+  MIDIData outputMIDIPortsPrev[CLOCK_MIDI_OUTCOUNT];
+  MIDIData outputMIDIPortsCurr[CLOCK_MIDI_OUTCOUNT];
 
-  MIDIData midiControlsCurr[CLK_MIDI_CONTROLCOUNT];
-  MIDIData midiControlsPrev[CLK_MIDI_CONTROLCOUNT];
+  MIDIData midiControlsCurr[CLOCK_MIDI_CONTROLCOUNT];
+  MIDIData midiControlsPrev[CLOCK_MIDI_CONTROLCOUNT];
 
 
   R4 phase;

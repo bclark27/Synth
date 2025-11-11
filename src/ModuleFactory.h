@@ -14,6 +14,7 @@
 #include "Sequencer.h"
 #include "VCO.h"
 #include "Filter.h"
+#include "MidiInput.h"
 
 ///////////
 // TYPES //

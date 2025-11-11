@@ -131,6 +131,13 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
 
     if (pad->isRelease)
     {
+      MIDIData md = {
+        .type=MIDIDataType_NoteOff,
+        .data1=pad->id,
+        .data2=pad->padVelocity,
+      };
+      ModularSynth_setControlByName("mdin", "Input", &md);
+
       AbletonPkt_Cmd_Pad cmd_p = { 
         .x=pad->padX, 
         .y=pad->padY,
@@ -141,7 +148,13 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
     }
     else if (pad->isPress)
     {
-      
+      MIDIData md = {
+        .type=MIDIDataType_NoteOn,
+        .data1=pad->id,
+        .data2=pad->padVelocity,
+      };
+      ModularSynth_setControlByName("mdin", "Input", &md);
+
       AbletonPkt_Cmd_Pad cmd_p = { 
         .x=pad->padX, 
         .y=pad->padY,
@@ -149,6 +162,15 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
         .color=ColorStates_LIGHT_GREEN,
       };
       IPC_PostMessage(MSG_TYPE_ABL_CMD_PAD, &cmd_p, sizeof(AbletonPkt_Cmd_Pad));
+    }
+    else if (pad->isHold)
+    {
+      MIDIData md = {
+        .type=MIDIDataType_AfterTouch,
+        .data1=pad->id,
+        .data2=pad->padVelocity,
+      };
+      ModularSynth_setControlByName("mdin", "Input", &md);
     }
   }
 

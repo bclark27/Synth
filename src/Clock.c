@@ -20,7 +20,7 @@
 #define SET_CONTROL_CURR_CLOCK(clk, rate) ((clk)->controlsCurr[CLOCK_CONTROL_RATE] = (rate))
 #define SET_CONTROL_PREV_CLOCK(clk, rate) ((clk)->controlsPrev[CLOCK_CONTROL_RATE] = (rate))
 
-#define CONTROL_PUSH_TO_PREV(vco)         for (U4 i = 0; i < CLOCK_CONTROLCOUNT; i++) {(vco)->controlsPrev[i] = (vco)->controlsCurr[i];}// for (U4 i = 0; i < CLOCK_MIDI_CONTROLCOUNT; i++) {(vco)->midiControlsPrev[i] = (vco)->midiControlsCurr[i];}
+#define CONTROL_PUSH_TO_PREV(vco)         for (U4 i = 0; i < CLOCK_CONTROLCOUNT; i++) {(vco)->controlsPrev[i] = (vco)->controlsCurr[i];} for (U4 i = 0; i < CLOCK_MIDI_CONTROLCOUNT; i++) {(vco)->midiControlsPrev[i] = (vco)->midiControlsCurr[i];}
 
 /////////////////////////////
 //  FUNCTION DECLERATIONS  //
@@ -150,7 +150,7 @@ static void pushCurrToPrev(void * modPtr)
 {
   Clock * clk = (Clock *)modPtr;
   memcpy(clk->outputPortsPrev, clk->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * CLOCK_OUTCOUNT);
-  memcpy(clk->outputMIDIPortsPrev, clk->outputMIDIPortsCurr, sizeof(MIDIData) * 0);
+  memcpy(clk->outputMIDIPortsPrev, clk->outputMIDIPortsCurr, sizeof(MIDIData) * CLOCK_MIDI_OUTCOUNT);
   CONTROL_PUSH_TO_PREV(clk);
 }
 

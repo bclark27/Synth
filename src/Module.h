@@ -24,6 +24,7 @@ typedef enum ModuleType
   ModuleType_Sequencer,
   ModuleType_VCO,
   ModuleType_Filter,
+  ModuleType_MidiInput,
 
   ModuleType_COUNT,
 } ModuleType;
