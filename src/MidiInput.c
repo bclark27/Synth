@@ -124,7 +124,7 @@ static void pushCurrToPrev(void * modPtr)
 {
   MidiInput * mi = (MidiInput*)modPtr;
   memcpy(mi->outputPortsPrev, mi->outputPortsCurr, sizeof(R4) * MODULE_BUFFER_SIZE * MIDIINPUT_OUTCOUNT);
-  memcpy(mi->outputMIDIPortsPrev, mi->outputMIDIPortsCurr, sizeof(MIDIData) * MIDIINPUT_MIDI_OUTCOUNT);
+  memcpy(mi->outputMIDIPortsPrev, mi->outputMIDIPortsCurr, sizeof(MIDIData) * MIDIINPUT_MIDI_OUTCOUNT * MIDI_STREAM_BUFFER_SIZE);
   CONTROL_PUSH_TO_PREV(mi);
 }
 
