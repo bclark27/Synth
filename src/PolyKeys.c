@@ -496,7 +496,6 @@ static void voiceOnSetup(PolyKeys* pk, PolyKeysVoice* voice)
 static void applyControlValsToModules(PolyKeys* pk, PolyKeysVoice* voice)
 {
     // push all the relevent control values of the full poly module to the relivent sub modules
-    return;
     R4 A = pk->controlsCurr[POLYKEYS_CONTROL_A];
     R4 D = pk->controlsCurr[POLYKEYS_CONTROL_D];
     R4 S = pk->controlsCurr[POLYKEYS_CONTROL_S];

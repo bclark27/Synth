@@ -109,7 +109,7 @@ static Module vtable = {
 
 #define DEFAULT_CONTROL_FREQ    0
 #define DEFAULT_CONTROL_PW      0.5f
-#define DEFAULT_CONTROL_WAVE    0
+#define DEFAULT_CONTROL_WAVE    0.6
 #define DEFAULT_CONTROL_UNI     1
 #define DEFAULT_CONTROL_DET     1.03
 

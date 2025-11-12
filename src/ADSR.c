@@ -6,6 +6,8 @@
 // DEFINES  //
 //////////////
 
+#define MIN_TIME (0.01f)
+
 #define IN_PORT_ADDR(mod, port)           (((ADSR*)(mod))->inputPorts[port]);
 
 #define PREV_PORT_ADDR(mod, port)         (((ADSR*)(mod))->outputPortsPrev + MODULE_BUFFER_SIZE * (port))
@@ -169,10 +171,11 @@ static void updateState(void * modPtr)
     currS += IN_PORT_S(adsr) ? IN_PORT_S(adsr)[i] : 0;
     currR += IN_PORT_R(adsr) ? IN_PORT_R(adsr)[i] : 0;
     
-    currA = MAX(0, currA);
-    currD = MAX(0, currD);
+    currA = MAX(MIN_TIME, currA);
+    currD = MAX(MIN_TIME, currD);
     currS = MAX(0, currS);
-    currR = MAX(0, currR);
+    currR = MAX(MIN_TIME, currR);
+    // TODO: make the adsr turn voltages into time, some expo func or smth idk
     
     R4 gateVal = IN_PORT_GATE(adsr) ? IN_PORT_GATE(adsr)[i] : 0;
     //printf("%f\n", gateVal);
