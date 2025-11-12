@@ -3,6 +3,7 @@
 
 
 #include "comm/Common.h"
+#include <stdatomic.h>
 
 ///////////////
 //  DEFINES  //
@@ -112,19 +113,12 @@ typedef struct MIDIData
     unsigned char data2;   /**< Second data byte. Meaning depends on message type. */
 } MIDIData;
 
-typedef struct MIDIDataRingBuffer
-{
-    MIDIData buffer[MIDI_STREAM_BUFFER_SIZE];
-    U2 read;
-    U2 write;
-} MIDIDataRingBuffer;
-
 ////////////////////////
 //  PUBLIC FUNCTIONS  //
 ////////////////////////
 
-void MIDI_PopRingBuffer(MIDIData* ringBuffer, MIDIData* outBuffer, U4* write, U4* read);
-bool MIDI_PushRingBuffer(MIDIData* ringBuffer, MIDIData data, U4* write, U4* read);
-MIDIData MIDI_PeakRingBuffer(MIDIData* ringBuffer, U4* read);
+void MIDI_PopRingBuffer(MIDIData* ringBuffer, MIDIData* outBuffer, atomic_uint* write, atomic_uint* read);
+bool MIDI_PushRingBuffer(MIDIData* ringBuffer, MIDIData data, atomic_uint* write, atomic_uint* read);
+MIDIData MIDI_PeakRingBuffer(MIDIData* ringBuffer, atomic_uint* read);
 
 #endif

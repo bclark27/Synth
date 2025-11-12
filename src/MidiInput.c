@@ -96,7 +96,7 @@ Module * MidiInput_init(char* name)
   for (int i = 0; i < MIDIINPUT_MIDI_CONTROLCOUNT; i++)
   {
     mi->midiRingRead[i] = 0;
-    mi->midiRingWrite[i] = 1;
+    mi->midiRingWrite[i] = 0;
   }
 
   return (Module*)mi;
@@ -123,7 +123,6 @@ static void updateState(void * modPtr)
   MIDI_PopRingBuffer(mi->midiControlsRingBuffer, CURR_MIDIDATA_PORT_ADDR(mi, MIDIINPUT_MIDI_OUTPUT_OUTPUT), &(mi->midiRingWrite[MIDIINPUT_MIDI_OUTPUT_OUTPUT]), &(mi->midiRingRead[MIDIINPUT_MIDI_OUTPUT_OUTPUT]));
 
   /*
-  */
   for (int i = 0; i < MIDI_STREAM_BUFFER_SIZE; i++)
   {
     U4 type = CURR_MIDIDATA_PORT_ADDR(mi, MIDIINPUT_MIDI_OUTPUT_OUTPUT)[i].type;
@@ -132,6 +131,7 @@ static void updateState(void * modPtr)
       printf("%d: %02x\n", i, type);
     }
   }
+  */
 }
 
 static void pushCurrToPrev(void * modPtr)
