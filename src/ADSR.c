@@ -112,7 +112,7 @@ static Module vtable = {
 
 #define DEFAULT_CONTROL_A   0.01f
 #define DEFAULT_CONTROL_D   0.05f
-#define DEFAULT_CONTROL_S   0.1f
+#define DEFAULT_CONTROL_S   0.6f
 #define DEFAULT_CONTROL_R   0.3f
 
 //////////////////////

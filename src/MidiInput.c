@@ -145,7 +145,7 @@ static void pushCurrToPrev(void * modPtr)
 static void * getOutputAddr(void * modPtr, ModularPortID port)
 {
   if (port < MIDIINPUT_OUTCOUNT) return PREV_VOLT_STREAM_PORT_ADDR(modPtr, port);
-  if ((port - MIDIINPUT_OUTCOUNT) < MIDIINPUT_MIDI_OUTCOUNT) return PREV_MIDIDATA_PORT_ADDR(modPtr, port - MIDIINPUT_OUTCOUNT);
+  else if ((port - MIDIINPUT_OUTCOUNT) < MIDIINPUT_MIDI_OUTCOUNT) return PREV_MIDIDATA_PORT_ADDR(modPtr, port - MIDIINPUT_OUTCOUNT);
   return NULL;
 }
 
@@ -159,21 +159,21 @@ static void * getInputAddr(void * modPtr, ModularPortID port)
 static ModulePortType getInputType(void * modPtr, ModularPortID port)
 {
   if (port < MIDIINPUT_INCOUNT) return ModulePortType_VoltStream;
-  if ((port - MIDIINPUT_INCOUNT) < MIDIINPUT_MIDI_INCOUNT) return ModulePortType_MIDIStream;
+  else if ((port - MIDIINPUT_INCOUNT) < MIDIINPUT_MIDI_INCOUNT) return ModulePortType_MIDIStream;
   return ModulePortType_None;
 }
 
 static ModulePortType getOutputType(void * modPtr, ModularPortID port)
 {
   if (port < MIDIINPUT_OUTCOUNT) return ModulePortType_VoltStream;
-  if ((port - MIDIINPUT_OUTCOUNT) < MIDIINPUT_MIDI_OUTCOUNT) return ModulePortType_MIDIStream;
+  else if ((port - MIDIINPUT_OUTCOUNT) < MIDIINPUT_MIDI_OUTCOUNT) return ModulePortType_MIDIStream;
   return ModulePortType_None;
 }
 
 static ModulePortType getControlType(void * modPtr, ModularPortID port)
 {
   if (port < MIDIINPUT_CONTROLCOUNT) return ModulePortType_VoltControl;
-  if ((port - MIDIINPUT_CONTROLCOUNT) < MIDIINPUT_MIDI_CONTROLCOUNT) return ModulePortType_MIDIControl;
+  else if ((port - MIDIINPUT_CONTROLCOUNT) < MIDIINPUT_MIDI_CONTROLCOUNT) return ModulePortType_MIDIControl;
   return ModulePortType_None;
 }
 
@@ -195,7 +195,7 @@ static U4 getControlCount(void * modPtr)
 static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
   if (id < MIDIINPUT_CONTROLCOUNT) ((MidiInput*)modPtr)->controlsCurr[id] = *(Volt*)val;
-  if ((id - MIDIINPUT_CONTROLCOUNT) < MIDIINPUT_MIDI_CONTROLCOUNT) 
+  else if ((id - MIDIINPUT_CONTROLCOUNT) < MIDIINPUT_MIDI_CONTROLCOUNT) 
   {
     bool good = MIDI_PushRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - MIDIINPUT_CONTROLCOUNT), *(MIDIData*)val, &(((MidiInput*)modPtr)->midiRingWrite[id - MIDIINPUT_CONTROLCOUNT]), &(((MidiInput*)modPtr)->midiRingRead[id - MIDIINPUT_CONTROLCOUNT]));
     if (!good) printf("dropped midi packet\n");
@@ -205,12 +205,12 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
 static void getControlVal(void * modPtr, ModularPortID id, void* ret)
 {
   if (id < MIDIINPUT_CONTROLCOUNT) *(Volt*)ret = ((MidiInput*)modPtr)->controlsCurr[id];
-  if ((id - MIDIINPUT_CONTROLCOUNT) < MIDIINPUT_MIDI_CONTROLCOUNT) *(MIDIData*)ret = MIDI_PeakRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - MIDIINPUT_CONTROLCOUNT), &(((MidiInput*)modPtr)->midiRingRead[id - MIDIINPUT_CONTROLCOUNT]));
+  else if ((id - MIDIINPUT_CONTROLCOUNT) < MIDIINPUT_MIDI_CONTROLCOUNT) *(MIDIData*)ret = MIDI_PeakRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - MIDIINPUT_CONTROLCOUNT), &(((MidiInput*)modPtr)->midiRingRead[id - MIDIINPUT_CONTROLCOUNT]));
 }
 
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
 {
   MidiInput * mi = (MidiInput*)modPtr;
   if (port < MIDIINPUT_INCOUNT) mi->inputPorts[port] = readAddr;
-  if ((port - MIDIINPUT_INCOUNT) < MIDIINPUT_MIDI_INCOUNT) mi->inputMIDIPorts[port - MIDIINPUT_INCOUNT] = readAddr;
+  else if ((port - MIDIINPUT_INCOUNT) < MIDIINPUT_MIDI_INCOUNT) mi->inputMIDIPorts[port - MIDIINPUT_INCOUNT] = readAddr;
 }

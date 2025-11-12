@@ -217,7 +217,7 @@ static void pushCurrToPrev(void * modPtr)
 static void * getOutputAddr(void * modPtr, ModularPortID port)
 {
   if (port < POLYKEYS_OUTCOUNT) return PREV_VOLT_STREAM_PORT_ADDR(modPtr, port);
-  if ((port - POLYKEYS_OUTCOUNT) < POLYKEYS_MIDI_OUTCOUNT) return PREV_MIDIDATA_PORT_ADDR(modPtr, port - POLYKEYS_OUTCOUNT);
+  else if ((port - POLYKEYS_OUTCOUNT) < POLYKEYS_MIDI_OUTCOUNT) return PREV_MIDIDATA_PORT_ADDR(modPtr, port - POLYKEYS_OUTCOUNT);
 
   return NULL;
 }
@@ -225,7 +225,7 @@ static void * getOutputAddr(void * modPtr, ModularPortID port)
 static void * getInputAddr(void * modPtr, ModularPortID port)
 {
     if (port < POLYKEYS_INCOUNT) return IN_VOLT_STREAM_PORT(modPtr, port);
-    if ((port - POLYKEYS_INCOUNT) < POLYKEYS_MIDI_INCOUNT) return IN_MIDIDADA_PORT(modPtr, port - POLYKEYS_INCOUNT);
+    else if ((port - POLYKEYS_INCOUNT) < POLYKEYS_MIDI_INCOUNT) return IN_MIDIDADA_PORT(modPtr, port - POLYKEYS_INCOUNT);
 
   return NULL;
 }
@@ -233,21 +233,21 @@ static void * getInputAddr(void * modPtr, ModularPortID port)
 static ModulePortType getInputType(void * modPtr, ModularPortID port)
 {
   if (port < POLYKEYS_INCOUNT) return ModulePortType_VoltStream;
-  if ((port - POLYKEYS_INCOUNT) < POLYKEYS_MIDI_INCOUNT) return ModulePortType_MIDIStream;
+  else if ((port - POLYKEYS_INCOUNT) < POLYKEYS_MIDI_INCOUNT) return ModulePortType_MIDIStream;
   return ModulePortType_None;
 }
 
 static ModulePortType getOutputType(void * modPtr, ModularPortID port)
 {
   if (port < POLYKEYS_OUTCOUNT) return ModulePortType_VoltStream;
-  if ((port - POLYKEYS_OUTCOUNT) < POLYKEYS_MIDI_OUTCOUNT) return ModulePortType_MIDIStream;
+  else if ((port - POLYKEYS_OUTCOUNT) < POLYKEYS_MIDI_OUTCOUNT) return ModulePortType_MIDIStream;
   return ModulePortType_None;
 }
 
 static ModulePortType getControlType(void * modPtr, ModularPortID port)
 {
   if (port < POLYKEYS_CONTROLCOUNT) return ModulePortType_VoltControl;
-  if ((port - POLYKEYS_CONTROLCOUNT) < POLYKEYS_MIDI_CONTROLCOUNT) return ModulePortType_MIDIControl;
+  else if ((port - POLYKEYS_CONTROLCOUNT) < POLYKEYS_MIDI_CONTROLCOUNT) return ModulePortType_MIDIControl;
   return ModulePortType_None;
 }
 
@@ -268,30 +268,28 @@ static U4 getControlCount(void * modPtr)
 
 static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
-  if (id < POLYKEYS_CONTROLCOUNT) 
-  {
-    printf("A %f\n", ((PolyKeys*)modPtr)->controlsCurr[id]);
-    ((PolyKeys*)modPtr)->controlsCurr[id] = *(Volt*)val;
-    printf("B %f\n", ((PolyKeys*)modPtr)->controlsCurr[id]);
-  }
-if ((id - POLYKEYS_CONTROLCOUNT) < POLYKEYS_MIDI_CONTROLCOUNT) 
-  {
-    bool good = MIDI_PushRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - POLYKEYS_CONTROLCOUNT), *(MIDIData*)val, &(((PolyKeys*)modPtr)->midiRingWrite[id - POLYKEYS_CONTROLCOUNT]), &(((PolyKeys*)modPtr)->midiRingRead[id - POLYKEYS_CONTROLCOUNT]));
-    if (!good) printf("dropped midi packet\n");
-  }
+    if (id < POLYKEYS_CONTROLCOUNT) 
+    {
+        ((PolyKeys*)modPtr)->controlsCurr[id] = *(Volt*)val;
+    }
+    else if ((id - POLYKEYS_CONTROLCOUNT) < POLYKEYS_MIDI_CONTROLCOUNT) 
+    {
+        bool good = MIDI_PushRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - POLYKEYS_CONTROLCOUNT), *(MIDIData*)val, &(((PolyKeys*)modPtr)->midiRingWrite[id - POLYKEYS_CONTROLCOUNT]), &(((PolyKeys*)modPtr)->midiRingRead[id - POLYKEYS_CONTROLCOUNT]));
+        if (!good) printf("dropped midi packet\n");
+    }
 }
 
 static void getControlVal(void * modPtr, ModularPortID id, void* ret)
 {
   if (id < POLYKEYS_CONTROLCOUNT) *(Volt*)ret = ((PolyKeys*)modPtr)->controlsCurr[id];
-  if ((id - POLYKEYS_CONTROLCOUNT) < POLYKEYS_MIDI_CONTROLCOUNT) *(MIDIData*)ret = MIDI_PeakRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - POLYKEYS_CONTROLCOUNT), &(((PolyKeys*)modPtr)->midiRingRead[id - POLYKEYS_CONTROLCOUNT]));
+  else if ((id - POLYKEYS_CONTROLCOUNT) < POLYKEYS_MIDI_CONTROLCOUNT) *(MIDIData*)ret = MIDI_PeakRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - POLYKEYS_CONTROLCOUNT), &(((PolyKeys*)modPtr)->midiRingRead[id - POLYKEYS_CONTROLCOUNT]));
 }
 
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
 {
     PolyKeys * mi = (PolyKeys*)modPtr;
   if (port < POLYKEYS_INCOUNT) mi->inputPorts[port] = readAddr;
-  if ((port - POLYKEYS_INCOUNT) < POLYKEYS_MIDI_INCOUNT) mi->inputMIDIPorts[port - POLYKEYS_INCOUNT] = readAddr;
+  else if ((port - POLYKEYS_INCOUNT) < POLYKEYS_MIDI_INCOUNT) mi->inputMIDIPorts[port - POLYKEYS_INCOUNT] = readAddr;
 }
 
 static void initAdsrInputBuffers(void)
@@ -406,8 +404,20 @@ static void consumeMidiMessage(PolyKeys* pk)
             // if not on then we need to kick someone out
             case MIDIDataType_NoteOn:
             {
-                idx = getFreeOrOldVoice(pk);
-                v = &pk->voices[idx];
+                v = NULL;
+                for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
+                {
+                    if (pk->voices[i].note == data.data1)
+                    {
+                        v = &pk->voices[i];
+                        break;
+                    }
+                }
+
+                if (!v)
+                {
+                    v = &pk->voices[getFreeOrOldVoice(pk)];
+                }
                 v->noteIsOn = true;
                 v->adsrActive = true;
                 v->firstOnSignal = true;
@@ -423,7 +433,7 @@ static void consumeMidiMessage(PolyKeys* pk)
                 v = NULL;
                 for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
                 {
-                    if (pk->voices[i].note == data.data1 && pk->voices[i].adsrActive)
+                    if (pk->voices[i].note == data.data1)
                     {
                         v = &pk->voices[i];
                         //printf("Turning OFF voice %d with note %d\n", i, v->note);

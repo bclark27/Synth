@@ -78,8 +78,9 @@ float knobs[9] = {0,0,0,0,0,0,0,0,0};
 
 void knobHelper(char* modName, char* cvName, int knobNum, int direction, float div)
 {
-  if (ModularSynth_getControlTypeByName(modName, cvName) != ModulePortType_VoltControl) return;
-
+  int t = ModularSynth_getControlTypeByName(modName, cvName);
+  if (t != ModulePortType_VoltControl) return;
+  
   ModularSynth_getControlByName(modName, cvName, &knobs[knobNum]);
   knobs[knobNum] += direction / div;
   ModularSynth_setControlByName(modName, cvName, &knobs[knobNum]);

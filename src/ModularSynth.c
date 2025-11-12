@@ -399,7 +399,7 @@ bool ModularSynth_setControlByName(char * name, char * controlName, void* val)
 
 void ModularSynth_getControlByName(char * name, char * controlName, void* ret)
 {
-  if (!name || !controlName) return;
+  if (!name || !controlName || !ret) return;
 
   Module * mod = getModuleByName(name);
   if (!mod) return;
