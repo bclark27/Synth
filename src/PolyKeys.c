@@ -40,6 +40,7 @@ static void getControlVal(void * modPtr, ModularPortID id, void* ret);
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 static void initAdsrInputBuffers(void);
 static void initVoice(PolyKeysVoice* voice);
+static inline U4 getFreeOrOldVoice(PolyKeys* pk);
 static void consumeMidiMessage(PolyKeys* pk);
 static void voiceOnSetup(PolyKeys* pk, PolyKeysVoice* voice);
 static void applyControlValsToModules(PolyKeys* pk, PolyKeysVoice* voice); // skip if voice setup ran, it will put in the values
@@ -122,6 +123,8 @@ Module * PolyKeys_init(char* name)
     {
         initVoice(&pk->voices[i]);
     }
+
+    return (Module*)pk;
 }
 
 /////////////////////////
@@ -152,7 +155,7 @@ static void updateState(void * modPtr)
     PolyKeys * pk = (PolyKeys*)modPtr;
 
     consumeMidiMessage(pk);
-
+    
     bool compileVoice[POLYKEYS_MAX_VOICES];
     for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
     {
@@ -161,6 +164,7 @@ static void updateState(void * modPtr)
         if (!voice->adsrActive)
         {
             compileVoice[i] = false;
+            continue;
         }
 
         if (voice->firstOnSignal)
@@ -273,7 +277,7 @@ static void initAdsrInputBuffers(void)
     {
         fakeAdsrStart[i] = i == 0 ? VOLTSTD_GATE_LOW : VOLTSTD_GATE_HIGH;
         fakeAdsrSustain[i] = VOLTSTD_GATE_HIGH;
-        fakeAdsrStart[i] = VOLTSTD_GATE_LOW;
+        fakeAdsrRelease[i] = VOLTSTD_GATE_LOW;
     }
 }
 
@@ -338,6 +342,24 @@ static void initVoice(PolyKeysVoice* voice)
     );
 }
 
+static inline U4 getFreeOrOldVoice(PolyKeys* pk)
+{
+    U8 oldestTime = 0;
+    U4 oldestIdx = 0;
+    for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
+    {
+        if (!pk->voices->adsrActive) return i;
+
+        if (oldestTime <= pk->voices->noteAge)
+        {
+            oldestIdx = i;
+            oldestTime = pk->voices->noteAge;
+        }
+    }
+
+    return oldestIdx;
+}
+
 static void consumeMidiMessage(PolyKeys* pk)
 {
     // in here we read all the midi data off the input
@@ -345,6 +367,58 @@ static void consumeMidiMessage(PolyKeys* pk)
 
     // mainly if a the voices are full and a new note is pressed then kick off the oldest one
     // if the note is turning on for the first time then set noteIsOn, adsrActive, firstOnSignal, note, startVelocity
+
+    PolyKeysVoice* v;
+    int idx;
+    for (int i = 0; i < MIDI_STREAM_BUFFER_SIZE; i++)
+    {
+        MIDIData data = IN_MIDIDADA_PORT(pk, POLYKEYS_MIDI_INPUT_MIDIIN)[i];
+
+        switch (data.type)
+        {
+            // if not on then we need to kick someone out
+            case MIDIDataType_NoteOn:
+            {
+                idx = getFreeOrOldVoice(pk);
+                v = &pk->voices[idx];
+                v->noteIsOn = true;
+                v->adsrActive = true;
+                v->firstOnSignal = true;
+                v->note = data.data1;
+                v->startVelocity = data.data2;
+                //printf("Turning on voice %d with note %d\n", idx, v->note);
+                break;
+            }
+            // if note off then we can set one of the notes here to off which corrosponds
+            case MIDIDataType_NoteOff:
+            {
+                v = NULL;
+                for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
+                {
+                    if (pk->voices->note == data.data1)
+                    {
+                        v = &pk->voices[i];
+                        //printf("Turning OFF voice %d with note %d\n", i, v->note);
+                        break;
+                    }
+                }
+
+                if (!v) break;
+
+                v->noteIsOn = false;
+                break;
+            }
+            case MIDIDataType_None:
+            {
+                break;
+            }
+            default:
+            {
+                //printf("Unused midi info: %d\n", data.type);
+                break;
+            }
+        }
+    }
 }
 
 static void voiceOnSetup(PolyKeys* pk, PolyKeysVoice* voice)
@@ -370,16 +444,13 @@ static void applyControlValsToModules(PolyKeys* pk, PolyKeysVoice* voice)
 static inline void assignADSRBuffer(PolyKeys* pk, PolyKeysVoice* voice)
 {
     // depending on the values of noteIsOn and firstOnSignal then set the input gate buffer of the adsr
-    if (voice->noteIsOn)
+    if (voice->firstOnSignal)
     {
-        if (voice->firstOnSignal)
-        {
-            voice->adsr->inputPorts[ADSR_IN_PORT_GATE] = fakeAdsrStart;
-        }
-        else
-        {
-            voice->adsr->inputPorts[ADSR_IN_PORT_GATE] = fakeAdsrSustain;
-        }
+        voice->adsr->inputPorts[ADSR_IN_PORT_GATE] = fakeAdsrStart;
+    } 
+    else if (voice->noteIsOn)
+    {
+        voice->adsr->inputPorts[ADSR_IN_PORT_GATE] = fakeAdsrSustain;
     }
     else
     {

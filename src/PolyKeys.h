@@ -39,6 +39,7 @@
 #define POLYKEYS_MIDI_OUTCOUNT    0
 #define POLYKEYS_MIDI_CONTROLCOUNT    0
 
+#define POLYKEYS_MIDI_INPUT_MIDIIN  0
 
 ///////////
 // TYPES //
@@ -78,7 +79,7 @@ typedef struct PolyKeys
   R4 controlsPrev[POLYKEYS_CONTROLCOUNT];
 
   // input ports
-  MIDISataStream inputMIDIPorts[POLYKEYS_MIDI_INCOUNT];
+  MIDIData* inputMIDIPorts[POLYKEYS_MIDI_INCOUNT];
 
   // output ports
   MIDIData outputMIDIPortsPrev[POLYKEYS_MIDI_OUTCOUNT * MIDI_STREAM_BUFFER_SIZE];

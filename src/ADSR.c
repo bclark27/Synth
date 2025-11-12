@@ -156,25 +156,26 @@ static void free_adsr(void * modPtr)
 static void updateState(void * modPtr)
 {
   ADSR * adsr = (ADSR *)modPtr;
-
+  
   for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
   {
     R4 currA = INTERP(GET_CONTROL_PREV_A(adsr), GET_CONTROL_CURR_A(adsr), MODULE_BUFFER_SIZE, i);
     R4 currD = INTERP(GET_CONTROL_PREV_D(adsr), GET_CONTROL_CURR_D(adsr), MODULE_BUFFER_SIZE, i);
     R4 currS = INTERP(GET_CONTROL_PREV_S(adsr), GET_CONTROL_CURR_S(adsr), MODULE_BUFFER_SIZE, i);
     R4 currR = INTERP(GET_CONTROL_PREV_R(adsr), GET_CONTROL_CURR_R(adsr), MODULE_BUFFER_SIZE, i);
-
+    
     currA += IN_PORT_A(adsr) ? IN_PORT_A(adsr)[i] : 0;
     currD += IN_PORT_D(adsr) ? IN_PORT_D(adsr)[i] : 0;
     currS += IN_PORT_S(adsr) ? IN_PORT_S(adsr)[i] : 0;
     currR += IN_PORT_R(adsr) ? IN_PORT_R(adsr)[i] : 0;
-
+    
     currA = MAX(0, currA);
     currD = MAX(0, currD);
     currS = MAX(0, currS);
     currR = MAX(0, currR);
-
+    
     R4 gateVal = IN_PORT_GATE(adsr) ? IN_PORT_GATE(adsr)[i] : 0;
+    //printf("%f\n", gateVal);
     bool isNewHigh = adsr->prevSampleValue < VOLTSTD_GATE_HIGH_THRESH &&
                       gateVal > VOLTSTD_GATE_HIGH_THRESH;
 

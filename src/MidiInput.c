@@ -48,11 +48,11 @@ static char * inPortNames[MIDIINPUT_INCOUNT + MIDIINPUT_MIDI_INCOUNT] = {
 };
 
 static char * outPortNames[MIDIINPUT_OUTCOUNT + MIDIINPUT_MIDI_OUTCOUNT] = {
-  "Output",
+  "MidiOut",
 };
 
 static char * controlNames[MIDIINPUT_CONTROLCOUNT + MIDIINPUT_MIDI_CONTROLCOUNT] = {
-  "Input",
+  "MidiIn",
 };
 
 static Module vtable = {
@@ -123,14 +123,15 @@ static void updateState(void * modPtr)
   MIDI_PopRingBuffer(mi->midiControlsRingBuffer, CURR_MIDIDATA_PORT_ADDR(mi, MIDIINPUT_MIDI_OUTPUT_OUTPUT), &(mi->midiRingWrite[MIDIINPUT_MIDI_OUTPUT_OUTPUT]), &(mi->midiRingRead[MIDIINPUT_MIDI_OUTPUT_OUTPUT]));
 
   /*
+  */
   for (int i = 0; i < MIDI_STREAM_BUFFER_SIZE; i++)
   {
-    if (CURR_MIDIDATA_PORT_ADDR(mi, MIDIINPUT_MIDI_OUTPUT_OUTPUT)[i].type != MIDIDataType_None)
+    U4 type = CURR_MIDIDATA_PORT_ADDR(mi, MIDIINPUT_MIDI_OUTPUT_OUTPUT)[i].type;
+    if (type != MIDIDataType_None)
     {
-      printf("got\n");
+      printf("%d: %02x\n", i, type);
     }
   }
-  */
 }
 
 static void pushCurrToPrev(void * modPtr)
@@ -144,8 +145,7 @@ static void pushCurrToPrev(void * modPtr)
 static void * getOutputAddr(void * modPtr, ModularPortID port)
 {
   if (port < MIDIINPUT_OUTCOUNT) return PREV_VOLT_STREAM_PORT_ADDR(modPtr, port);
-  if ((port - MIDIINPUT_OUTCOUNT) < MIDIINPUT_MIDI_INCOUNT) return PREV_MIDIDATA_PORT_ADDR(modPtr, port - MIDIINPUT_OUTCOUNT);
-
+  if ((port - MIDIINPUT_OUTCOUNT) < MIDIINPUT_MIDI_OUTCOUNT) return PREV_MIDIDATA_PORT_ADDR(modPtr, port - MIDIINPUT_OUTCOUNT);
   return NULL;
 }
 

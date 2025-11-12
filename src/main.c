@@ -136,7 +136,7 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
         .data1=pad->id,
         .data2=pad->padVelocity,
       };
-      ModularSynth_setControlByName("mdin", "Input", &md);
+      ModularSynth_setControlByName("mdin", "MidiIn", &md);
 
       AbletonPkt_Cmd_Pad cmd_p = { 
         .x=pad->padX, 
@@ -153,7 +153,7 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
         .data1=pad->id,
         .data2=pad->padVelocity,
       };
-      ModularSynth_setControlByName("mdin", "Input", &md);
+      ModularSynth_setControlByName("mdin", "MidiIn", &md);
 
       AbletonPkt_Cmd_Pad cmd_p = { 
         .x=pad->padX, 
@@ -170,7 +170,7 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
         .data1=pad->id,
         .data2=pad->padVelocity,
       };
-      ModularSynth_setControlByName("mdin", "Input", &md);
+      ModularSynth_setControlByName("mdin", "MidiIn", &md);
     }
   }
 
@@ -251,7 +251,7 @@ int main(void)
   IPC_ConnectToService("PushEvents", OnPushEvent);
   initColors();
   ModularSynth_init();
-  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth2");
+  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth3");
   AudioDevice_init();
   AudioDevice_LoopForever();
   return 0;

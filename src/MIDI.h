@@ -112,6 +112,13 @@ typedef struct MIDIData
     unsigned char data2;   /**< Second data byte. Meaning depends on message type. */
 } MIDIData;
 
+typedef struct MIDIDataRingBuffer
+{
+    MIDIData buffer[MIDI_STREAM_BUFFER_SIZE];
+    U2 read;
+    U2 write;
+} MIDIDataRingBuffer;
+
 ////////////////////////
 //  PUBLIC FUNCTIONS  //
 ////////////////////////
