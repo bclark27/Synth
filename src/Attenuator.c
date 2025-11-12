@@ -144,7 +144,6 @@ static void updateState(void * modPtr)
 
     // out = mult * inputSig
     OUT_PORT_AUD(attn)[i] = IN_PORT_AUD(attn)[i] * attnMult;
-
   }
 }
 

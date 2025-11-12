@@ -14,7 +14,7 @@
 #define PREV_MIDIDATA_PORT_ADDR(mod, port)    (((PolyKeys*)(mod))->outputMIDIPortsPrev + (port))
 #define CURR_MIDIDATA_PORT_ADDR(mod, port)    (((PolyKeys*)(mod))->outputMIDIPortsCurr + (port))
 
-#define OUT_PORT_OUTPUT(m)                (CURR_MIDIDATA_PORT_ADDR(m, POLYKEYS_MIDI_OUTPUT_OUTPUT))  
+#define OUT_PORT_OUTPUT(m)                (CURR_VOLT_STREAM_PORT_ADDR(m, POLYKEYS_OUTPORT_AUDIO))  
 
 #define GET_MIDI_CONTROL_RING_BUFFER(mod, port)   (((PolyKeys*)(mod))->midiControlsRingBuffer + (MIDI_STREAM_BUFFER_SIZE * (port)))
 
@@ -42,6 +42,7 @@ static void initAdsrInputBuffers(void);
 static void initVoice(PolyKeysVoice* voice);
 static inline U4 getFreeOrOldVoice(PolyKeys* pk);
 static void consumeMidiMessage(PolyKeys* pk);
+static inline Volt midiNoteToFreqVolt(int midi_note);
 static void voiceOnSetup(PolyKeys* pk, PolyKeysVoice* voice);
 static void applyControlValsToModules(PolyKeys* pk, PolyKeysVoice* voice); // skip if voice setup ran, it will put in the values
 static inline void assignADSRBuffer(PolyKeys* pk, PolyKeysVoice* voice);
@@ -155,7 +156,7 @@ static void updateState(void * modPtr)
     PolyKeys * pk = (PolyKeys*)modPtr;
 
     consumeMidiMessage(pk);
-    
+
     bool compileVoice[POLYKEYS_MAX_VOICES];
     for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
     {
@@ -183,6 +184,25 @@ static void updateState(void * modPtr)
         voice->firstOnSignal = false;
 
         compileVoice[i] = true;
+    }
+
+    for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+    {
+        OUT_PORT_OUTPUT(pk)[i] = 0;
+    }
+
+    for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
+    {
+        if (!compileVoice[i]) continue;
+        for (int k = 0; k < MODULE_BUFFER_SIZE; k++)
+        {
+            OUT_PORT_OUTPUT(pk)[k] += pk->voices[i].voiceOutputBuffer[k];
+        }
+    }
+
+    for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+    {
+        OUT_PORT_OUTPUT(pk)[i] /= POLYKEYS_MAX_VOICES;
     }
 }
 
@@ -248,8 +268,13 @@ static U4 getControlCount(void * modPtr)
 
 static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
-  if (id < POLYKEYS_CONTROLCOUNT) ((PolyKeys*)modPtr)->controlsCurr[id] = *(Volt*)val;
-  if ((id - POLYKEYS_CONTROLCOUNT) < POLYKEYS_MIDI_CONTROLCOUNT) 
+  if (id < POLYKEYS_CONTROLCOUNT) 
+  {
+    printf("A %f\n", ((PolyKeys*)modPtr)->controlsCurr[id]);
+    ((PolyKeys*)modPtr)->controlsCurr[id] = *(Volt*)val;
+    printf("B %f\n", ((PolyKeys*)modPtr)->controlsCurr[id]);
+  }
+if ((id - POLYKEYS_CONTROLCOUNT) < POLYKEYS_MIDI_CONTROLCOUNT) 
   {
     bool good = MIDI_PushRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - POLYKEYS_CONTROLCOUNT), *(MIDIData*)val, &(((PolyKeys*)modPtr)->midiRingWrite[id - POLYKEYS_CONTROLCOUNT]), &(((PolyKeys*)modPtr)->midiRingRead[id - POLYKEYS_CONTROLCOUNT]));
     if (!good) printf("dropped midi packet\n");
@@ -348,12 +373,12 @@ static inline U4 getFreeOrOldVoice(PolyKeys* pk)
     U4 oldestIdx = 0;
     for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
     {
-        if (!pk->voices->adsrActive) return i;
+        if (!pk->voices[i].adsrActive) return i;
 
-        if (oldestTime <= pk->voices->noteAge)
+        if (oldestTime <= pk->voices[i].noteAge)
         {
             oldestIdx = i;
-            oldestTime = pk->voices->noteAge;
+            oldestTime = pk->voices[i].noteAge;
         }
     }
 
@@ -374,6 +399,8 @@ static void consumeMidiMessage(PolyKeys* pk)
     {
         MIDIData data = IN_MIDIDADA_PORT(pk, POLYKEYS_MIDI_INPUT_MIDIIN)[i];
 
+        //if (data.type != MIDIDataType_None) printf("%d: %02x, %d\n", i, data.type, data.data1);
+
         switch (data.type)
         {
             // if not on then we need to kick someone out
@@ -386,6 +413,7 @@ static void consumeMidiMessage(PolyKeys* pk)
                 v->firstOnSignal = true;
                 v->note = data.data1;
                 v->startVelocity = data.data2;
+                v->velocityAmplitudeMultiplier = data.data2 / 127.0f;
                 //printf("Turning on voice %d with note %d\n", idx, v->note);
                 break;
             }
@@ -395,7 +423,7 @@ static void consumeMidiMessage(PolyKeys* pk)
                 v = NULL;
                 for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
                 {
-                    if (pk->voices->note == data.data1)
+                    if (pk->voices[i].note == data.data1 && pk->voices[i].adsrActive)
                     {
                         v = &pk->voices[i];
                         //printf("Turning OFF voice %d with note %d\n", i, v->note);
@@ -421,6 +449,11 @@ static void consumeMidiMessage(PolyKeys* pk)
     }
 }
 
+static inline Volt midiNoteToFreqVolt(int midi_note)
+{
+    return (midi_note - 48) / 12.0f;
+}
+
 static void voiceOnSetup(PolyKeys* pk, PolyKeysVoice* voice)
 {
     /*
@@ -434,11 +467,47 @@ static void voiceOnSetup(PolyKeys* pk, PolyKeysVoice* voice)
     TODO: also be sure to set the control values of the modules and push curr to prev so no interp goes weird between note presses***
     fill up the voiceInputFreqBuffer with currect note freq
     */
+
+    Volt freq = midiNoteToFreqVolt(voice->note);
+    for (int i = 0; i < MIDI_STREAM_BUFFER_SIZE; i++)
+    {
+        voice->voiceInputFreqBuffer[i] = freq;
+    }
+
+    // put control updates here
+    applyControlValsToModules(pk, voice);
+
+    voice->adsr->module.pushCurrToPrev(voice->adsr);
+    voice->vco->module.pushCurrToPrev(voice->vco);
+    voice->flt->module.pushCurrToPrev(voice->flt);
+    voice->attn->module.pushCurrToPrev(voice->attn);
 }
 
 static void applyControlValsToModules(PolyKeys* pk, PolyKeysVoice* voice)
 {
     // push all the relevent control values of the full poly module to the relivent sub modules
+    return;
+    R4 A = pk->controlsCurr[POLYKEYS_CONTROL_A];
+    R4 D = pk->controlsCurr[POLYKEYS_CONTROL_D];
+    R4 S = pk->controlsCurr[POLYKEYS_CONTROL_S];
+    R4 R = pk->controlsCurr[POLYKEYS_CONTROL_R];
+    R4 fltEnvAmt = pk->controlsCurr[POLYKEYS_CONTROL_FILTER_ENV_AMT];
+    R4 fltFreq = pk->controlsCurr[POLYKEYS_CONTROL_FILTER_FREQ];
+    R4 fltQ = pk->controlsCurr[POLYKEYS_CONTROL_FILTER_Q];
+    R4 unison = pk->controlsCurr[POLYKEYS_CONTROL_UNISON];
+    R4 detune = pk->controlsCurr[POLYKEYS_CONTROL_DETUNE];
+    
+    voice->adsr->module.setControlVal(voice->adsr, ADSR_CONTROL_A, &A);
+    voice->adsr->module.setControlVal(voice->adsr, ADSR_CONTROL_D, &D);
+    voice->adsr->module.setControlVal(voice->adsr, ADSR_CONTROL_S, &S);
+    voice->adsr->module.setControlVal(voice->adsr, ADSR_CONTROL_R, &R);
+
+    voice->flt->module.setControlVal(voice->flt, FILTER_CONTROL_ENV, &fltEnvAmt);
+    voice->flt->module.setControlVal(voice->flt, FILTER_CONTROL_FREQ, &fltFreq);
+    voice->flt->module.setControlVal(voice->flt, FILTER_CONTROL_Q, &fltQ);
+
+    voice->vco->module.setControlVal(voice->vco, VCO_CONTROL_UNI, &unison);
+    voice->vco->module.setControlVal(voice->vco, VCO_CONTROL_DET, &detune);
 }
 
 static inline void assignADSRBuffer(PolyKeys* pk, PolyKeysVoice* voice)

@@ -133,9 +133,10 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
     {
       MIDIData md = {
         .type=MIDIDataType_NoteOff,
-        .data1=pad->id,
+        .data1=pad->id+36,
         .data2=pad->padVelocity,
       };
+      //printf("Pushing: %02x\n", md.type);
       ModularSynth_setControlByName("mdin", "MidiIn", &md);
 
       AbletonPkt_Cmd_Pad cmd_p = { 
@@ -150,9 +151,10 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
     {
       MIDIData md = {
         .type=MIDIDataType_NoteOn,
-        .data1=pad->id,
+        .data1=pad->id+36,
         .data2=pad->padVelocity,
       };
+      //printf("Pushing: %02x\n", md.type);
       ModularSynth_setControlByName("mdin", "MidiIn", &md);
 
       AbletonPkt_Cmd_Pad cmd_p = { 
@@ -167,10 +169,10 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
     {
       MIDIData md = {
         .type=MIDIDataType_AfterTouch,
-        .data1=pad->id,
+        .data1=pad->id+36,
         .data2=pad->padVelocity,
       };
-      ModularSynth_setControlByName("mdin", "MidiIn", &md);
+      //ModularSynth_setControlByName("mdin", "MidiIn", &md);
     }
   }
 
@@ -196,42 +198,42 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
     {
       case 0:
       {
-        knobHelper("osc1", "Freq", id, dir, 100);
+        knobHelper("pk", "Attack", id, dir, 100);
         break;
       }
       case 1:
       {
-        knobHelper("osc1", "Waveform", id, dir, 10);
+        knobHelper("pk", "Decay", id, dir, 100);
         break;
       }
       case 2:
       {
-        knobHelper("osc1", "Unison", id, dir, 10);
+        knobHelper("pk", "Sustain", id, dir, 100);
         break;
       }
       case 3:
       {
-        knobHelper("osc1", "Detune", id, dir, 1000);
+        knobHelper("pk", "Release", id, dir, 100);
         break;
       }
       case 4:
       {
-        knobHelper("f1", "Freq", id, dir, 10);
+        knobHelper("pk", "FltEnvAmt", id, dir, 100);
         break;
       }
       case 5:
       {
-        knobHelper("f1", "Env", id, dir, 10);
+        knobHelper("pk", "FltFreq", id, dir, 100);
         break;
       }
       case 6:
       {
-        knobHelper("lfo", "Freq", id, dir, 100);
+        knobHelper("pk", "Detune", id, dir, 100);
         break;
       }
       case 7:
       {
-        knobHelper("adsr", "Decay", id, dir, 100);
+        knobHelper("pk", "Unison", id, dir, 100);
         break;
       }
       default:
