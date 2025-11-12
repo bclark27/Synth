@@ -113,10 +113,24 @@ Module * PolyKeys_init(char* name)
     pk->module = vtable;
     pk->module.name = name;
 
+    // set all control values
+    pk->controlsCurr[POLYKEYS_CONTROL_A] = 0.3;
+    pk->controlsCurr[POLYKEYS_CONTROL_D] = 0.3;
+    pk->controlsCurr[POLYKEYS_CONTROL_S] = 0.3;
+    pk->controlsCurr[POLYKEYS_CONTROL_R] = 0.3;
+    pk->controlsCurr[POLYKEYS_CONTROL_DETUNE] = 1.03;
+    pk->controlsCurr[POLYKEYS_CONTROL_UNISON] = 5;
+    pk->controlsCurr[POLYKEYS_CONTROL_FILTER_ENV_AMT] = -4;
+    pk->controlsCurr[POLYKEYS_CONTROL_FILTER_Q] = -2;
+    pk->controlsCurr[POLYKEYS_CONTROL_FILTER_FREQ] = 0;
+
+    // push curr to prev
+    CONTROL_PUSH_TO_PREV(pk);
+
     for (int i = 0; i < POLYKEYS_MIDI_CONTROLCOUNT; i++)
     {
         pk->midiRingRead[i] = 0;
-        pk->midiRingWrite[i] = 1;
+        pk->midiRingWrite[i] = 0;
     }
 
     memset(pk->voices, 0, sizeof(PolyKeysVoice) * POLYKEYS_MAX_VOICES);
