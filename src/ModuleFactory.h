@@ -15,6 +15,7 @@
 #include "VCO.h"
 #include "Filter.h"
 #include "MidiInput.h"
+#include "PolyKeys.h"
 
 ///////////
 // TYPES //

@@ -93,8 +93,11 @@ Module * MidiInput_init(char* name)
   mi->module = vtable;
   mi->module.name = name;
 
-  mi->midiRingRead = 0;
-  mi->midiRingWrite = 1;
+  for (int i = 0; i < MIDIINPUT_MIDI_CONTROLCOUNT; i++)
+  {
+    mi->midiRingRead[i] = 0;
+    mi->midiRingWrite[i] = 1;
+  }
 
   return (Module*)mi;
 }
@@ -117,7 +120,17 @@ static void updateState(void * modPtr)
 {
   MidiInput * mi = (MidiInput*)modPtr;
 
-  MIDI_PopRingBuffer(mi->midiControlsRingBuffer, OUT_PORT_OUTPUT(mi), &mi->midiRingWrite, &mi->midiRingRead);
+  MIDI_PopRingBuffer(mi->midiControlsRingBuffer, CURR_MIDIDATA_PORT_ADDR(mi, MIDIINPUT_MIDI_OUTPUT_OUTPUT), &(mi->midiRingWrite[MIDIINPUT_MIDI_OUTPUT_OUTPUT]), &(mi->midiRingRead[MIDIINPUT_MIDI_OUTPUT_OUTPUT]));
+
+  /*
+  for (int i = 0; i < MIDI_STREAM_BUFFER_SIZE; i++)
+  {
+    if (CURR_MIDIDATA_PORT_ADDR(mi, MIDIINPUT_MIDI_OUTPUT_OUTPUT)[i].type != MIDIDataType_None)
+    {
+      printf("got\n");
+    }
+  }
+  */
 }
 
 static void pushCurrToPrev(void * modPtr)
@@ -184,14 +197,15 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
   if (id < MIDIINPUT_CONTROLCOUNT) ((MidiInput*)modPtr)->controlsCurr[id] = *(Volt*)val;
   if ((id - MIDIINPUT_CONTROLCOUNT) < MIDIINPUT_MIDI_CONTROLCOUNT) 
   {
-    MIDI_PushRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - MIDIINPUT_CONTROLCOUNT), *(MIDIData*)val, &((MidiInput*)modPtr)->midiRingWrite, &((MidiInput*)modPtr)->midiRingRead);
+    bool good = MIDI_PushRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - MIDIINPUT_CONTROLCOUNT), *(MIDIData*)val, &(((MidiInput*)modPtr)->midiRingWrite[id - MIDIINPUT_CONTROLCOUNT]), &(((MidiInput*)modPtr)->midiRingRead[id - MIDIINPUT_CONTROLCOUNT]));
+    if (!good) printf("dropped midi packet\n");
   }
 }
 
 static void getControlVal(void * modPtr, ModularPortID id, void* ret)
 {
   if (id < MIDIINPUT_CONTROLCOUNT) *(Volt*)ret = ((MidiInput*)modPtr)->controlsCurr[id];
-  if ((id - MIDIINPUT_CONTROLCOUNT) < MIDIINPUT_MIDI_CONTROLCOUNT) *(MIDIData*)ret = MIDI_PeakRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - MIDIINPUT_CONTROLCOUNT), &((MidiInput*)modPtr)->midiRingRead);
+  if ((id - MIDIINPUT_CONTROLCOUNT) < MIDIINPUT_MIDI_CONTROLCOUNT) *(MIDIData*)ret = MIDI_PeakRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - MIDIINPUT_CONTROLCOUNT), &(((MidiInput*)modPtr)->midiRingRead[id - MIDIINPUT_CONTROLCOUNT]));
 }
 
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)

@@ -22,6 +22,7 @@ const char * const ModuleTypeNames[ModuleType_COUNT] = {
     "VCO",
     "Filter",
     "MidiInput",
+    "PolyKeys",
   };
   
 /////////////////////////////

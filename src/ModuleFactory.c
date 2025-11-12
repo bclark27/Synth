@@ -50,6 +50,10 @@ Module * ModuleFactory_createModule(ModuleType type, char * name)
     case ModuleType_MidiInput:
     mod = MidiInput_init(name);
     break;
+
+    case ModuleType_PolyKeys:
+    mod = PolyKeys_init(name);
+    break;
   }
 
   return mod;

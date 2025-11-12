@@ -25,6 +25,7 @@ typedef enum ModuleType
   ModuleType_VCO,
   ModuleType_Filter,
   ModuleType_MidiInput,
+  ModuleType_PolyKeys,
 
   ModuleType_COUNT,
 } ModuleType;
@@ -39,8 +40,8 @@ typedef enum ModulePortType
   ModulePortType_Count,
 } ModulePortType;
 
-typedef R4* VoltStream;
 typedef R4 Volt;
+typedef Volt* VoltStream;
 typedef MIDIData* MIDISataStream;
 
 typedef U2 ModularPortID;
