@@ -570,18 +570,19 @@ static void applyControlValsToModules(PolyKeys* pk, PolyKeysVoice* voice)
     R4 unison = pk->controlsCurr[POLYKEYS_CONTROL_UNISON];
     R4 detune = pk->controlsCurr[POLYKEYS_CONTROL_DETUNE];
     
-    voice->adsr->module.setControlVal(voice->adsr, ADSR_CONTROL_A, &A);
-    voice->adsr->module.setControlVal(voice->adsr, ADSR_CONTROL_D, &D);
-    voice->adsr->module.setControlVal(voice->adsr, ADSR_CONTROL_S, &S);
-    voice->adsr->module.setControlVal(voice->adsr, ADSR_CONTROL_R, &R);
+    voice->adsr->controlsCurr[ADSR_CONTROL_A] = A;
+    voice->adsr->controlsCurr[ADSR_CONTROL_D] = D;
+    voice->adsr->controlsCurr[ADSR_CONTROL_S] = S;
+    voice->adsr->controlsCurr[ADSR_CONTROL_R] = R;
 
-    voice->flt->module.setControlVal(voice->flt, FILTER_CONTROL_ENV, &fltEnvAmt);
-    voice->flt->module.setControlVal(voice->flt, FILTER_CONTROL_FREQ, &fltFreq);
-    voice->flt->module.setControlVal(voice->flt, FILTER_CONTROL_Q, &fltQ);
 
-    voice->vco->module.setControlVal(voice->vco, VCO_CONTROL_UNI, &unison);
-    voice->vco->module.setControlVal(voice->vco, VCO_CONTROL_DET, &detune);
-    voice->vco->module.setControlVal(voice->vco, VCO_CONTROL_WAVE, &wave);
+    voice->flt->controlsCurr[FILTER_CONTROL_ENV] = fltEnvAmt;
+    voice->flt->controlsCurr[FILTER_CONTROL_FREQ] = fltFreq;
+    voice->flt->controlsCurr[FILTER_CONTROL_Q] = fltQ;
+
+    voice->vco->controlsCurr[VCO_CONTROL_UNI] = unison;
+    voice->vco->controlsCurr[VCO_CONTROL_DET] = detune;
+    voice->vco->controlsCurr[VCO_CONTROL_WAVE] = wave;
 }
 
 static inline void assignADSRBuffer(PolyKeys* pk, PolyKeysVoice* voice)

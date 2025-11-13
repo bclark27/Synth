@@ -2,8 +2,14 @@
 #include "AudioSettings.h"
 #include "ModularSynth.h"
 #include "comm/Common.h"
+#include <time.h>
 
 
+///////////////
+//  DEFINES  //
+///////////////
+
+#define SHOW_TIME
 
 /////////////////////////////
 //  FUNCTION DECLERATIONS  //
@@ -103,13 +109,42 @@ void AudioDevice_LoopForever(void)
 //  PRIVATE FUNCTIONS  //
 /////////////////////////
 
+struct timespec start, end;
+static double total_time = 0.0;
+static int count = 0;
 
-// ---- Your synth update ----
 // This fills synth_buffer with SYNTH_BUFFER_FRAMES of stereo samples.
 static void update_synth() {
     
     R4* left = ModularSynth_getLeftChannel();
+
+#ifdef SHOW_TIME
+    clock_gettime(CLOCK_MONOTONIC, &start);
+#endif
+
     ModularSynth_update();
+
+#ifdef SHOW_TIME
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double delta = (end.tv_sec - start.tv_sec) * 1e6 +
+                   (end.tv_nsec - start.tv_nsec) / 1e3;
+
+    total_time += delta;
+    count++;
+
+    static double last_print = 0.0;
+    double now = end.tv_sec + end.tv_nsec / 1e9;
+    if (now - last_print >= 1.0) {
+        double avg = (total_time / count) / 1000.f;
+        printf("Avg synth_update time: %.2f ms (%d calls)\n", avg, count);
+        double buffer_time_ms = ((double)STREAM_BUFFER_SIZE / SAMPLE_RATE) * 1000;
+        printf("time to beat: %lf ms\n", buffer_time_ms);
+        printf("went %.3lfx faster then needed\n", buffer_time_ms / avg);
+        total_time = 0.0;
+        count = 0;
+        last_print = now;
+    }
+#endif
 
     for (int i = 0; i < STREAM_BUFFER_SIZE; i++)
     {
@@ -122,7 +157,6 @@ static void update_synth() {
 
 // TODO: if ever got crackle or pop sounds, just start double buffering this guy here
 
-// ---- SoundIO callback ----
 static void write_callback(struct SoundIoOutStream *outstream,
                            int frame_count_min, int frame_count_max)
 {
