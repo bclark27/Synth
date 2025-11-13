@@ -1,16 +1,22 @@
 __OUTPUT__ OutputModule
 osc1 VCO
 lfo VCO
-attn Attenuator
+attn Attenuverter
 mix1 Mixer
 f1 Filter
+adsr ADSR
+mdin MidiInput
+pk PolyKeys
 +++
 __OUTPUT__
 connect Left mix1 Mix
 +++
 lfo
-control Freq -8
-control Waveform 0.6
+control Freq -6
+control Waveform 0.3
++++
+pk
+connect MidiIn mdin MidiOut
 +++
 attn
 control Vol 0
@@ -22,9 +28,18 @@ control Unison 7
 control Detune 1.03
 +++
 f1
+connect Freq adsr Env
 connect Audio osc1 Audio
-control Freq 9
-control Q -10
+control Freq 0
+control Q -5
+control Env -5
++++
+adsr
+connect Gate lfo Audio
+control Attack 0.01
+control Decay 0.5
+control Sustain 0.5
+control Release 0.5
 +++
 mix1
 connect Input0 f1 Audio

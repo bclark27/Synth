@@ -22,9 +22,7 @@ inline R4 VoltUtils_voltDbToAmpl(R4 volts)
   return fasterPow(10, (volts - VOLTSTD_MOD_CV_MID) * VOLTSTD_VOLT_PER_DB_AMP);
 }
 
-inline R4 VoltUtils_voltDbToAtten(R4 volts)
+inline R4 VoltUtils_voltDbToAttenuverterMult(R4 volts)
 {
-  if (volts <= VOLTSTD_MOD_CV_MIN) return 0;
-  if (volts >= VOLTSTD_MOD_CV_MAX) return 1;
-  return volts / (VOLTSTD_MOD_CV_RANGE) + 0.5;//fasterPow(10, (volts - VOLTSTD_MOD_CV_MAX) * VOLTSTD_VOLT_PER_DB_ATN);
+  return CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, volts) / (VOLTSTD_MOD_CV_MAX);
 }

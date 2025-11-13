@@ -13,7 +13,7 @@
 
 const char * const ModuleTypeNames[ModuleType_COUNT] = {
     "ADSR",
-    "Attenuator",
+    "Attenuverter",
     "Clock",
     "ClockMult",
     "Mixer",

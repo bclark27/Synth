@@ -323,7 +323,7 @@ static void initVoice(PolyKeysVoice* voice)
     voice->vco = (VCO*)VCO_init("mod");
     voice->adsr = (ADSR*)ADSR_init("mod");
     voice->flt = (Filter*)Filter_init("mod");
-    voice->attn = (Attenuator*)Attenuator_init("mod");
+    voice->attn = (Attenuverter*)Attenuverter_init("mod");
 
     // connect the input of the flt to the out of the vco audio
     voice->flt->module.linkToInput(
@@ -338,7 +338,7 @@ static void initVoice(PolyKeysVoice* voice)
     // connect the input of the attn vol to the output env of the adsr
     voice->attn->module.linkToInput(
         (Module*)voice->attn,
-        ATTN_IN_PORT_VOL,
+        ATTN_IN_PORT_ATTN,
         voice->adsr->module.getOutputAddr(
             (Module*)voice->adsr, 
             ADSR_OUT_PORT_ENV
@@ -358,7 +358,7 @@ static void initVoice(PolyKeysVoice* voice)
     // connect the input of the attn to the output of the fitler
     voice->attn->module.linkToInput(
         (Module*)voice->attn,
-        ATTN_IN_PORT_AUD,
+        ATTN_IN_PORT_SIG,
         voice->flt->module.getOutputAddr(
             (Module*)voice->flt, 
             FILTER_OUT_PORT_AUD
@@ -375,7 +375,7 @@ static void initVoice(PolyKeysVoice* voice)
     // set up the output of the attn as the last step to the voice
     voice->voiceOutputBuffer = voice->attn->module.getOutputAddr(
         (Module*)voice->attn, 
-        ATTN_OUT_PORT_AUD
+        ATTN_OUT_PORT_SIG
     );
 }
 

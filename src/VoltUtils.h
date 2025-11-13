@@ -53,5 +53,5 @@ R4 VoltUtils_voltDbToAmpl(R4 volts) __attribute__((hot));
 /*
 takes signal in CV mod range and reurns amplitude multiplyer less than one
 */
-R4 VoltUtils_voltDbToAtten(R4 volts) __attribute__((hot));
+R4 VoltUtils_voltDbToAttenuverterMult(R4 volts) __attribute__((hot));
 #endif

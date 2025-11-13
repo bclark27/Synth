@@ -8,7 +8,7 @@
 #include "VCO.h"
 #include "ADSR.h"
 #include "Filter.h"
-#include "Attenuator.h"
+#include "Attenuverter.h"
 
 ///////////////
 //  DEFINES  //
@@ -50,7 +50,7 @@ typedef struct PolyKeysVoice
     VCO * vco;
     Filter * flt;
     ADSR * adsr;
-    Attenuator * attn;
+    Attenuverter * attn;
     VoltStream voiceOutputBuffer;
     Volt voiceInputFreqBuffer[MIDI_STREAM_BUFFER_SIZE];
 

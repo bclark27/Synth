@@ -1,5 +1,5 @@
-#ifndef ATTENUATOR_H_
-#define ATTENUATOR_H_
+#ifndef ATTENUVERTER_H_
+#define ATTENUVERTER_H_
 
 #include "comm/Common.h"
 #include "Module.h"
@@ -10,26 +10,26 @@
 
 /*
   Inputs:
-  0: volume: cv mod [-10v - 10v]
-  1: audio: audio range [-5v - 5v]
+  0: attenuvert: cv mod [-10v - 10v]
+  1: sig: [-?v - ?v]
 
   Outputs:
-  0: audio out: audio range [-5v - 5v]
+  0: sig out: [-?v - ?v]
 
   Controls:
-  0: volume
+  0: sig
 */
 
 #define ATTN_INCOUNT        2
 #define ATTN_OUTCOUNT       1
 #define ATTN_CONTROLCOUNT   1
 
-#define ATTN_IN_PORT_VOL    0
-#define ATTN_IN_PORT_AUD    1
+#define ATTN_IN_PORT_ATTN    0
+#define ATTN_IN_PORT_SIG    1
 
-#define ATTN_OUT_PORT_AUD   0
+#define ATTN_OUT_PORT_SIG   0
 
-#define ATTN_CONTROL_VOL    0
+#define ATTN_CONTROL_ATTN    0
 
 #define ATTN_MIDI_INCOUNT    0
 #define ATTN_MIDI_OUTCOUNT    0
@@ -39,7 +39,7 @@
 // TYPES //
 ///////////
 
-typedef struct Attenuator
+typedef struct Attenuverter
 {
   Module module;
 
@@ -64,9 +64,9 @@ typedef struct Attenuator
   MIDIData midiControlsPrev[ATTN_MIDI_CONTROLCOUNT];
 
 
-} Attenuator;
+} Attenuverter;
 
 
-Module * Attenuator_init(char* name);
+Module * Attenuverter_init(char* name);
 
 #endif

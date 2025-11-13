@@ -6,7 +6,7 @@
 
 // all known modules:
 #include "ADSR.h"
-#include "Attenuator.h"
+#include "Attenuverter.h"
 #include "Clock.h"
 #include "ClockMult.h"
 #include "Mixer.h"

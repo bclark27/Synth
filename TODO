@@ -6,3 +6,12 @@
 run this to install the audio libs
 
 sudo apt install libpulse-dev libasound2-dev
+
+// TODO: make the adsr turn voltages into time, some expo func or smth idk
+// TODO: if ever got crackle or pop sounds, just start double buffering this guy here
+// TODO: make the ADSR have exponential option
+// TODO modules: 
+    make the LFO module. should be able to change freq, wave, and min/max of the wave
+    compressor, include side chain
+    sampler, read from wav files
+    

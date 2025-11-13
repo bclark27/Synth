@@ -1,0 +1,10 @@
+__OUTPUT__ OutputModule
+mdin MidiInput
+pk PolyKeys
++++
+pk
+connect MidiIn mdin MidiOut
++++
+__OUTPUT__
+connect Left pk Audio
++++

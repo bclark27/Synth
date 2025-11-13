@@ -16,7 +16,7 @@
 typedef enum ModuleType
 {
   ModuleType_ADSR=0,
-  ModuleType_Attenuator,
+  ModuleType_Attenuverter,
   ModuleType_Clock,
   ModuleType_ClockMult,
   ModuleType_Mixer,

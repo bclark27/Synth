@@ -39,8 +39,8 @@ Module * ModuleFactory_createModule(ModuleType type, char * name)
     mod = Sequencer_init(name);
     break;
 
-    case ModuleType_Attenuator:
-    mod = Attenuator_init(name);
+    case ModuleType_Attenuverter:
+    mod = Attenuverter_init(name);
     break;
 
     case ModuleType_Filter:
