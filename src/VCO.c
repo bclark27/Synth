@@ -171,8 +171,10 @@ static void updateState(void * modPtr)
   Waveform wave = (Waveform)(int)(CLAMP(0, 3.5, GET_CONTROL_CURR_WAVE(vco)));
   vco->osc.waveform = wave;
   
+
+  R4 detune = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 1.f, 2.f, GET_CONTROL_CURR_DET(vco));
   U1 unison = CLAMP(1, MAX_UNISON, (int)GET_CONTROL_CURR_UNI(vco));
-  Oscillator_sampleWithStrideAndPWTable(&vco->osc, OUT_PORT_AUD(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, unison, GET_CONTROL_CURR_DET(vco));
+  Oscillator_sampleWithStrideAndPWTable(&vco->osc, OUT_PORT_AUD(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, unison, detune);
 }
 
 static void pushCurrToPrev(void * modPtr)

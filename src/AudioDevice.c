@@ -112,6 +112,8 @@ void AudioDevice_LoopForever(void)
 struct timespec start, end;
 static double total_time = 0.0;
 static int count = 0;
+static double min_time = 9999999999;
+static double max_time = 0;
 
 // This fills synth_buffer with SYNTH_BUFFER_FRAMES of stereo samples.
 static void update_synth() {
@@ -129,6 +131,8 @@ static void update_synth() {
     double delta = (end.tv_sec - start.tv_sec) * 1e6 +
                    (end.tv_nsec - start.tv_nsec) / 1e3;
 
+    min_time = MIN(min_time, delta);
+    max_time = MAX(max_time, delta);
     total_time += delta;
     count++;
 
@@ -136,12 +140,18 @@ static void update_synth() {
     double now = end.tv_sec + end.tv_nsec / 1e9;
     if (now - last_print >= 1.0) {
         double avg = (total_time / count) / 1000.f;
-        printf("Avg synth_update time: %.2f ms (%d calls)\n", avg, count);
+        double mn = min_time / 1000.f;
+        double mx = max_time / 1000.f;
+        printf("===\nAvg synth_update time: %.2f ms (%d calls)\n", avg, count);
         double buffer_time_ms = ((double)STREAM_BUFFER_SIZE / SAMPLE_RATE) * 1000;
         printf("time to beat: %lf ms\n", buffer_time_ms);
-        printf("went %.3lfx faster then needed\n", buffer_time_ms / avg);
+        printf("avg was %.3lfx faster\n", buffer_time_ms / avg);
+        printf("min was %.3lfx faster\n", buffer_time_ms / mn);
+        printf("max was %.3lfx faster\n", buffer_time_ms / mx);
         total_time = 0.0;
         count = 0;
+        min_time = 9999999999;
+        max_time = 0;
         last_print = now;
     }
 #endif

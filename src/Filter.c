@@ -45,6 +45,14 @@
 //  FUNCTION DECLERATIONS  //
 /////////////////////////////
 
+#define VOLT_TABLE_SIZE 1024
+static float volt_to_freq_table[VOLT_TABLE_SIZE];
+#define Q_TABLE_SIZE 1024
+static float volt_to_q_table[Q_TABLE_SIZE];
+#define SIN_TABLE_SIZE 1024
+static float sin_table[SIN_TABLE_SIZE];
+static bool tableInitDone = false;
+
 static inline void setLowpass(Filter *f, float cutoff, float q);
 static inline void setHighpass(Filter *f, float cutoff, float q);
 static inline float processFilter(Filter *f, float x);
@@ -81,6 +89,10 @@ static U4 getControlCount(void * modPtr);
 static void setControlVal(void * modPtr, ModularPortID id, void* val);
 static void getControlVal(void * modPtr, ModularPortID id, void* ret);
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
+static void initVoltTable();
+static inline float fastVoltToFreq(float v);
+static void initQTable();
+static inline float fastVoltToQ(float v);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -122,6 +134,13 @@ static Module vtable = {
 
 Module * Filter_init(char* name)
 {
+  if (!tableInitDone)
+  {
+    tableInitDone = true;
+    initVoltTable();
+    initQTable();
+  }
+
   Filter * flt = calloc(1, sizeof(Filter));
 
   // set vtable
@@ -181,8 +200,8 @@ static void updateState(void * modPtr)
     R4 voltsFreq = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, (controlEnvMult * inVoltsFreqEnv) + controlVoltsFreq);
 
     // convert voltage into usable values
-    R4 realFreq = 20 * powf(2, voltsFreq);
-    R4 realQ = voltToMoogQ(controlVoltsQ);
+    R4 realFreq = fastVoltToFreq(voltsFreq);//fastVoltToFreq(voltsFreq);//20 * powf(2, voltsFreq);
+    R4 realQ = fastVoltToQ(controlVoltsQ);//voltToMoogQ(controlVoltsQ);
     //printf("%f, %f, %f, %f\n", realQ, controlVoltsEnv, inVoltsFreqEnv, controlVoltsFreq);
 
     if (filterType < 1)
@@ -194,7 +213,6 @@ static void updateState(void * modPtr)
       setHighpass(flt, realFreq, realQ);
     }
 
-    // out = mult * inputSig
     OUT_PORT_AUD(flt)[i] = processFilter(flt, IN_PORT_AUD(flt)[i]);
   }
 }
@@ -379,4 +397,42 @@ static inline float voltToMoogQ(float volts)
   float q = Q_MIN * powf(Q_MAX / Q_MIN, t);
   
   return q;
+}
+
+static void initVoltTable()
+{
+  for (int i = 0; i < VOLT_TABLE_SIZE; i++) 
+  {
+      float v = (float)i / (VOLT_TABLE_SIZE - 1) * 10.0f; // 0→10 V
+      volt_to_freq_table[i] = 20.0f * powf(2.0f, v);
+  }
+}
+
+static inline float fastVoltToFreq(float v)
+{
+  if (v < 0) v = 0;
+  if (v > 10) v = 10;
+  float idx = v / 10.0f * (VOLT_TABLE_SIZE - 1);
+  int i = (int)idx;
+  float frac = idx - i;
+  return volt_to_freq_table[i] * (1.0f - frac)
+       + volt_to_freq_table[i + 1] * frac; // linear interpolation
+}
+
+static void initQTable() {
+  const float Q_MIN = 0.5f, Q_MAX = 100.0f;
+  for (int i = 0; i < Q_TABLE_SIZE; i++) {
+      float t = (float)i / (Q_TABLE_SIZE - 1);
+      volt_to_q_table[i] = Q_MIN * powf(Q_MAX / Q_MIN, t);
+  }
+}
+
+static inline float fastVoltToQ(float v) {
+  if (v < 0) v = 0;
+  if (v > 10) v = 10;
+  float idx = v / 10.0f * (Q_TABLE_SIZE - 1);
+  int i = (int)idx;
+  float frac = idx - i;
+  return volt_to_q_table[i] * (1.0f - frac)
+       + volt_to_q_table[i + 1] * frac;
 }
