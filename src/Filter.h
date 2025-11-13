@@ -11,15 +11,17 @@
 /*
   Inputs:
   0: audio: audio range [-5v - 5v]
-  1: freq: cv mod [-10v - 10v]
+  1: freq: cv mod [0v - 10v]
 
   Outputs:
   0: audio out: audio range [-5v - 5v]
 
   Controls:
-  0: frequency: cv mod [-10v - 10v]
-  1: Q resonance: cv mod [-10v - 10v]
-  2: db fitler type: cv mod [-10v - 10v]
+  0: frequency: cv mod [0v - 10v]
+  1: Q resonance: cv mod [0v - 10v]
+  2: db: cv mod [0v - 10v]
+  3: env : cv mod [0v - 10v]
+  4: type: cv mod [0v - 10v]
 */
 
 #define FILTER_INCOUNT          2

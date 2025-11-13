@@ -110,11 +110,11 @@ static Module vtable = {
   .controlNamesCount = ARRAY_LEN(controlNames),
 };
 
-#define DEFAULT_CONTROL_FREQ   3
-#define DEFAULT_CONTROL_Q   -5
-#define DEFAULT_CONTROL_DB   0
-#define DEFAULT_CONTROL_ENV   0
-#define DEFAULT_CONTROL_TYPE   -5
+#define DEFAULT_CONTROL_FREQ   VOLTSTD_MOD_CV_MAX
+#define DEFAULT_CONTROL_Q   ((VOLTSTD_MOD_CV_MAX + VOLTSTD_MOD_CV_ZERO) / 4)
+#define DEFAULT_CONTROL_DB   VOLTSTD_MOD_CV_ZERO
+#define DEFAULT_CONTROL_ENV   VOLTSTD_MOD_CV_MAX
+#define DEFAULT_CONTROL_TYPE   VOLTSTD_MOD_CV_ZERO
 
 //////////////////////
 // PUBLIC FUNCTIONS //
@@ -166,23 +166,24 @@ static void updateState(void * modPtr)
   for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
   {
     // get the input voltage
-    R4 inVoltsFreq = IN_PORT_FREQ(flt) ? IN_PORT_FREQ(flt)[i] : 0;
+    R4 inVoltsFreqEnv = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, IN_PORT_FREQ(flt) ? IN_PORT_FREQ(flt)[i] : VOLTSTD_MOD_CV_ZERO); // [0, 10]
 
     // interp the control input
-    R4 controlVoltsFreq = INTERP(GET_CONTROL_PREV_FREQ(flt), GET_CONTROL_CURR_FREQ(flt), MODULE_BUFFER_SIZE, i);
-    R4 controlVoltsQ = INTERP(GET_CONTROL_PREV_Q(flt), GET_CONTROL_CURR_Q(flt), MODULE_BUFFER_SIZE, i);
-    R4 controlVoltsDb = INTERP(GET_CONTROL_PREV_DB(flt), GET_CONTROL_CURR_DB(flt), MODULE_BUFFER_SIZE, i);
-    R4 controlVoltsEnv = INTERP(GET_CONTROL_PREV_ENV(flt), GET_CONTROL_CURR_ENV(flt), MODULE_BUFFER_SIZE, i);
-    R4 controlVoltsType = INTERP(GET_CONTROL_PREV_TYPE(flt), GET_CONTROL_CURR_TYPE(flt), MODULE_BUFFER_SIZE, i);
+    R4 controlVoltsFreq = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_FREQ(flt), GET_CONTROL_CURR_FREQ(flt), MODULE_BUFFER_SIZE, i));// [0, 10]
+    R4 controlVoltsQ = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_Q(flt), GET_CONTROL_CURR_Q(flt), MODULE_BUFFER_SIZE, i));// [0, 10]
+    //R4 controlVoltsDb = INTERP(GET_CONTROL_PREV_DB(flt), GET_CONTROL_CURR_DB(flt), MODULE_BUFFER_SIZE, i);
+    R4 controlVoltsEnv = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_ENV(flt), GET_CONTROL_CURR_ENV(flt), MODULE_BUFFER_SIZE, i));// [0, 10]
+    R4 controlVoltsType = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_TYPE(flt), GET_CONTROL_CURR_TYPE(flt), MODULE_BUFFER_SIZE, i));// [0, 10]
 
-    R4 controlEnv = MAP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, 0.0f, 1.0f, controlVoltsEnv);
-    float filterType = MAP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, 0.0f, 2.0f, controlVoltsType);
+    R4 controlEnvMult = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.0f, 1.0f, controlVoltsEnv);
+    float filterType = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.0f, 2.0f, controlVoltsType);
 
-    R4 voltsFreq = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, controlEnv * inVoltsFreq + controlVoltsFreq);
+    R4 voltsFreq = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, (controlEnvMult * inVoltsFreqEnv) + controlVoltsFreq);
 
     // convert voltage into usable values
-    R4 realFreq = CLAMP(1, 22000, VoltUtils_voltToFreq(voltsFreq));
+    R4 realFreq = 20 * powf(2, voltsFreq);
     R4 realQ = voltToMoogQ(controlVoltsQ);
+    //printf("%f, %f, %f, %f\n", realQ, controlVoltsEnv, inVoltsFreqEnv, controlVoltsFreq);
 
     if (filterType < 1)
     {
@@ -335,7 +336,7 @@ static inline float voltToMoogQ(float volts)
 {
   const float Q_MIN = 0.5f;     // very gentle slope
   const float Q_MAX = 100.0f;   // near self-oscillation
-  const float V_MIN = VOLTSTD_MOD_CV_MIN;
+  const float V_MIN = VOLTSTD_MOD_CV_ZERO;
   const float V_MAX = VOLTSTD_MOD_CV_MAX;
   
   // Normalize voltage to 0..1

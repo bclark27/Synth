@@ -16,9 +16,7 @@ set these ranges to emulate some type of rack
 #define VOLTSTD_MOD_CV_MIN        (-VOLTSTD_MOD_CV_MAX)
 #define VOLTSTD_MOD_CV_RANGE      (VOLTSTD_MOD_CV_MAX - VOLTSTD_MOD_CV_MIN)
 #define VOLTSTD_MOD_CV_MID        ((VOLTSTD_MOD_CV_MAX + VOLTSTD_MOD_CV_MIN) / 2)
-
-#define VOLTSTD_PITCH_CV_MAX      5.f
-#define VOLTSTD_PITCH_CV_MIN      0.f
+#define VOLTSTD_MOD_CV_ZERO       0.f
 
 #define VOLTSTD_C3_VOLTAGE        0.f
 #define VOLTSTD_C3_FREQ           130.8128

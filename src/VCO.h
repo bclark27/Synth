@@ -11,11 +11,11 @@
 
 /*
   Inputs:
-  0: freq: pitch cv range [0v - 5v]
-  1: pulse width: cv mod range [-10v - 10v]
+  0: freq: cv range [-10v, 10v]
+  1: pulse width: cv mod range [-10v, 10v]
 
   Outputs:
-  0: audio: audio volt range
+  0: audio: audio volt range [-5v, +5v]
 
   Controls:
   0: freq

@@ -19,8 +19,10 @@
 #define IN_PORT_D(adsr)                   ((adsr)->inputPorts[ADSR_IN_PORT_D])
 #define IN_PORT_S(adsr)                   ((adsr)->inputPorts[ADSR_IN_PORT_S])
 #define IN_PORT_R(adsr)                   ((adsr)->inputPorts[ADSR_IN_PORT_R])
+#define IN_PORT_ATTN(adsr)                   ((adsr)->inputPorts[ADSR_IN_PORT_ATTN])
 
 #define OUT_PORT_ENV(adsr)                (CURR_PORT_ADDR(adsr, ADSR_OUT_PORT_ENV))
+#define OUT_PORT_ENVINV(adsr)                (CURR_PORT_ADDR(adsr, ADSR_OUT_PORT_ENVINV))
 
 #define GET_CONTROL_CURR_A(adsr)          ((adsr)->controlsCurr[ADSR_CONTROL_A])
 #define GET_CONTROL_PREV_A(adsr)          ((adsr)->controlsPrev[ADSR_CONTROL_A])
@@ -30,6 +32,8 @@
 #define GET_CONTROL_PREV_S(adsr)          ((adsr)->controlsPrev[ADSR_CONTROL_S])
 #define GET_CONTROL_CURR_R(adsr)          ((adsr)->controlsCurr[ADSR_CONTROL_R])
 #define GET_CONTROL_PREV_R(adsr)          ((adsr)->controlsPrev[ADSR_CONTROL_R])
+#define GET_CONTROL_CURR_ATTN(adsr)          ((adsr)->controlsCurr[ADSR_CONTROL_ATTN])
+#define GET_CONTROL_PREV_ATTN(adsr)          ((adsr)->controlsPrev[ADSR_CONTROL_ATTN])
 
 #define SET_CONTROL_CURR_A(adsr, val)     ((adsr)->controlsCurr[ADSR_CONTROL_A] = (val))
 #define SET_CONTROL_PREV_A(adsr, val)     ((adsr)->controlsPrev[ADSR_CONTROL_A] = (val))
@@ -39,6 +43,8 @@
 #define SET_CONTROL_PREV_S(adsr, val)     ((adsr)->controlsPrev[ADSR_CONTROL_S] = (val))
 #define SET_CONTROL_CURR_R(adsr, val)     ((adsr)->controlsCurr[ADSR_CONTROL_R] = (val))
 #define SET_CONTROL_PREV_R(adsr, val)     ((adsr)->controlsPrev[ADSR_CONTROL_R] = (val))
+#define SET_CONTROL_CURR_ATTN(adsr, val)     ((adsr)->controlsCurr[ADSR_CONTROL_ATTN] = (val))
+#define SET_CONTROL_PREV_ATTN(adsr, val)     ((adsr)->controlsPrev[ADSR_CONTROL_ATTN] = (val))
 
 #define CONTROL_PUSH_TO_PREV(vco)         for (U4 i = 0; i < ADSR_CONTROLCOUNT; i++) {(vco)->controlsPrev[i] = (vco)->controlsCurr[i];} for (U4 i = 0; i < ADSR_MIDI_CONTROLCOUNT; i++) {(vco)->midiControlsPrev[i] = (vco)->midiControlsCurr[i];}
 
@@ -75,10 +81,12 @@ static char * inPortNames[ADSR_INCOUNT] = {
   "Decay",
   "Sustain",
   "Release",
+  "Attn",
 };
 
 static char * outPortNames[ADSR_OUTCOUNT] = {
   "Env",
+  "EnvInv",
 };
 
 static char * controlNames[ADSR_CONTROLCOUNT] = {
@@ -86,6 +94,7 @@ static char * controlNames[ADSR_CONTROLCOUNT] = {
   "Decay",
   "Sustain",
   "Release",
+  "Attn",
 };
 
 static Module vtable = {
@@ -116,6 +125,7 @@ static Module vtable = {
 #define DEFAULT_CONTROL_D   0.05f
 #define DEFAULT_CONTROL_S   0.6f
 #define DEFAULT_CONTROL_R   0.3f
+#define DEFAULT_CONTROL_ATTN   VOLTSTD_MOD_CV_MAX
 
 //////////////////////
 // PUBLIC FUNCTIONS //
@@ -134,6 +144,7 @@ Module * ADSR_init(char* name)
   SET_CONTROL_CURR_D(adsr, DEFAULT_CONTROL_D);
   SET_CONTROL_CURR_S(adsr, DEFAULT_CONTROL_S);
   SET_CONTROL_CURR_R(adsr, DEFAULT_CONTROL_R);
+  SET_CONTROL_CURR_ATTN(adsr, DEFAULT_CONTROL_ATTN);
 
   // push curr to prev
   CONTROL_PUSH_TO_PREV(adsr);
@@ -188,7 +199,7 @@ static void updateState(void * modPtr)
 
     // update envelope state
     // sample from correct equation
-    R4 finalVal = 0;
+    R4 sampledEvelope = 0;
     // printf("%d\n", okok++);
 
     if (isNewHigh)
@@ -215,12 +226,20 @@ static void updateState(void * modPtr)
 
     }
 
-    finalVal = sampleEnvelope(adsr, currA, currD, currS, currR);
+    sampledEvelope = sampleEnvelope(adsr, currA, currD, currS, currR);
 
-    adsr->prevADSRStop = finalVal;
-    finalVal = (VOLTSTD_MOD_CV_RANGE * finalVal) - VOLTSTD_MOD_CV_MAX;
+    adsr->prevADSRStop = sampledEvelope;
     
-    OUT_PORT_ENV(adsr)[i] = finalVal;
+    // factor in the attenuvert
+    R4 attnInVolts = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, IN_PORT_ATTN(adsr) ? IN_PORT_ATTN(adsr)[i] : VOLTSTD_MOD_CV_MAX); // [-10 10]
+    R4 attnInlMult = MAP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, -1.f, 1.f, attnInVolts); // [-1, 1]
+    
+    R4 attnControlVolts = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_ATTN(adsr), GET_CONTROL_CURR_ATTN(adsr), MODULE_BUFFER_SIZE, i)); // [-10, 10]
+    R4 attnControlMult = MAP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, -1.f, 1.f, attnControlVolts); // [-1, 1]
+
+    R4 finalEnvelope = sampledEvelope * attnInlMult * attnControlMult * VOLTSTD_MOD_CV_MAX;
+    OUT_PORT_ENV(adsr)[i] = finalEnvelope;
+    OUT_PORT_ENVINV(adsr)[i] = -finalEnvelope;
   }
 
 }

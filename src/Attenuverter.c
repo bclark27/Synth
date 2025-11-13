@@ -84,7 +84,7 @@ static Module vtable = {
   .controlNamesCount = ARRAY_LEN(controlNames),
 };
 
-#define DEFAULT_CONTROL_ATTN   0//VOLTSTD_MOD_CV_MIN
+#define DEFAULT_CONTROL_ATTN   VOLTSTD_MOD_CV_MAX
 
 //////////////////////
 // PUBLIC FUNCTIONS //
@@ -134,13 +134,14 @@ static void updateState(void * modPtr)
   {
 
     // get the input voltage
-    R4 inVolts = IN_PORT_ATTN(attn) ? IN_PORT_ATTN(attn)[i] : 0;
+    R4 inVolts = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, IN_PORT_ATTN(attn) ? IN_PORT_ATTN(attn)[i] : VOLTSTD_MOD_CV_MAX); // [-10v, +10v]
 
     // interp the control input
-    R4 controlVolts = INTERP(GET_CONTROL_PREV_ATTN(attn), GET_CONTROL_CURR_ATTN(attn), MODULE_BUFFER_SIZE, i);
+    R4 controlVolts = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_ATTN(attn), GET_CONTROL_CURR_ATTN(attn), MODULE_BUFFER_SIZE, i)); //[-10v, +10v]
+    R4 controlAsMultiplier = MAP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, -1.f, 1.f, controlVolts); // [-1, 1]
 
     // convert voltage into attn multiplier
-    R4 attnMult = VoltUtils_voltDbToAttenuverterMult(inVolts + controlVolts);
+    R4 attnMult = VoltUtils_voltDbToAttenuverterMult(inVolts * controlAsMultiplier);
 
     // out = mult * inputSig
     OUT_PORT_SIG(attn)[i] = IN_PORT_SIG(attn)[i] * attnMult;

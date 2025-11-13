@@ -14,7 +14,7 @@
   1: audio1: audio volt range
   2: audio2: audio volt range
   3: audio3: audio volt range
-  4: volume cv: cv mod volt range
+  4: volume: [0 - +10v]
 
   Outputs:
   0: combination out: audio volt range

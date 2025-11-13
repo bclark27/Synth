@@ -120,9 +120,9 @@ Module * PolyKeys_init(char* name)
     pk->controlsCurr[POLYKEYS_CONTROL_R] = 0.3;
     pk->controlsCurr[POLYKEYS_CONTROL_DETUNE] = 1.03;
     pk->controlsCurr[POLYKEYS_CONTROL_UNISON] = 5;
-    pk->controlsCurr[POLYKEYS_CONTROL_FILTER_ENV_AMT] = -4;
-    pk->controlsCurr[POLYKEYS_CONTROL_FILTER_Q] = -2;
-    pk->controlsCurr[POLYKEYS_CONTROL_FILTER_FREQ] = 0;
+    pk->controlsCurr[POLYKEYS_CONTROL_FILTER_ENV_AMT] = VOLTSTD_MOD_CV_ZERO;
+    pk->controlsCurr[POLYKEYS_CONTROL_FILTER_Q] = ((VOLTSTD_MOD_CV_MAX + VOLTSTD_MOD_CV_ZERO) / 4);
+    pk->controlsCurr[POLYKEYS_CONTROL_FILTER_FREQ] = VOLTSTD_MOD_CV_MAX;
 
     // push curr to prev
     CONTROL_PUSH_TO_PREV(pk);

@@ -90,7 +90,7 @@ static Module vtable = {
   .controlNamesCount = ARRAY_LEN(controlNames),
 };
 
-#define DEFAULT_CONTROL_VOL   VOLTSTD_MOD_CV_MID
+#define DEFAULT_CONTROL_VOL   VOLTSTD_MOD_CV_MAX
 
 ////////////////////////
 //  PUBLIC FUNCTIONS  //
@@ -140,11 +140,12 @@ static void updateState(void * modPtr)
     sum[i] += IN_PORT_AUDIO2(mix) ? IN_PORT_AUDIO2(mix)[i] : 0;
     sum[i] += IN_PORT_AUDIO3(mix) ? IN_PORT_AUDIO3(mix)[i] : 0;
 
-    R4 rawVolts = 0;
-    rawVolts += IN_PORT_VOL(mix) ? IN_PORT_VOL(mix)[i] : 0;
-    rawVolts += INTERP(GET_CONTROL_PREV_VOL(mix), GET_CONTROL_CURR_VOL(mix), MODULE_BUFFER_SIZE, i);
-    sum[i] *= VoltUtils_voltDbToAmpl(rawVolts);
-
+    
+    R4 inputVolts = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, IN_PORT_VOL(mix) ? IN_PORT_VOL(mix)[i] : VOLTSTD_MOD_CV_MAX); // [0v, +10v]
+    R4 controlVolts = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_VOL(mix), GET_CONTROL_CURR_VOL(mix), MODULE_BUFFER_SIZE, i)); // [0v, +10v]
+    
+    R4 controlAsMultiplier = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.f, 1.f, controlVolts); // [0, 1]
+    sum[i] *= VoltUtils_voltDbToAmpl(inputVolts * controlVolts);
   }
 }
 
