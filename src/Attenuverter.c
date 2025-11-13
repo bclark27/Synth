@@ -134,10 +134,10 @@ static void updateState(void * modPtr)
   {
 
     // get the input voltage
-    R4 inVolts = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, IN_PORT_ATTN(attn) ? IN_PORT_ATTN(attn)[i] : VOLTSTD_MOD_CV_MAX); // [-10v, +10v]
+    R4 inVolts = IN_PORT_ATTN(attn) ? IN_PORT_ATTN(attn)[i] : VOLTSTD_MOD_CV_MAX; // [-10v, +10v]
 
     // interp the control input
-    R4 controlVolts = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_ATTN(attn), GET_CONTROL_CURR_ATTN(attn), MODULE_BUFFER_SIZE, i)); //[-10v, +10v]
+    R4 controlVolts = INTERP(GET_CONTROL_PREV_ATTN(attn), GET_CONTROL_CURR_ATTN(attn), MODULE_BUFFER_SIZE, i); //[-10v, +10v]
     R4 controlAsMultiplier = MAP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, -1.f, 1.f, controlVolts); // [-1, 1]
 
     // convert voltage into attn multiplier
@@ -207,10 +207,25 @@ static U4 getControlCount(void * modPtr)
 
 static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
-  if (id >= ATTN_CONTROLCOUNT) return;
+  if (id < ATTN_CONTROLCOUNT)
+  {
+    Volt v = *(Volt*)val;
+    switch (id)
+    {
+      case ATTN_CONTROL_ATTN:
+      v = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      default:
+        break;
+    }
 
-  Attenuverter * vco = (Attenuverter *)modPtr;
-  memcpy(&vco->controlsCurr[id], val, sizeof(Volt));
+    ((Attenuverter*)modPtr)->controlsCurr[id] = v;
+  }
+  else if ((id - ATTN_CONTROLCOUNT) < ATTN_MIDI_CONTROLCOUNT)
+  {
+    ((Attenuverter*)modPtr)->midiControlsCurr[id - ATTN_CONTROLCOUNT] = *(MIDIData*)val;
+  }
 }
 
 static void getControlVal(void * modPtr, ModularPortID id, void* ret)

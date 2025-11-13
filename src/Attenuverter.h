@@ -17,7 +17,7 @@
   0: sig out: [-?v - ?v]
 
   Controls:
-  0: sig
+  0: attn [-10v, +10v]
 */
 
 #define ATTN_INCOUNT        2

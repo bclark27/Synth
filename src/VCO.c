@@ -160,19 +160,19 @@ static void free_vco(void * modPtr)
 static void updateState(void * modPtr)
 {
   VCO * vco = (VCO *)modPtr;
-
+  
   R4 strideTable[MODULE_BUFFER_SIZE];
   R4 pwTable[MODULE_BUFFER_SIZE];
-
+  
   createStrideTable(vco, strideTable);
   createPwTable(vco, pwTable);
-
+  
   // now lets change the wave form based on the control
-  Waveform wave = (Waveform)(int)MAX(MIN(GET_CONTROL_PREV_WAVE(vco) * 4, 3), 0);
+  Waveform wave = (Waveform)(int)(CLAMP(0, 3.5, GET_CONTROL_CURR_WAVE(vco)));
   vco->osc.waveform = wave;
-
-  U1 unison = MAX(MIN((int)GET_CONTROL_PREV_UNI(vco), MAX_UNISON), 1);
-  Oscillator_sampleWithStrideAndPWTable(&vco->osc, OUT_PORT_AUD(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, unison, GET_CONTROL_PREV_DET(vco));
+  
+  U1 unison = CLAMP(1, MAX_UNISON, (int)GET_CONTROL_CURR_UNI(vco));
+  Oscillator_sampleWithStrideAndPWTable(&vco->osc, OUT_PORT_AUD(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, unison, GET_CONTROL_CURR_DET(vco));
 }
 
 static void pushCurrToPrev(void * modPtr)
@@ -232,10 +232,41 @@ static U4 getControlCount(void * modPtr)
 
 static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
-  if (id >= VCO_CONTROLCOUNT) return;
+  if (id < VCO_CONTROLCOUNT)
+  {
+    Volt v = *(Volt*)val;
+    switch (id)
+    {
+      case VCO_CONTROL_FREQ:
+      v = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case VCO_CONTROL_PW:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case VCO_CONTROL_WAVE:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case VCO_CONTROL_UNI:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case VCO_CONTROL_DET:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      default:
+        break;
+    }
 
-  VCO * vco = (VCO *)modPtr;
-  memcpy(&vco->controlsCurr[id], val, sizeof(Volt));
+    ((VCO*)modPtr)->controlsCurr[id] = v;
+  }
+  else if ((id - VCO_CONTROLCOUNT) < VCO_MIDI_CONTROLCOUNT)
+  {
+    ((VCO*)modPtr)->midiControlsCurr[id - VCO_CONTROLCOUNT] = *(MIDIData*)val;
+  }
 }
 
 static void getControlVal(void * modPtr, ModularPortID id, void* ret)
@@ -262,7 +293,7 @@ static void createStrideTable(VCO * vco, R4 * table)
     {
       R4 freqControlVolts = INTERP(GET_CONTROL_PREV_FREQ(vco), GET_CONTROL_CURR_FREQ(vco), MODULE_BUFFER_SIZE, i);
       
-      R4 totalFreqVolts = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, IN_PORT_FREQ(vco)[i] + freqControlVolts);
+      R4 totalFreqVolts = IN_PORT_FREQ(vco)[i] + freqControlVolts;
       table[i] = VoltUtils_voltToFreq(totalFreqVolts);
       table[i] /= SAMPLE_RATE;
     }
@@ -271,7 +302,7 @@ static void createStrideTable(VCO * vco, R4 * table)
   {
     for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-      R4 freqControlVolts = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_FREQ(vco), GET_CONTROL_CURR_FREQ(vco), MODULE_BUFFER_SIZE, i));
+      R4 freqControlVolts = INTERP(GET_CONTROL_PREV_FREQ(vco), GET_CONTROL_CURR_FREQ(vco), MODULE_BUFFER_SIZE, i);
       table[i] = VoltUtils_voltToFreq(freqControlVolts);
       table[i] /= SAMPLE_RATE;
     }
@@ -284,16 +315,16 @@ static void createPwTable(VCO * vco, R4 * table)
   {
     for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-      R4 totalPwVolts = IN_PORT_PW(vco)[i] / VOLTSTD_MOD_CV_MAX + INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), MODULE_BUFFER_SIZE, i);
-      table[i] = CLAMP(0.01f, 0.99f, totalPwVolts);
+      R4 cvPwVolts = IN_PORT_PW(vco)[i];
+      R4 pwControlVolts = INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), MODULE_BUFFER_SIZE, i);
+      table[i] = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.01f, 0.99f, CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, cvPwVolts + pwControlVolts));
     }
   }
   else
   {
     for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-      R4 totalPwVolts = INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), MODULE_BUFFER_SIZE, i);
-      table[i] = CLAMP(0.01f, 0.99f, totalPwVolts);
+      table[i] = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.01f, 0.99f, INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), MODULE_BUFFER_SIZE, i));
     }
   }
 }

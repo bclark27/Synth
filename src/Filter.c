@@ -169,11 +169,11 @@ static void updateState(void * modPtr)
     R4 inVoltsFreqEnv = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, IN_PORT_FREQ(flt) ? IN_PORT_FREQ(flt)[i] : VOLTSTD_MOD_CV_ZERO); // [0, 10]
 
     // interp the control input
-    R4 controlVoltsFreq = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_FREQ(flt), GET_CONTROL_CURR_FREQ(flt), MODULE_BUFFER_SIZE, i));// [0, 10]
-    R4 controlVoltsQ = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_Q(flt), GET_CONTROL_CURR_Q(flt), MODULE_BUFFER_SIZE, i));// [0, 10]
+    R4 controlVoltsFreq = INTERP(GET_CONTROL_PREV_FREQ(flt), GET_CONTROL_CURR_FREQ(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
+    R4 controlVoltsQ = INTERP(GET_CONTROL_PREV_Q(flt), GET_CONTROL_CURR_Q(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
     //R4 controlVoltsDb = INTERP(GET_CONTROL_PREV_DB(flt), GET_CONTROL_CURR_DB(flt), MODULE_BUFFER_SIZE, i);
-    R4 controlVoltsEnv = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_ENV(flt), GET_CONTROL_CURR_ENV(flt), MODULE_BUFFER_SIZE, i));// [0, 10]
-    R4 controlVoltsType = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_TYPE(flt), GET_CONTROL_CURR_TYPE(flt), MODULE_BUFFER_SIZE, i));// [0, 10]
+    R4 controlVoltsEnv = INTERP(GET_CONTROL_PREV_ENV(flt), GET_CONTROL_CURR_ENV(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
+    R4 controlVoltsType = INTERP(GET_CONTROL_PREV_TYPE(flt), GET_CONTROL_CURR_TYPE(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
 
     R4 controlEnvMult = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.0f, 1.0f, controlVoltsEnv);
     float filterType = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.0f, 2.0f, controlVoltsType);
@@ -257,10 +257,41 @@ static U4 getControlCount(void * modPtr)
 
 static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
-  if (id >= FILTER_CONTROLCOUNT) return;
+  if (id < FILTER_CONTROLCOUNT)
+  {
+    Volt v = *(Volt*)val;
+    switch (id)
+    {
+      case FILTER_CONTROL_FREQ:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case FILTER_CONTROL_Q:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case FILTER_CONTROL_DB:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case FILTER_CONTROL_ENV:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case FILTER_CONTROL_TYPE:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      default:
+        break;
+    }
 
-  Filter * vco = (Filter *)modPtr;
-  memcpy(&vco->controlsCurr[id], val, sizeof(Volt));
+    ((Filter*)modPtr)->controlsCurr[id] = v;
+  }
+  else if ((id - FILTER_CONTROLCOUNT) < FILTER_MIDI_CONTROLCOUNT)
+  {
+    ((Filter*)modPtr)->midiControlsCurr[id - FILTER_CONTROLCOUNT] = *(MIDIData*)val;
+  }
 }
 
 static void getControlVal(void * modPtr, ModularPortID id, void* ret)

@@ -15,12 +15,26 @@
 ///////////////
 
 /*
+  Inputs:
+
+  Outputs:
+  0: audio: audio volt range [-5v, +5v]
+
+  Controls:
+  0: attack [0v, +10v]
+  1: decay [0v, +10v]
+  2: sustain [0v, +10v]
+  3: release [0v, +10v]
+  
+  2: waveform [0v, 10v] for sin tri sqr saw. only first 4 volts are used. [0, 1)->sin, [1, 2)->tri .... 
+  4: unison [0v, 10v] 1 volt per voice
+  5: detune [0v, 10v] from 0 detune up to full octave
 */
 #define POLYKEYS_MAX_VOICES 5
 
 #define POLYKEYS_INCOUNT           0
 #define POLYKEYS_OUTCOUNT          1
-#define POLYKEYS_CONTROLCOUNT      9
+#define POLYKEYS_CONTROLCOUNT      10
 
 #define POLYKEYS_OUTPORT_AUDIO      0
 
@@ -31,8 +45,9 @@
 #define POLYKEYS_CONTROL_FILTER_ENV_AMT 4
 #define POLYKEYS_CONTROL_FILTER_FREQ 5
 #define POLYKEYS_CONTROL_FILTER_Q 6
-#define POLYKEYS_CONTROL_UNISON 7
-#define POLYKEYS_CONTROL_DETUNE 8
+#define POLYKEYS_CONTROL_WAVE 7
+#define POLYKEYS_CONTROL_UNISON 8
+#define POLYKEYS_CONTROL_DETUNE 9
 
 
 #define POLYKEYS_MIDI_INCOUNT    1

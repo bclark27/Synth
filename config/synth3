@@ -2,9 +2,22 @@ __OUTPUT__ OutputModule
 mdin MidiInput
 pk PolyKeys
 +++
-pk
-connect MidiIn mdin MidiOut
-+++
 __OUTPUT__
 connect Left pk Audio
++++
+mdin
+control MidiIn 0.000000
++++
+pk
+connect MidiIn mdin MidiOut
+control Attack 0.650000
+control Decay 0.560000
+control Sustain 0.580000
+control Release 2.049999
+control FltEnvAmt 3.379997
+control FltFreq 3.039944
+control FltRes 2.500000
+control Waveform 2.500000
+control Unison 0.879998
+control Detune 1.020000
 +++

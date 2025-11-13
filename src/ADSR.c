@@ -234,7 +234,7 @@ static void updateState(void * modPtr)
     R4 attnInVolts = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, IN_PORT_ATTN(adsr) ? IN_PORT_ATTN(adsr)[i] : VOLTSTD_MOD_CV_MAX); // [-10 10]
     R4 attnInlMult = MAP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, -1.f, 1.f, attnInVolts); // [-1, 1]
     
-    R4 attnControlVolts = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_ATTN(adsr), GET_CONTROL_CURR_ATTN(adsr), MODULE_BUFFER_SIZE, i)); // [-10, 10]
+    R4 attnControlVolts = INTERP(GET_CONTROL_PREV_ATTN(adsr), GET_CONTROL_CURR_ATTN(adsr), MODULE_BUFFER_SIZE, i); // [-10, 10]
     R4 attnControlMult = MAP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, -1.f, 1.f, attnControlVolts); // [-1, 1]
 
     R4 finalEnvelope = sampledEvelope * attnInlMult * attnControlMult * VOLTSTD_MOD_CV_MAX;
@@ -302,10 +302,41 @@ static U4 getControlCount(void * modPtr)
 
 static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
-  if (id >= ADSR_CONTROLCOUNT) return;
+  if (id < ADSR_CONTROLCOUNT)
+  {
+    Volt v = *(Volt*)val;
+    switch (id)
+    {
+      case ADSR_CONTROL_A:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case ADSR_CONTROL_D:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case ADSR_CONTROL_S:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case ADSR_CONTROL_R:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case ADSR_CONTROL_ATTN:
+      v = CLAMP(VOLTSTD_MOD_CV_MAX, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      default:
+        break;
+    }
 
-  ADSR * vco = (ADSR *)modPtr;
-  memcpy(&vco->controlsCurr[id], val, sizeof(Volt));
+    ((ADSR*)modPtr)->controlsCurr[id] = v;
+  }
+  else if ((id - ADSR_CONTROLCOUNT) < ADSR_MIDI_CONTROLCOUNT)
+  {
+    ((ADSR*)modPtr)->midiControlsCurr[id - ADSR_CONTROLCOUNT] = *(MIDIData*)val;
+  }
 }
 
 static void getControlVal(void * modPtr, ModularPortID id, void* ret)

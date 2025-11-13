@@ -74,6 +74,7 @@ static char * controlNames[POLYKEYS_CONTROLCOUNT + POLYKEYS_MIDI_CONTROLCOUNT] =
     "FltEnvAmt",
     "FltFreq",
     "FltRes",
+    "Waveform",
     "Unison",
     "Detune",
 };
@@ -120,6 +121,7 @@ Module * PolyKeys_init(char* name)
     pk->controlsCurr[POLYKEYS_CONTROL_R] = 0.3;
     pk->controlsCurr[POLYKEYS_CONTROL_DETUNE] = 1.03;
     pk->controlsCurr[POLYKEYS_CONTROL_UNISON] = 5;
+    pk->controlsCurr[POLYKEYS_CONTROL_WAVE] = 2.5;
     pk->controlsCurr[POLYKEYS_CONTROL_FILTER_ENV_AMT] = VOLTSTD_MOD_CV_ZERO;
     pk->controlsCurr[POLYKEYS_CONTROL_FILTER_Q] = ((VOLTSTD_MOD_CV_MAX + VOLTSTD_MOD_CV_ZERO) / 4);
     pk->controlsCurr[POLYKEYS_CONTROL_FILTER_FREQ] = VOLTSTD_MOD_CV_MAX;
@@ -170,7 +172,6 @@ static void updateState(void * modPtr)
     PolyKeys * pk = (PolyKeys*)modPtr;
 
     consumeMidiMessage(pk);
-
     bool compileVoice[POLYKEYS_MAX_VOICES];
     for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
     {
@@ -282,11 +283,58 @@ static U4 getControlCount(void * modPtr)
 
 static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
-    if (id < POLYKEYS_CONTROLCOUNT) 
+    if (id < POLYKEYS_CONTROLCOUNT)
+  {
+    Volt v = *(Volt*)val;
+    switch (id)
     {
-        ((PolyKeys*)modPtr)->controlsCurr[id] = *(Volt*)val;
+      case POLYKEYS_CONTROL_A:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case POLYKEYS_CONTROL_D:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case POLYKEYS_CONTROL_S:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case POLYKEYS_CONTROL_R:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case POLYKEYS_CONTROL_FILTER_ENV_AMT:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case POLYKEYS_CONTROL_FILTER_FREQ:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case POLYKEYS_CONTROL_FILTER_Q:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case POLYKEYS_CONTROL_WAVE:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case POLYKEYS_CONTROL_UNISON:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      case POLYKEYS_CONTROL_DETUNE:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      default:
+        break;
     }
-    else if ((id - POLYKEYS_CONTROLCOUNT) < POLYKEYS_MIDI_CONTROLCOUNT) 
+
+    ((PolyKeys*)modPtr)->controlsCurr[id] = v;
+  }
+  else if ((id - POLYKEYS_CONTROLCOUNT) < POLYKEYS_MIDI_CONTROLCOUNT) 
     {
         bool good = MIDI_PushRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - POLYKEYS_CONTROLCOUNT), *(MIDIData*)val, &(((PolyKeys*)modPtr)->midiRingWrite[id - POLYKEYS_CONTROLCOUNT]), &(((PolyKeys*)modPtr)->midiRingRead[id - POLYKEYS_CONTROLCOUNT]));
         if (!good) printf("dropped midi packet\n");
@@ -510,6 +558,7 @@ static void voiceOnSetup(PolyKeys* pk, PolyKeysVoice* voice)
 static void applyControlValsToModules(PolyKeys* pk, PolyKeysVoice* voice)
 {
     // push all the relevent control values of the full poly module to the relivent sub modules
+    // if want to get more performance then directly modify the curr control arrays of the controls and bypass the functions
     R4 A = pk->controlsCurr[POLYKEYS_CONTROL_A];
     R4 D = pk->controlsCurr[POLYKEYS_CONTROL_D];
     R4 S = pk->controlsCurr[POLYKEYS_CONTROL_S];
@@ -517,6 +566,7 @@ static void applyControlValsToModules(PolyKeys* pk, PolyKeysVoice* voice)
     R4 fltEnvAmt = pk->controlsCurr[POLYKEYS_CONTROL_FILTER_ENV_AMT];
     R4 fltFreq = pk->controlsCurr[POLYKEYS_CONTROL_FILTER_FREQ];
     R4 fltQ = pk->controlsCurr[POLYKEYS_CONTROL_FILTER_Q];
+    R4 wave = pk->controlsCurr[POLYKEYS_CONTROL_WAVE];
     R4 unison = pk->controlsCurr[POLYKEYS_CONTROL_UNISON];
     R4 detune = pk->controlsCurr[POLYKEYS_CONTROL_DETUNE];
     
@@ -531,6 +581,7 @@ static void applyControlValsToModules(PolyKeys* pk, PolyKeysVoice* voice)
 
     voice->vco->module.setControlVal(voice->vco, VCO_CONTROL_UNI, &unison);
     voice->vco->module.setControlVal(voice->vco, VCO_CONTROL_DET, &detune);
+    voice->vco->module.setControlVal(voice->vco, VCO_CONTROL_WAVE, &wave);
 }
 
 static inline void assignADSRBuffer(PolyKeys* pk, PolyKeysVoice* voice)

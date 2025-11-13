@@ -142,7 +142,7 @@ static void updateState(void * modPtr)
 
     
     R4 inputVolts = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, IN_PORT_VOL(mix) ? IN_PORT_VOL(mix)[i] : VOLTSTD_MOD_CV_MAX); // [0v, +10v]
-    R4 controlVolts = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, INTERP(GET_CONTROL_PREV_VOL(mix), GET_CONTROL_CURR_VOL(mix), MODULE_BUFFER_SIZE, i)); // [0v, +10v]
+    R4 controlVolts = INTERP(GET_CONTROL_PREV_VOL(mix), GET_CONTROL_CURR_VOL(mix), MODULE_BUFFER_SIZE, i); // [0v, +10v]
     
     R4 controlAsMultiplier = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.f, 1.f, controlVolts); // [0, 1]
     sum[i] *= VoltUtils_voltDbToAmpl(inputVolts * controlVolts);
@@ -207,10 +207,25 @@ static U4 getControlCount(void * modPtr)
 
 static void setControlVal(void * modPtr, ModularPortID id, void* val)
 {
-  if (id >= MIXER_CONTROLCOUNT) return;
+  if (id < MIXER_CONTROLCOUNT)
+  {
+    Volt v = *(Volt*)val;
+    switch (id)
+    {
+      case MIXER_CONTROL_VOL:
+      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
+      default:
+        break;
+    }
 
-  Mixer * vco = (Mixer *)modPtr;
-  memcpy(&vco->controlsCurr[id], val, sizeof(Volt));
+    ((Mixer*)modPtr)->controlsCurr[id] = v;
+  }
+  else if ((id - MIXER_CONTROLCOUNT) < MIXER_MIDI_CONTROLCOUNT)
+  {
+    ((Mixer*)modPtr)->midiControlsCurr[id - MIXER_CONTROLCOUNT] = *(MIDIData*)val;
+  }
 }
 
 static void getControlVal(void * modPtr, ModularPortID id, void* ret)

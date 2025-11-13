@@ -18,9 +18,11 @@
   0: audio: audio volt range [-5v, +5v]
 
   Controls:
-  0: freq
-  1: pulse width
-  2: waveform [0 - 1] for sin tri sqr saw
+  0: freq [-10v, 10v]
+  1: pulse width [0v, 10v]
+  2: waveform [0v, 10v] for sin tri sqr saw. only first 4 volts are used. [0, 1)->sin, [1, 2)->tri .... 
+  4: unison [0v, 10v] 1 volt per voice
+  5: detune [0v, 10v] from 0 detune up to full octave
 */
 
 #define VCO_INCOUNT         2

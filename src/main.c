@@ -9,7 +9,7 @@ ModularSynth_update();
 memcpy(signalBuffers[idx], synthOutput, sizeof(R4) * STREAM_BUFFER_SIZE);
 */
 
-
+#define PATH "/home/ben/projects/github/my/Synth/config/synth3"
 #define SCREEN_WIDTH        300
 #define SCREEN_HEIGHT       300
 #define FPS                 60
@@ -125,6 +125,14 @@ void knobHelper(char* modName, char* cvName, int knobNum, int direction, float d
 
 void OnPushEvent(MessageType t, void* d, MessageSize s)
 {
+  if (t == MSG_TYPE_ABL_BUTTON)
+  {
+    AbletonPkt_button* btn = d;
+    if (btn->btnId == 86)
+    {
+      ModularSynth_exportConfig(PATH);
+    }
+  }
 
   if (t == MSG_TYPE_ABL_PAD)
   {
@@ -254,7 +262,7 @@ int main(void)
   IPC_ConnectToService("PushEvents", OnPushEvent);
   initColors();
   ModularSynth_init();
-  ModularSynth_readConfig("/home/ben/projects/github/my/Synth/config/synth3");
+  ModularSynth_readConfig(PATH);
   AudioDevice_init();
   AudioDevice_LoopForever();
   return 0;
