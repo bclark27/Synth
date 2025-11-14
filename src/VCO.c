@@ -58,6 +58,8 @@ static U4 getControlCount(void * modPtr);
 static void setControlVal(void * modPtr, ModularPortID id, void* val);
 static void getControlVal(void * modPtr, ModularPortID id, void* ret);
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
+static void initTables();
+static inline float fastVoltToFreq(float v);
 
 static void createStrideTable(VCO * vco, R4 * table);
 static void createPwTable(VCO * vco, R4 * table);
@@ -65,6 +67,10 @@ static void createPwTable(VCO * vco, R4 * table);
 //////////////////////
 //  DEFAULT VALUES  //
 //////////////////////
+
+#define FREQ_TABLE_SIZE 2048
+static float volt_to_freq_table[FREQ_TABLE_SIZE];
+static bool tableInitDone = false;
 
 static char * inPortNames[VCO_INCOUNT] = {
   "Freq",
@@ -120,6 +126,11 @@ static Module vtable = {
 
 void VCO_initInPlace(VCO* vco, char* name)
 {
+  if (!tableInitDone)
+  {
+    initTables();
+    tableInitDone = true;
+  }
 
   // set vtable
   vco->module = vtable;
@@ -302,7 +313,7 @@ static void createStrideTable(VCO * vco, R4 * table)
       R4 freqControlVolts = INTERP(GET_CONTROL_PREV_FREQ(vco), GET_CONTROL_CURR_FREQ(vco), MODULE_BUFFER_SIZE, i);
       
       R4 totalFreqVolts = IN_PORT_FREQ(vco)[i] + freqControlVolts;
-      table[i] = VoltUtils_voltToFreq(totalFreqVolts);
+      table[i] = fastVoltToFreq(totalFreqVolts);
       table[i] /= SAMPLE_RATE;
     }
   }
@@ -311,7 +322,7 @@ static void createStrideTable(VCO * vco, R4 * table)
     for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
       R4 freqControlVolts = INTERP(GET_CONTROL_PREV_FREQ(vco), GET_CONTROL_CURR_FREQ(vco), MODULE_BUFFER_SIZE, i);
-      table[i] = VoltUtils_voltToFreq(freqControlVolts);
+      table[i] = fastVoltToFreq(freqControlVolts);
       table[i] /= SAMPLE_RATE;
     }
   }
@@ -335,4 +346,26 @@ static void createPwTable(VCO * vco, R4 * table)
       table[i] = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.01f, 0.99f, INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), MODULE_BUFFER_SIZE, i));
     }
   }
+}
+
+static void initTables()
+{
+  float inc = VOLTSTD_MOD_CV_RANGE / (float)FREQ_TABLE_SIZE;
+  float v = VOLTSTD_MOD_CV_MIN;
+  for (int i = 0; i < FREQ_TABLE_SIZE; i++)
+  {
+    volt_to_freq_table[i] = VOLTSTD_C3_FREQ * pow(2, v - VOLTSTD_C3_VOLTAGE);
+    v += inc;
+  }
+}
+
+static inline float fastVoltToFreq(float v)
+{
+  v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
+  float idx = (v + (-VOLTSTD_MOD_CV_MIN)) / VOLTSTD_MOD_CV_RANGE * (FREQ_TABLE_SIZE - 1);
+  int i = (int)idx;
+  float frac = idx - i;
+  float ret = volt_to_freq_table[i] * (1.0f - frac)
+       + volt_to_freq_table[i + 1] * frac;
+  return ret;
 }

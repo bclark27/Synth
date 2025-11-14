@@ -197,16 +197,6 @@ static void updateState(void * modPtr)
   }
   for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
   {
-    // get the input voltage
-    
-    // interp the control input
-    //R4 controlVoltsDb = INTERP(GET_CONTROL_PREV_DB(flt), GET_CONTROL_CURR_DB(flt), MODULE_BUFFER_SIZE, i);
-    
-    
-    
-    // convert voltage into usable values
-    //printf("%f, %f, %f, %f\n", realQ, controlVoltsEnv, inVoltsFreqEnv, controlVoltsFreq);
-    
     if ((i & 7) == 7)
     {
       R4 inVoltsFreqEnv = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, IN_PORT_FREQ(flt) ? IN_PORT_FREQ(flt)[i] : VOLTSTD_MOD_CV_ZERO); // [0, 10]

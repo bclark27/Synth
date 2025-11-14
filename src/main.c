@@ -262,6 +262,7 @@ int main(void)
   initColors();
   ModularSynth_init();
   ModularSynth_readConfig(PATH);
+  //while (1){ModularSynth_update();}
   AudioDevice_init();
   AudioDevice_LoopForever();
   return 0;

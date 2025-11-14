@@ -31,6 +31,10 @@ typedef struct Oscillator
 {
   Waveform waveform;
   R4 phase[MAX_UNISON];
+  R4 detuneTable[MAX_UNISON];
+
+  U1 prevUnison;
+  R4 prevDetune;
 } Oscillator;
 
 ////////////////////////
