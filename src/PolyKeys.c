@@ -541,7 +541,7 @@ static void voiceOnSetup(PolyKeys* pk, PolyKeysVoice* voice)
     */
 
     Volt freq = midiNoteToFreqVolt(voice->note);
-    for (int i = 0; i < MIDI_STREAM_BUFFER_SIZE; i++)
+    for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
         voice->voiceInputFreqBuffer[i] = freq;
     }

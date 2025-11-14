@@ -197,7 +197,7 @@ static void updateState(void * modPtr)
   }
   for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
   {
-    if ((i & 7) == 7)
+    if (((i + 6) & 7) == 7)
     {
       R4 inVoltsFreqEnv = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, IN_PORT_FREQ(flt) ? IN_PORT_FREQ(flt)[i] : VOLTSTD_MOD_CV_ZERO); // [0, 10]
       R4 controlVoltsFreq = INTERP(GET_CONTROL_PREV_FREQ(flt), GET_CONTROL_CURR_FREQ(flt), MODULE_BUFFER_SIZE, i);// [0, 10]

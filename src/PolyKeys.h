@@ -66,8 +66,8 @@ typedef struct PolyKeysVoice
     Filter flt;
     ADSR adsr;
     Attenuverter attn;
-    VoltStream voiceOutputBuffer;
-    Volt voiceInputFreqBuffer[MIDI_STREAM_BUFFER_SIZE];
+    Volt* voiceOutputBuffer;
+    Volt voiceInputFreqBuffer[MODULE_BUFFER_SIZE];
 
     U8 noteAge;
     R4 velocityAmplitudeMultiplier;
