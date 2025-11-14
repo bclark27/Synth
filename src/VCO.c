@@ -168,7 +168,7 @@ static void updateState(void * modPtr)
   createPwTable(vco, pwTable);
   
   // now lets change the wave form based on the control
-  Waveform wave = (Waveform)(int)(CLAMP(0, 3.5, GET_CONTROL_CURR_WAVE(vco)));
+  Waveform wave = (Waveform)(int)(CLAMPF(0, 3.5, GET_CONTROL_CURR_WAVE(vco)));
   vco->osc.waveform = wave;
   
 
@@ -240,23 +240,23 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
     switch (id)
     {
       case VCO_CONTROL_FREQ:
-      v = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case VCO_CONTROL_PW:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case VCO_CONTROL_WAVE:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case VCO_CONTROL_UNI:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case VCO_CONTROL_DET:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       default:
@@ -319,7 +319,7 @@ static void createPwTable(VCO * vco, R4 * table)
     {
       R4 cvPwVolts = IN_PORT_PW(vco)[i];
       R4 pwControlVolts = INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), MODULE_BUFFER_SIZE, i);
-      table[i] = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.01f, 0.99f, CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, cvPwVolts + pwControlVolts));
+      table[i] = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.01f, 0.99f, CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, cvPwVolts + pwControlVolts));
     }
   }
   else

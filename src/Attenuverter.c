@@ -213,7 +213,7 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
     switch (id)
     {
       case ATTN_CONTROL_ATTN:
-      v = CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       default:

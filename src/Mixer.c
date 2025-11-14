@@ -141,7 +141,7 @@ static void updateState(void * modPtr)
     sum[i] += IN_PORT_AUDIO3(mix) ? IN_PORT_AUDIO3(mix)[i] : 0;
 
     
-    R4 inputVolts = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, IN_PORT_VOL(mix) ? IN_PORT_VOL(mix)[i] : VOLTSTD_MOD_CV_MAX); // [0v, +10v]
+    R4 inputVolts = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, IN_PORT_VOL(mix) ? IN_PORT_VOL(mix)[i] : VOLTSTD_MOD_CV_MAX); // [0v, +10v]
     R4 controlVolts = INTERP(GET_CONTROL_PREV_VOL(mix), GET_CONTROL_CURR_VOL(mix), MODULE_BUFFER_SIZE, i); // [0v, +10v]
     
     R4 controlAsMultiplier = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.f, 1.f, controlVolts); // [0, 1]
@@ -213,7 +213,7 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
     switch (id)
     {
       case MIXER_CONTROL_VOL:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       default:

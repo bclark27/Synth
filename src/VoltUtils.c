@@ -24,5 +24,5 @@ inline R4 VoltUtils_voltDbToAmpl(R4 volts)
 
 inline R4 VoltUtils_voltDbToAttenuverterMult(R4 volts)
 {
-  return CLAMP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, volts) / (VOLTSTD_MOD_CV_MAX);
+  return CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, volts) / (VOLTSTD_MOD_CV_MAX);
 }

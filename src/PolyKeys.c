@@ -121,7 +121,7 @@ Module * PolyKeys_init(char* name)
     pk->controlsCurr[POLYKEYS_CONTROL_R] = 0.3;
     pk->controlsCurr[POLYKEYS_CONTROL_DETUNE] = 1.03;
     pk->controlsCurr[POLYKEYS_CONTROL_UNISON] = 5;
-    pk->controlsCurr[POLYKEYS_CONTROL_WAVE] = 2.5;
+    pk->controlsCurr[POLYKEYS_CONTROL_WAVE] = .5f;
     pk->controlsCurr[POLYKEYS_CONTROL_FILTER_ENV_AMT] = VOLTSTD_MOD_CV_ZERO;
     pk->controlsCurr[POLYKEYS_CONTROL_FILTER_Q] = ((VOLTSTD_MOD_CV_MAX + VOLTSTD_MOD_CV_ZERO) / 4);
     pk->controlsCurr[POLYKEYS_CONTROL_FILTER_FREQ] = VOLTSTD_MOD_CV_MAX;
@@ -289,43 +289,43 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
     switch (id)
     {
       case POLYKEYS_CONTROL_A:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case POLYKEYS_CONTROL_D:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case POLYKEYS_CONTROL_S:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case POLYKEYS_CONTROL_R:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case POLYKEYS_CONTROL_FILTER_ENV_AMT:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case POLYKEYS_CONTROL_FILTER_FREQ:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case POLYKEYS_CONTROL_FILTER_Q:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case POLYKEYS_CONTROL_WAVE:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case POLYKEYS_CONTROL_UNISON:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case POLYKEYS_CONTROL_DETUNE:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       default:
@@ -536,7 +536,7 @@ static void voiceOnSetup(PolyKeys* pk, PolyKeysVoice* voice)
         noteIsOn
         adsrActive
     
-    TODO: also be sure to set the control values of the modules and push curr to prev so no interp goes weird between note presses***
+    also be sure to set the control values of the modules and push curr to prev so no interp goes weird between note presses***
     fill up the voiceInputFreqBuffer with currect note freq
     */
 

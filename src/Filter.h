@@ -76,6 +76,10 @@ typedef struct Filter
   float x1, x2;  // past inputs
   float y1, y2;  // past outputs
 
+  float prevFreq;
+  float prevQ;
+  float prevType;
+
 } Filter;
 
 

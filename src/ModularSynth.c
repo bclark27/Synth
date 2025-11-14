@@ -4,6 +4,8 @@
 #include "ModuleFactory.h"
 #include <pthread.h>
 #include <stdatomic.h>
+#include <xmmintrin.h>
+#include <immintrin.h>
 
 //////////////
 // DEFINES  //
@@ -58,6 +60,9 @@ void ModularSynth_init(void)
 {
   if (initDone) return;
   initDone = true;
+
+  _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+  _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
 
   memset(synth, 0, sizeof(ModularSynth));
 

@@ -55,6 +55,7 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define CLAMP(min,max,x)    MAX((min), MIN((x), (max)))
+#define CLAMPF(min,max,x)   (fmaxf((min), fminf((x), (max))))
 #define MAP(i1, i2, o1, o2, x)    ((o1) + (R8)(((o2) - (o1)) / (R8)((i2) - (i1))) * (R8)((x) - (i1)))
 #define INTERP(a, b, steps, x)    ((R8)(a) + (((R8)(b) - (R8)(a)) / (R8)(steps)) * (R8)(x))
 #define PI        3.14159265358979323846f

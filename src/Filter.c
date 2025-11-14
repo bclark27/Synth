@@ -185,32 +185,35 @@ static void updateState(void * modPtr)
   for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
   {
     // get the input voltage
-    R4 inVoltsFreqEnv = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, IN_PORT_FREQ(flt) ? IN_PORT_FREQ(flt)[i] : VOLTSTD_MOD_CV_ZERO); // [0, 10]
-
+    
     // interp the control input
-    R4 controlVoltsFreq = INTERP(GET_CONTROL_PREV_FREQ(flt), GET_CONTROL_CURR_FREQ(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
-    R4 controlVoltsQ = INTERP(GET_CONTROL_PREV_Q(flt), GET_CONTROL_CURR_Q(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
     //R4 controlVoltsDb = INTERP(GET_CONTROL_PREV_DB(flt), GET_CONTROL_CURR_DB(flt), MODULE_BUFFER_SIZE, i);
-    R4 controlVoltsEnv = INTERP(GET_CONTROL_PREV_ENV(flt), GET_CONTROL_CURR_ENV(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
-    R4 controlVoltsType = INTERP(GET_CONTROL_PREV_TYPE(flt), GET_CONTROL_CURR_TYPE(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
-
-    R4 controlEnvMult = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.0f, 1.0f, controlVoltsEnv);
-    float filterType = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.0f, 2.0f, controlVoltsType);
-
-    R4 voltsFreq = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, (controlEnvMult * inVoltsFreqEnv) + controlVoltsFreq);
-
+    
+    
+    
     // convert voltage into usable values
-    R4 realFreq = fastVoltToFreq(voltsFreq);//fastVoltToFreq(voltsFreq);//20 * powf(2, voltsFreq);
-    R4 realQ = fastVoltToQ(controlVoltsQ);//voltToMoogQ(controlVoltsQ);
     //printf("%f, %f, %f, %f\n", realQ, controlVoltsEnv, inVoltsFreqEnv, controlVoltsFreq);
+    
+    if ((i & 7) == 7)
+    {
+      R4 inVoltsFreqEnv = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, IN_PORT_FREQ(flt) ? IN_PORT_FREQ(flt)[i] : VOLTSTD_MOD_CV_ZERO); // [0, 10]
+      R4 controlVoltsFreq = INTERP(GET_CONTROL_PREV_FREQ(flt), GET_CONTROL_CURR_FREQ(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
+      R4 controlVoltsQ = INTERP(GET_CONTROL_PREV_Q(flt), GET_CONTROL_CURR_Q(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
+      R4 controlVoltsEnv = INTERP(GET_CONTROL_PREV_ENV(flt), GET_CONTROL_CURR_ENV(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
+      R4 controlEnvMult = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.0f, 1.0f, controlVoltsEnv);
+      R4 voltsFreq = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, (controlEnvMult * inVoltsFreqEnv) + controlVoltsFreq);
+      R4 realFreq = fastVoltToFreq(voltsFreq);//fastVoltToFreq(voltsFreq);//20 * powf(2, voltsFreq);
+      R4 realQ = fastVoltToQ(controlVoltsQ);//voltToMoogQ(controlVoltsQ);
+      R4 controlVoltsType = INTERP(GET_CONTROL_PREV_TYPE(flt), GET_CONTROL_CURR_TYPE(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
 
-    if (filterType < 1)
-    {
-      setLowpass(flt, realFreq, realQ);
-    }
-    else
-    {
-      setHighpass(flt, realFreq, realQ);
+      if (controlVoltsType < 5)
+      {
+        setLowpass(flt, realFreq, realQ);
+      }
+      else
+      {
+        setHighpass(flt, realFreq, realQ);
+      }
     }
 
     OUT_PORT_AUD(flt)[i] = processFilter(flt, IN_PORT_AUD(flt)[i]);
@@ -281,23 +284,23 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
     switch (id)
     {
       case FILTER_CONTROL_FREQ:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case FILTER_CONTROL_Q:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case FILTER_CONTROL_DB:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case FILTER_CONTROL_ENV:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       case FILTER_CONTROL_TYPE:
-      v = CLAMP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
       
       default:

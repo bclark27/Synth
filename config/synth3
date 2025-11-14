@@ -11,13 +11,13 @@ control MidiIn 0.000000
 pk
 connect MidiIn mdin MidiOut
 control Attack 0.840000
-control Decay 1.010000
-control Sustain 0.760000
+control Decay 0.760000
+control Sustain 0.500000
 control Release 2.109999
-control FltEnvAmt 5.839936
-control FltFreq 2.279998
+control FltEnvAmt 5.419927
+control FltFreq 1.229999
 control FltRes 2.500000
 control Waveform 2.500000
-control Unison 8.570045
-control Detune 0.269897
+control Unison 1.840008
+control Detune 0.259897
 +++
