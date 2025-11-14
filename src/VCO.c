@@ -181,13 +181,13 @@ static void updateState(void * modPtr)
   R4 strideTable[MODULE_BUFFER_SIZE];
   R4 pwTable[MODULE_BUFFER_SIZE];
   
-  createStrideTable(vco, strideTable);
-  createPwTable(vco, pwTable);
-  
   // now lets change the wave form based on the control
   Waveform wave = (Waveform)(int)(CLAMPF(0, 3.5, GET_CONTROL_CURR_WAVE(vco)));
   vco->osc.waveform = wave;
   
+  createStrideTable(vco, strideTable);
+  if (wave == Waveform_sqr)
+    createPwTable(vco, pwTable);
 
   R4 detune = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 1.f, 2.f, GET_CONTROL_CURR_DET(vco));
   U1 unison = CLAMP(1, MAX_UNISON, (int)GET_CONTROL_CURR_UNI(vco));
@@ -343,7 +343,8 @@ static void createPwTable(VCO * vco, R4 * table)
   {
     for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-      table[i] = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.01f, 0.99f, INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), MODULE_BUFFER_SIZE, i));
+      R4 pwControlVolts = INTERP(GET_CONTROL_PREV_PW(vco), GET_CONTROL_CURR_PW(vco), MODULE_BUFFER_SIZE, i);
+      table[i] = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.01f, 0.99f, pwControlVolts);
     }
   }
 }

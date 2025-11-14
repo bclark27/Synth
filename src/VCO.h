@@ -72,6 +72,10 @@ typedef struct VCO
   MIDIData midiControlsCurr[VCO_MIDI_CONTROLCOUNT];
   MIDIData midiControlsPrev[VCO_MIDI_CONTROLCOUNT];
 
+
+  Volt pwTable[MODULE_BUFFER_SIZE];
+  Volt strideTable[MODULE_BUFFER_SIZE];
+
   Oscillator osc;
 
 } VCO;

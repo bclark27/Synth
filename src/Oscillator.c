@@ -55,6 +55,8 @@ void Oscillator_initInPlace(Oscillator * osc, Waveform waveform)
     tableInitDone = true;
   }
   osc->waveform = waveform;
+  osc->prevUnison = 127;
+  osc->prevDetune = -999;
   memset(osc->phase, 0, sizeof(osc->phase));
 }
 
@@ -133,8 +135,15 @@ void Oscillator_sampleWithStrideAndPWTable(Oscillator * osc, R4 * samples, U4 sa
   }
   else
   {
-    detune = MAX(detune, 1);
-    fillDetuneTable(osc->detuneTable, unison, detune);
+    detune = fmaxf(detune, 1);
+    bool change = fabsf(osc->prevUnison - unison) > EPSILON ||
+                  fabsf(osc->prevDetune - detune) > EPSILON;
+    if (change)
+    {
+      osc->prevUnison = unison;
+      osc->prevDetune = detune;
+      fillDetuneTable(osc->detuneTable, unison, detune);
+    }
     R4 thisSample;
     switch (osc->waveform)
     {
