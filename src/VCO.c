@@ -117,9 +117,9 @@ static Module vtable = {
 // PUBLIC FUNCTIONS //
 //////////////////////
 
-Module * VCO_init(char* name)
+
+void VCO_initInPlace(VCO* vco, char* name)
 {
-  VCO * vco = calloc(1, sizeof(VCO));
 
   // set vtable
   vco->module = vtable;
@@ -139,7 +139,13 @@ Module * VCO_init(char* name)
 
   // init other structs
   Oscillator_initInPlace(&vco->osc, Waveform_sin);
+}
 
+Module * VCO_init(char* name)
+{
+  VCO * vco = calloc(1, sizeof(VCO));
+
+  VCO_initInPlace(vco, name);
   return (Module*)vco;
 }
 

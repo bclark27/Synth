@@ -104,5 +104,6 @@ typedef struct ADSR
 } ADSR;
 
 Module * ADSR_init(char* name);
+void ADSR_initInPlace(ADSR* adsr, char* name);
 
 #endif

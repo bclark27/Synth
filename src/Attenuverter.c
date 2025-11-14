@@ -89,10 +89,8 @@ static Module vtable = {
 //////////////////////
 // PUBLIC FUNCTIONS //
 //////////////////////
-
-Module * Attenuverter_init(char* name)
+void Attenuverter_initInPlace(Attenuverter* attn, char* name)
 {
-  Attenuverter * attn = calloc(1, sizeof(Attenuverter));
 
   // set vtable
   attn->module = vtable;
@@ -103,6 +101,12 @@ Module * Attenuverter_init(char* name)
 
   // push curr to prev
   CONTROL_PUSH_TO_PREV(attn);
+}
+
+Module * Attenuverter_init(char* name)
+{
+  Attenuverter * attn = calloc(1, sizeof(Attenuverter));
+  Attenuverter_initInPlace(attn, name);
 
   return (Module*)attn;
 }

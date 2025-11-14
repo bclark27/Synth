@@ -68,5 +68,6 @@ typedef struct Attenuverter
 
 
 Module * Attenuverter_init(char* name);
+void Attenuverter_initInPlace(Attenuverter* attn, char* name);
 
 #endif

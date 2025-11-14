@@ -81,5 +81,6 @@ typedef struct VCO
 ////////////////////////
 
 Module * VCO_init(char* name);
+void VCO_initInPlace(VCO* vco, char* name);
 
 #endif

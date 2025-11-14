@@ -6,6 +6,8 @@
 // DEFINES  //
 //////////////
 
+#define EPSILON (0.0005f)
+
 #define IN_PORT_ADDR(mod, port)           (((Filter*)(mod))->inputPorts[port]);
 
 #define PREV_PORT_ADDR(mod, port)         (((Filter*)(mod))->outputPortsPrev + MODULE_BUFFER_SIZE * (port))
@@ -132,7 +134,7 @@ static Module vtable = {
 // PUBLIC FUNCTIONS //
 //////////////////////
 
-Module * Filter_init(char* name)
+void Filter_initInPlace(Filter* flt, char* name)
 {
   if (!tableInitDone)
   {
@@ -140,8 +142,6 @@ Module * Filter_init(char* name)
     initVoltTable();
     initQTable();
   }
-
-  Filter * flt = calloc(1, sizeof(Filter));
 
   // set vtable
   flt->module = vtable;
@@ -156,6 +156,19 @@ Module * Filter_init(char* name)
 
   // push curr to prev
   CONTROL_PUSH_TO_PREV(flt);
+
+  flt->prevVoltsFreq = -999;
+  flt->prevControlVoltsQ = -999;
+  flt->prevVoltsFreq = -999;
+}
+
+Module * Filter_init(char* name)
+{
+  
+
+  Filter * flt = calloc(1, sizeof(Filter));
+
+  Filter_initInPlace(flt, name);
 
   return (Module*)flt;
 }
@@ -202,17 +215,29 @@ static void updateState(void * modPtr)
       R4 controlVoltsEnv = INTERP(GET_CONTROL_PREV_ENV(flt), GET_CONTROL_CURR_ENV(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
       R4 controlEnvMult = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.0f, 1.0f, controlVoltsEnv);
       R4 voltsFreq = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, (controlEnvMult * inVoltsFreqEnv) + controlVoltsFreq);
-      R4 realFreq = fastVoltToFreq(voltsFreq);//fastVoltToFreq(voltsFreq);//20 * powf(2, voltsFreq);
-      R4 realQ = fastVoltToQ(controlVoltsQ);//voltToMoogQ(controlVoltsQ);
       R4 controlVoltsType = INTERP(GET_CONTROL_PREV_TYPE(flt), GET_CONTROL_CURR_TYPE(flt), MODULE_BUFFER_SIZE, i);// [0, 10]
 
-      if (controlVoltsType < 5)
+      bool change = fabsf(flt->prevVoltsFreq - voltsFreq) > EPSILON ||
+                  fabsf(flt->prevControlVoltsQ - controlVoltsQ) > EPSILON ||
+                  fabsf(flt->prevType - controlVoltsType) > EPSILON;
+
+      if (change)
       {
-        setLowpass(flt, realFreq, realQ);
-      }
-      else
-      {
-        setHighpass(flt, realFreq, realQ);
+        flt->prevVoltsFreq = voltsFreq;
+        flt->prevControlVoltsQ = controlVoltsQ;
+        flt->prevType = controlVoltsType;
+
+        R4 realFreq = fastVoltToFreq(voltsFreq);//fastVoltToFreq(voltsFreq);//20 * powf(2, voltsFreq);
+        R4 realQ = fastVoltToQ(controlVoltsQ);//voltToMoogQ(controlVoltsQ);
+  
+        if (controlVoltsType < 5)
+        {
+          setLowpass(flt, realFreq, realQ);
+        }
+        else
+        {
+          setHighpass(flt, realFreq, realQ);
+        }
       }
     }
 

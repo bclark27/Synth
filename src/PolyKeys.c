@@ -158,10 +158,10 @@ static void free_poly(void * modPtr)
     for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
     {
         PolyKeysVoice* voice = &pk->voices[i];
-        voice->vco->module.freeModule(voice->vco);
-        voice->attn->module.freeModule(voice->attn);
-        voice->flt->module.freeModule(voice->flt);
-        voice->adsr->module.freeModule(voice->adsr);
+        voice->vco.module.freeModule(&voice->vco);
+        voice->attn.module.freeModule(&voice->attn);
+        voice->flt.module.freeModule(&voice->flt);
+        voice->adsr.module.freeModule(&voice->adsr);
     }
 
     free(pk);
@@ -368,61 +368,61 @@ static void initAdsrInputBuffers(void)
 
 static void initVoice(PolyKeysVoice* voice)
 {
-    voice->vco = (VCO*)VCO_init("mod");
-    voice->adsr = (ADSR*)ADSR_init("mod");
-    voice->flt = (Filter*)Filter_init("mod");
-    voice->attn = (Attenuverter*)Attenuverter_init("mod");
+    VCO_initInPlace(&voice->vco, malloc(1));
+    ADSR_initInPlace(&voice->adsr, malloc(1));
+    Filter_initInPlace(&voice->flt, malloc(1));
+    Attenuverter_initInPlace(&voice->attn, malloc(1));
 
     // connect the input of the flt to the out of the vco audio
-    voice->flt->module.linkToInput(
-        (Module*)voice->flt,
+    voice->flt.module.linkToInput(
+        (Module*)&voice->flt,
         FILTER_IN_PORT_AUD,
-        voice->vco->module.getOutputAddr(
-            (Module*)voice->vco, 
+        voice->vco.module.getOutputAddr(
+            (Module*)&voice->vco, 
             VCO_OUT_PORT_AUD
         )
     );
 
     // connect the input of the attn vol to the output env of the adsr
-    voice->attn->module.linkToInput(
-        (Module*)voice->attn,
+    voice->attn.module.linkToInput(
+        (Module*)&voice->attn,
         ATTN_IN_PORT_ATTN,
-        voice->adsr->module.getOutputAddr(
-            (Module*)voice->adsr, 
+        voice->adsr.module.getOutputAddr(
+            (Module*)&voice->adsr, 
             ADSR_OUT_PORT_ENV
         )
     );
 
     // connect the input of the fitler env to the output of the adsr
-    voice->flt->module.linkToInput(
-        (Module*)voice->flt,
+    voice->flt.module.linkToInput(
+        (Module*)&voice->flt,
         FILTER_IN_PORT_FREQ,
-        voice->adsr->module.getOutputAddr(
-            (Module*)voice->adsr, 
+        voice->adsr.module.getOutputAddr(
+            (Module*)&voice->adsr, 
             ADSR_OUT_PORT_ENV
         )
     );
 
     // connect the input of the attn to the output of the fitler
-    voice->attn->module.linkToInput(
-        (Module*)voice->attn,
+    voice->attn.module.linkToInput(
+        (Module*)&voice->attn,
         ATTN_IN_PORT_SIG,
-        voice->flt->module.getOutputAddr(
-            (Module*)voice->flt, 
+        voice->flt.module.getOutputAddr(
+            (Module*)&voice->flt, 
             FILTER_OUT_PORT_AUD
         )
     );
     
     // conenct the input of the vco to the volt stream input
-    voice->vco->module.linkToInput(
-        (Module*)voice->vco,
+    voice->vco.module.linkToInput(
+        (Module*)&voice->vco,
         VCO_IN_PORT_FREQ,
         voice->voiceInputFreqBuffer
     );
 
     // set up the output of the attn as the last step to the voice
-    voice->voiceOutputBuffer = voice->attn->module.getOutputAddr(
-        (Module*)voice->attn, 
+    voice->voiceOutputBuffer = voice->attn.module.getOutputAddr(
+        (Module*)&voice->attn, 
         ATTN_OUT_PORT_SIG
     );
 }
@@ -549,10 +549,10 @@ static void voiceOnSetup(PolyKeys* pk, PolyKeysVoice* voice)
     // put control updates here
     applyControlValsToModules(pk, voice);
 
-    voice->adsr->module.pushCurrToPrev(voice->adsr);
-    voice->vco->module.pushCurrToPrev(voice->vco);
-    voice->flt->module.pushCurrToPrev(voice->flt);
-    voice->attn->module.pushCurrToPrev(voice->attn);
+    voice->adsr.module.pushCurrToPrev(&voice->adsr);
+    voice->vco.module.pushCurrToPrev(&voice->vco);
+    voice->flt.module.pushCurrToPrev(&voice->flt);
+    voice->attn.module.pushCurrToPrev(&voice->attn);
 }
 
 static void applyControlValsToModules(PolyKeys* pk, PolyKeysVoice* voice)
@@ -570,19 +570,19 @@ static void applyControlValsToModules(PolyKeys* pk, PolyKeysVoice* voice)
     R4 unison = pk->controlsCurr[POLYKEYS_CONTROL_UNISON];
     R4 detune = pk->controlsCurr[POLYKEYS_CONTROL_DETUNE];
     
-    voice->adsr->controlsCurr[ADSR_CONTROL_A] = A;
-    voice->adsr->controlsCurr[ADSR_CONTROL_D] = D;
-    voice->adsr->controlsCurr[ADSR_CONTROL_S] = S;
-    voice->adsr->controlsCurr[ADSR_CONTROL_R] = R;
+    voice->adsr.controlsCurr[ADSR_CONTROL_A] = A;
+    voice->adsr.controlsCurr[ADSR_CONTROL_D] = D;
+    voice->adsr.controlsCurr[ADSR_CONTROL_S] = S;
+    voice->adsr.controlsCurr[ADSR_CONTROL_R] = R;
 
 
-    voice->flt->controlsCurr[FILTER_CONTROL_ENV] = fltEnvAmt;
-    voice->flt->controlsCurr[FILTER_CONTROL_FREQ] = fltFreq;
-    voice->flt->controlsCurr[FILTER_CONTROL_Q] = fltQ;
+    voice->flt.controlsCurr[FILTER_CONTROL_ENV] = fltEnvAmt;
+    voice->flt.controlsCurr[FILTER_CONTROL_FREQ] = fltFreq;
+    voice->flt.controlsCurr[FILTER_CONTROL_Q] = fltQ;
 
-    voice->vco->controlsCurr[VCO_CONTROL_UNI] = unison;
-    voice->vco->controlsCurr[VCO_CONTROL_DET] = detune;
-    voice->vco->controlsCurr[VCO_CONTROL_WAVE] = wave;
+    voice->vco.controlsCurr[VCO_CONTROL_UNI] = unison;
+    voice->vco.controlsCurr[VCO_CONTROL_DET] = detune;
+    voice->vco.controlsCurr[VCO_CONTROL_WAVE] = wave;
 }
 
 static inline void assignADSRBuffer(PolyKeys* pk, PolyKeysVoice* voice)
@@ -590,15 +590,15 @@ static inline void assignADSRBuffer(PolyKeys* pk, PolyKeysVoice* voice)
     // depending on the values of noteIsOn and firstOnSignal then set the input gate buffer of the adsr
     if (voice->firstOnSignal)
     {
-        voice->adsr->inputPorts[ADSR_IN_PORT_GATE] = fakeAdsrStart;
+        voice->adsr.inputPorts[ADSR_IN_PORT_GATE] = fakeAdsrStart;
     } 
     else if (voice->noteIsOn)
     {
-        voice->adsr->inputPorts[ADSR_IN_PORT_GATE] = fakeAdsrSustain;
+        voice->adsr.inputPorts[ADSR_IN_PORT_GATE] = fakeAdsrSustain;
     }
     else
     {
-        voice->adsr->inputPorts[ADSR_IN_PORT_GATE] = fakeAdsrRelease;
+        voice->adsr.inputPorts[ADSR_IN_PORT_GATE] = fakeAdsrRelease;
     }
 }
 
@@ -607,17 +607,17 @@ static void updateVoice(PolyKeys* pk, PolyKeysVoice* voice)
     // update modules in the right order
     // push curr to prev for each module should take place inidietly after the mod update to get continuous flow of sound out the end
     
-    voice->adsr->module.updateState(voice->adsr);
-    voice->adsr->module.pushCurrToPrev(voice->adsr);
+    voice->adsr.module.updateState(&voice->adsr);
+    voice->adsr.module.pushCurrToPrev(&voice->adsr);
 
-    voice->vco->module.updateState(voice->vco);
-    voice->vco->module.pushCurrToPrev(voice->vco);
+    voice->vco.module.updateState(&voice->vco);
+    voice->vco.module.pushCurrToPrev(&voice->vco);
 
-    voice->flt->module.updateState(voice->flt);
-    voice->flt->module.pushCurrToPrev(voice->flt);
+    voice->flt.module.updateState(&voice->flt);
+    voice->flt.module.pushCurrToPrev(&voice->flt);
 
-    voice->attn->module.updateState(voice->attn);
-    voice->attn->module.pushCurrToPrev(voice->attn);
+    voice->attn.module.updateState(&voice->attn);
+    voice->attn.module.pushCurrToPrev(&voice->attn);
 
     // multiply the voiceOutputBuffer values by velocityAmplitudeMultiplier for velocity volume
     for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
@@ -629,5 +629,5 @@ static void updateVoice(PolyKeys* pk, PolyKeysVoice* voice)
 static inline void checkADSRDone(PolyKeys* pk, PolyKeysVoice* voice)
 {
     // the main metric for if a note is still hanging on is if the adsr has finished its envelope
-    voice->adsrActive = voice->adsr->envelopeActive;
+    voice->adsrActive = voice->adsr.envelopeActive;
 }

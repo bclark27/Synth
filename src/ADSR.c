@@ -131,9 +131,8 @@ static Module vtable = {
 // PUBLIC FUNCTIONS //
 //////////////////////
 
-Module * ADSR_init(char* name)
+void ADSR_initInPlace(ADSR* adsr, char* name)
 {
-  ADSR * adsr = calloc(1, sizeof(ADSR));
 
   // set vtable
   adsr->module = vtable;
@@ -149,6 +148,12 @@ Module * ADSR_init(char* name)
   // push curr to prev
   CONTROL_PUSH_TO_PREV(adsr);
 
+}
+
+Module * ADSR_init(char* name)
+{
+  ADSR * adsr = calloc(1, sizeof(ADSR));
+  ADSR_initInPlace(adsr, name);
   return (Module*)adsr;
 }
 

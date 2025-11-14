@@ -76,13 +76,14 @@ typedef struct Filter
   float x1, x2;  // past inputs
   float y1, y2;  // past outputs
 
-  float prevFreq;
-  float prevQ;
+  float prevVoltsFreq;
+  float prevControlVoltsQ;
   float prevType;
 
 } Filter;
 
 
 Module * Filter_init(char* name);
+void Filter_initInPlace(Filter* flt, char* name);
 
 #endif

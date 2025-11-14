@@ -62,10 +62,10 @@
 
 typedef struct PolyKeysVoice
 {
-    VCO * vco;
-    Filter * flt;
-    ADSR * adsr;
-    Attenuverter * attn;
+    VCO vco;
+    Filter flt;
+    ADSR adsr;
+    Attenuverter attn;
     VoltStream voiceOutputBuffer;
     Volt voiceInputFreqBuffer[MIDI_STREAM_BUFFER_SIZE];
 
