@@ -2,6 +2,7 @@
 #define LFO_H_
 
 #include "comm/Common.h"
+#include "Oscillator.h"
 #include "Module.h"
 
 
@@ -53,6 +54,13 @@ typedef struct LFO
   // output ports
   MIDIData outputMIDIPortsPrev[LFO_MIDI_OUTCOUNT * MIDI_STREAM_BUFFER_SIZE];
   MIDIData outputMIDIPortsCurr[LFO_MIDI_OUTCOUNT * MIDI_STREAM_BUFFER_SIZE];
+
+  Oscillator osc;
+
+  long long lastClockAge;
+  R4 currentClockFreq;
+  R4 lastSampleVoltage;
+  bool lastUpdateHadNoClockPort;
 
 } LFO;
 

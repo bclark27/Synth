@@ -62,6 +62,10 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val);
 static void getControlVal(void * modPtr, ModularPortID id, void* ret);
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 static void initTables();
+static void createStrideTable(LFO * lfo, R4 * table);
+static void createPwTable(LFO * lfo, R4 * table);
+static inline float fastVoltToFreq(float v);
+static inline void updateClockInputStats(LFO* lfo, R4 thisSample);
 
 
 
@@ -70,6 +74,9 @@ static void initTables();
 //////////////////////
 
 static bool tableInitDone = false;
+static R4 zeroVoltTable[MODULE_BUFFER_SIZE];
+#define FREQ_TABLE_SIZE 2048
+static float volt_to_freq_table[FREQ_TABLE_SIZE];
 
 static char * inPortNames[LFO_INCOUNT] = {
 	"FREQ",
@@ -147,7 +154,9 @@ void LFO_initInPlace(LFO* lfo, char* name)
 
   // push curr to prev
   CONTROL_PUSH_TO_PREV(lfo);
-
+    
+  // init other structs
+  Oscillator_initInPlace(&lfo->osc, Waveform_sin);
 }
 
 
@@ -177,8 +186,63 @@ static void free_lfo(void * modPtr)
 static void updateState(void * modPtr)
 {
     LFO * lfo = (LFO*)modPtr;
+
+    if (lfo->lastUpdateHadNoClockPort && IN_PORT_CLK(lfo))
+    {
+        lfo->lastClockAge = 0;
+        lfo->lastSampleVoltage = VOLTSTD_AUD_MIN;
+        lfo->lastUpdateHadNoClockPort = false;
+    }
+    else if (!IN_PORT_CLK(lfo))
+    {
+        lfo->lastUpdateHadNoClockPort = true;
+    }
+    
+    Waveform wave = (Waveform)(int)(CLAMPF(0, 3.5, GET_CONTROL_CURR_WAVE(lfo)));
+    lfo->osc.waveform = wave;
+
+    R4 strideTable[MODULE_BUFFER_SIZE];
+    R4 pwTable[MODULE_BUFFER_SIZE];
+    createStrideTable(lfo, strideTable);
+    if (wave == Waveform_sqr)
+        createPwTable(lfo, pwTable);
+
+    Oscillator_sampleWithStrideAndPWTable(&lfo->osc, OUT_PORT_SIG(lfo), MODULE_BUFFER_SIZE, strideTable, pwTable, 1, 0);
 }
 
+static void createStrideTable(LFO * lfo, R4 * table)
+{
+    R4* fTable = IN_PORT_FREQ(lfo) ? IN_PORT_FREQ(lfo) : zeroVoltTable;
+    R4* clockFreq = zeroVoltTable;
+    
+    if (IN_PORT_CLK(lfo))
+    {
+        for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+        {
+            updateClockInputStats(lfo, IN_PORT_CLK(lfo)[i]);
+            clockFreq[i] = lfo->currentClockFreq;
+        }
+    }
+    
+    for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+    {
+        R4 freqControlVolts = INTERP(GET_CONTROL_PREV_FREQ(lfo), GET_CONTROL_CURR_FREQ(lfo), MODULE_BUFFER_SIZE, i);    
+        R4 voltSum = fTable[i] + freqControlVolts;
+        R4 realFreq = fastVoltToFreq(voltSum) + clockFreq[i];
+        table[i] = realFreq / SAMPLE_RATE;
+    }
+}
+
+static void createPwTable(LFO * lfo, R4 * table)
+{
+    R4* pwTable = IN_PORT_PW(lfo) ? IN_PORT_PW(lfo) : zeroVoltTable;
+    for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
+    {
+      R4 cvPwVolts = pwTable[i];
+      R4 pwControlVolts = INTERP(GET_CONTROL_PREV_PW(lfo), GET_CONTROL_CURR_PW(lfo), MODULE_BUFFER_SIZE, i);
+      table[i] = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.01f, 0.99f, CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, cvPwVolts + pwControlVolts));
+    }
+}
 
 static void pushCurrToPrev(void * modPtr)
 {
@@ -294,6 +358,39 @@ static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
 }
 static void initTables()
 {
-    
+    memset(zeroVoltTable, 0, sizeof(zeroVoltTable));
+
+    float inc = VOLTSTD_MOD_CV_RANGE / (float)FREQ_TABLE_SIZE;
+    float v = VOLTSTD_MOD_CV_MIN;
+    for (int i = 0; i < FREQ_TABLE_SIZE; i++)
+    {
+        volt_to_freq_table[i] = VOLTSTD_C3_FREQ * pow(2, v - VOLTSTD_C3_VOLTAGE);
+        v += inc;
+    }
 }
 
+static inline float fastVoltToFreq(float v)
+{
+  v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
+  float idx = (v + (-VOLTSTD_MOD_CV_MIN)) / VOLTSTD_MOD_CV_RANGE * (FREQ_TABLE_SIZE - 1);
+  int i = (int)idx;
+  float frac = idx - i;
+  float ret = volt_to_freq_table[i] * (1.0f - frac)
+       + volt_to_freq_table[i + 1] * frac;
+  return ret;
+}
+
+static inline void updateClockInputStats(LFO* lfo, R4 thisSample)
+{
+    if (lfo->lastSampleVoltage < 1.f && thisSample >= 1.f)
+    {
+        R4 rate = lfo->lastClockAge / SAMPLE_RATE;
+        lfo->lastClockAge = 0;
+    }
+    else
+    {
+        lfo->lastClockAge++;
+    }
+
+    lfo->lastSampleVoltage = thisSample;
+}
