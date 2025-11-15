@@ -20,6 +20,8 @@ typedef enum Waveform
   Waveform_sqr,
   Waveform_saw,
   Waveform_tri,
+
+  Wafeform_Count,
 } Waveform;
 
 typedef struct OscillatorVoice
