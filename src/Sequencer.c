@@ -278,7 +278,6 @@ static void updateState(void * modPtr)
 
     OUT_PORT_GATE(seq)[i] = VOLTSTD_GATE_HIGH;
     OUT_PORT_PITCH(seq)[i] = GET_CONTROL_CURR_NOTE_PITCH(seq, seq->currentStepNum);
-
   }
 
 }

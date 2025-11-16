@@ -561,18 +561,24 @@ static void consumeCVInputs(PolyKeys* pk)
         bool gateWentHigh = pk->lastGateSampleVolts < VOLTSTD_GATE_HIGH_THRESH && IN_PORT_GATE(pk)[i] >= VOLTSTD_GATE_HIGH_THRESH;
         bool gateWentLow = pk->lastGateSampleVolts >= VOLTSTD_GATE_HIGH_THRESH && IN_PORT_GATE(pk)[i] < VOLTSTD_GATE_HIGH_THRESH;
 
+        pk->lastGateSampleVolts = IN_PORT_GATE(pk)[i];
         //if (data.type != MIDIDataType_None) printf("%d: %02x, %d\n", i, data.type, data.data1);
 
         if (gateWentHigh)
         {
-            pk->pitchVoltsAtGateStart = IN_PORT_GATE(pk)[i];
+            pk->pitchVoltsAtGateStart = IN_PORT_PITCH(pk)[i];
             v = &pk->voices[getFreeOrOldVoice(pk)];
             v->noteIsOn = true;
             v->adsrActive = true;
             v->firstOnSignal = true;
-            v->noteFreqVolt = midiNoteToFreqVolt(v->note);
+            v->noteFreqVolt = pk->pitchVoltsAtGateStart;
             v->startVelocity = 127;
             v->velocityAmplitudeMultiplier = 1;
+
+            v->adsr.section = ADSR_ASection;
+            v->adsr.timeSinceSectionStart = 0;
+            v->adsr.envelopeActive = 0;
+            v->adsr.releaseStartVal = 0;
         }
         else if (gateWentLow)
         {

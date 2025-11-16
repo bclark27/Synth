@@ -375,7 +375,7 @@ int main(void)
   ModularSynth_readConfig(PATH);
   //ModularSynth_exportConfig(PATH);
   //while (1){ModularSynth_update();}
-  inputMidiChord();
+  //inputMidiChord();
   AudioDevice_init();
   AudioDevice_LoopForever();
   return 0;

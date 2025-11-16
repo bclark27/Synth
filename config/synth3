@@ -1,7 +1,6 @@
 __OUTPUT__ OutputModule
 mdin MidiInput
 pk PolyKeys
-vco0 VCO
 +++
 __OUTPUT__
 connect Left pk Audio
@@ -21,11 +20,3 @@ control FltRes 2.500000
 control Waveform 2.500000
 control Unison 8.820007
 control Detune 0.165000
-+++
-vco0
-control Freq 1.000000
-control PW 0.500000
-control Waveform 0.600000
-control Unison 1.000000
-control Detune 1.030000
-+++

@@ -23,9 +23,7 @@ set these ranges to emulate some type of rack
 
 #define VOLTSTD_GATE_HIGH         5.f
 #define VOLTSTD_GATE_LOW          0.f
-#define VOLTSTD_GATE_ERROR        0.01f
-#define VOLTSTD_GATE_HIGH_THRESH  (VOLTSTD_GATE_HIGH - VOLTSTD_GATE_ERROR)
-#define VOLTSTD_GATE_LOW_THRESH   (VOLTSTD_GATE_LOW + VOLTSTD_GATE_ERROR)
+#define VOLTSTD_GATE_HIGH_THRESH  1.f
 
 #define VOLTSTD_AUD_MAX           5.f
 #define VOLTSTD_AUD_MIN           (-VOLTSTD_AUD_MAX)
