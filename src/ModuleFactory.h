@@ -16,6 +16,7 @@
 #include "Filter.h"
 #include "MidiInput.h"
 #include "PolyKeys.h"
+#include "LFO.h"
 
 ///////////
 // TYPES //

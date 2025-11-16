@@ -16,8 +16,6 @@
 #define OUT_PORT_SIG(lfo)		(CURR_PORT_ADDR(lfo, LFO_OUT_PORT_SIG))
 #define OUT_PORT_CLK(lfo)		(CURR_PORT_ADDR(lfo, LFO_OUT_PORT_CLK))
 
-#define IN_MIDI_PORT_MIDI_asdasd(lfo)		((lfo)->inputPorts[LFO_IN_PORT_MIDI_asdasd])
-#define OUT_MIDI_PORT_MIDI_okok(lfo)		(CURR_MIDI_PORT_ADDR(lfo, LFO_OUT_PORT_MIDI_okok))
 #define GET_CONTROL_CURR_FREQ(lfo)	((lfo)->controlsCurr[LFO_CONTROL_FREQ])
 #define GET_CONTROL_PREV_FREQ(lfo)	((lfo)->controlsPrev[LFO_CONTROL_FREQ])
 #define GET_CONTROL_CURR_PW(lfo)	((lfo)->controlsCurr[LFO_CONTROL_PW])
@@ -75,24 +73,25 @@ static inline void updateClockInputStats(LFO* lfo, R4 thisSample);
 
 static bool tableInitDone = false;
 static R4 zeroVoltTable[MODULE_BUFFER_SIZE];
+static R4 minVoltTable[MODULE_BUFFER_SIZE];
 #define FREQ_TABLE_SIZE 2048
 static float volt_to_freq_table[FREQ_TABLE_SIZE];
 
 static char * inPortNames[LFO_INCOUNT] = {
-	"FREQ",
-	"CLK",
+	"Freq",
+	"Clock",
 	"PW",
 };
 static char * outPortNames[LFO_OUTCOUNT] = {
-	"SIG",
-	"CLK",
+	"Sig",
+	"Clock",
 };
 static char * controlNames[LFO_CONTROLCOUNT] = {
-	"FREQ",
+	"Freq",
 	"PW",
-	"MIN",
-	"MAX",
-	"WAVE",
+	"Min",
+	"Max",
+	"Waveform",
 };
 
 static Module vtable = {
@@ -119,7 +118,7 @@ static Module vtable = {
   .controlNames = controlNames,
 };
 
-#define DEFAULT_CONTROL_FREQ	0
+#define DEFAULT_CONTROL_FREQ	-10
 #define DEFAULT_CONTROL_PW	0
 #define DEFAULT_CONTROL_MIN	0
 #define DEFAULT_CONTROL_MAX	0
@@ -197,7 +196,7 @@ static void updateState(void * modPtr)
     {
         lfo->lastUpdateHadNoClockPort = true;
     }
-    
+
     Waveform wave = (Waveform)(int)(CLAMPF(0, 3.5, GET_CONTROL_CURR_WAVE(lfo)));
     lfo->osc.waveform = wave;
 
@@ -208,15 +207,24 @@ static void updateState(void * modPtr)
         createPwTable(lfo, pwTable);
 
     Oscillator_sampleWithStrideAndPWTable(&lfo->osc, OUT_PORT_SIG(lfo), MODULE_BUFFER_SIZE, strideTable, pwTable, 1, 0);
+
+    for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+    {
+        R4 min = INTERP(GET_CONTROL_PREV_MIN(lfo), GET_CONTROL_CURR_MIN(lfo), MODULE_BUFFER_SIZE, i);
+        R4 max = INTERP(GET_CONTROL_PREV_MAX(lfo), GET_CONTROL_CURR_MAX(lfo), MODULE_BUFFER_SIZE, i);
+        OUT_PORT_SIG(lfo)[i] = MAP(VOLTSTD_AUD_MIN, VOLTSTD_AUD_MAX, min, max, OUT_PORT_SIG(lfo)[i]);
+    }
 }
 
 static void createStrideTable(LFO * lfo, R4 * table)
 {
-    R4* fTable = IN_PORT_FREQ(lfo) ? IN_PORT_FREQ(lfo) : zeroVoltTable;
+    R4* fTable = IN_PORT_FREQ(lfo) ? IN_PORT_FREQ(lfo) : minVoltTable;
     R4* clockFreq = zeroVoltTable;
     
+    R4 clockFreqFilledIn[MODULE_BUFFER_SIZE];
     if (IN_PORT_CLK(lfo))
     {
+        clockFreq = clockFreqFilledIn;
         for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
         {
             updateClockInputStats(lfo, IN_PORT_CLK(lfo)[i]);
@@ -227,8 +235,8 @@ static void createStrideTable(LFO * lfo, R4 * table)
     for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
         R4 freqControlVolts = INTERP(GET_CONTROL_PREV_FREQ(lfo), GET_CONTROL_CURR_FREQ(lfo), MODULE_BUFFER_SIZE, i);    
-        R4 voltSum = fTable[i] + freqControlVolts;
-        R4 realFreq = fastVoltToFreq(voltSum) + clockFreq[i];
+        R4 voltSum = (fTable[i] + -(VOLTSTD_MOD_CV_MIN)) + (freqControlVolts + -(VOLTSTD_MOD_CV_MIN));
+        R4 realFreq = voltSum + clockFreq[i];
         table[i] = realFreq / SAMPLE_RATE;
     }
 }
@@ -359,7 +367,10 @@ static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
 static void initTables()
 {
     memset(zeroVoltTable, 0, sizeof(zeroVoltTable));
-
+    for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+    {
+        minVoltTable[i] = VOLTSTD_MOD_CV_MIN;
+    }
     float inc = VOLTSTD_MOD_CV_RANGE / (float)FREQ_TABLE_SIZE;
     float v = VOLTSTD_MOD_CV_MIN;
     for (int i = 0; i < FREQ_TABLE_SIZE; i++)
@@ -384,8 +395,9 @@ static inline void updateClockInputStats(LFO* lfo, R4 thisSample)
 {
     if (lfo->lastSampleVoltage < 1.f && thisSample >= 1.f)
     {
-        R4 rate = lfo->lastClockAge / SAMPLE_RATE;
+        R4 rate = (float)SAMPLE_RATE / lfo->lastClockAge;
         lfo->lastClockAge = 0;
+        lfo->currentClockFreq = rate;
     }
     else
     {

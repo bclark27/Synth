@@ -2,13 +2,16 @@
 #include "ModularSynth.h"
 #include "AudioSettings.h"
 #include "AudioDevice.h"
+#include <time.h>
+#include <xmmintrin.h>   // SSE
+#include <pmmintrin.h>   // SSE3
 #include "comm/IPC.h"
 /*
 ModularSynth_update();
 memcpy(signalBuffers[idx], synthOutput, sizeof(R4) * STREAM_BUFFER_SIZE);
 */
 
-#define PATH "/home/ben/projects/github/my/Synth/config/synth3"
+#define PATH "/home/ben/projects/github/Synth/config/synth2"
 #define SCREEN_WIDTH        300
 #define SCREEN_HEIGHT       300
 #define FPS                 60
@@ -252,9 +255,117 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
   }
 }
 
+void inputMidiChord()
+{
+  MIDIData md = {
+      .type=MIDIDataType_NoteOn,
+      .data1=0,
+      .data2=100,
+    };
+  
+  int offset = 48;
+  md.data1 = 0 + offset;
+  ModularSynth_setControlByName("mdin", "MidiIn", &md);
+  md.data1 = 4 + offset;
+  ModularSynth_setControlByName("mdin", "MidiIn", &md);
+  md.data1 = 7 + offset;
+  ModularSynth_setControlByName("mdin", "MidiIn", &md);
+  md.data1 = 9 + offset;
+  ModularSynth_setControlByName("mdin", "MidiIn", &md);
+  md.data1 = 12 + offset;
+  ModularSynth_setControlByName("mdin", "MidiIn", &md);
+}
+
+static inline double now_ms() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec * 1000.0 + ts.tv_nsec / 1e6;
+}
+
+
+#define N (1 << 26)
+void SIMDTesting()
+{
+  float *A = aligned_alloc(16, N * sizeof(float));
+    float *B = aligned_alloc(16, N * sizeof(float));
+    float *C = aligned_alloc(16, N * sizeof(float));
+
+    for (size_t i = 0; i < N; i++) {
+        A[i] = 0.001f * (float)(i & 0xFF);
+        B[i] = 0.002f * (float)((i * 7) & 0xFF);
+    }
+
+    // --------------------------------------------------------------
+    // A: Scalar C[i] = A[i] + B[i]
+    // --------------------------------------------------------------
+    double startA = now_ms();
+
+    for (size_t i = 0; i < N; i++) {
+        C[i] = A[i] + B[i];
+    }
+
+    double endA = now_ms();
+    printf("Scalar A+B = %.3f ms\n", endA - startA);
+
+    // --------------------------------------------------------------
+    // B: SIMD C[i] = A[i] + B[i]
+    // --------------------------------------------------------------
+    double startB = now_ms();
+
+    size_t i = 0;
+    for (; i + 4 <= N; i += 4) {
+        __m128 a = _mm_load_ps(&A[i]);
+        __m128 b = _mm_load_ps(&B[i]);
+        __m128 r = _mm_add_ps(a, b);
+        _mm_store_ps(&C[i], r);
+    }
+
+    // Remainder
+    for (; i < N; i++) {
+        C[i] = A[i] + B[i];
+    }
+
+    double endB = now_ms();
+    printf("SIMD A+B   = %.3f ms\n", endB - startB);
+
+    free(A);
+    free(B);
+    free(C);
+    return 0;
+}
+
+void ModuleTesting()
+{
+  const int vcoCount = 500;
+  const int iterCount = 10000;
+  VCO vcos[vcoCount];
+  float inputBuff[MODULE_BUFFER_SIZE];
+  for (int i = 0; i < vcoCount; i++)
+  {
+    VCO_initInPlace(&vcos[i], malloc(4));
+    vcos[i].module.linkToInput(&vcos[i], VCO_IN_PORT_FREQ, inputBuff);
+    vcos[i].module.linkToInput(&vcos[i], VCO_IN_PORT_PW, inputBuff);
+  }
+
+  double startA = now_ms();
+
+  for (int i = 0; i < iterCount; i++)
+  {
+    for (int k = 0; k < vcoCount; k++)
+    {
+      vcos[k].module.updateState(&vcos[k]);
+      vcos[k].module.pushCurrToPrev(&vcos[k]);
+    }
+  }
+
+  double endA = now_ms();
+  printf("VCO time %.3f ms\n", endA - startA);
+}
 
 int main(void)
 {
+  // ModuleTesting();
+  // return 1;
   // timetest();
   // return 0;
   IPC_StartService("Controller"); 
@@ -263,6 +374,7 @@ int main(void)
   ModularSynth_init();
   ModularSynth_readConfig(PATH);
   //while (1){ModularSynth_update();}
+  inputMidiChord();
   AudioDevice_init();
   AudioDevice_LoopForever();
   return 0;

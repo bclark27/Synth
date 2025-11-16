@@ -5,7 +5,6 @@
 #include "Oscillator.h"
 #include "Module.h"
 
-
 #define LFO_INCOUNT 3
 #define LFO_OUTCOUNT 2
 #define LFO_CONTROLCOUNT 5
@@ -22,13 +21,8 @@
 #define LFO_CONTROL_MAX	3
 #define LFO_CONTROL_WAVE	4
 
-#define LFO_MIDI_INCOUNT 1
-#define LFO_MIDI_OUTCOUNT 1
-
-#define LFO_IN_MIDI_PORT_MIDI_asdasd	0
-
-#define LFO_OUT_MIDI_PORT_MIDI_okok	0
-
+#define LFO_MIDI_INCOUNT 0
+#define LFO_MIDI_OUTCOUNT 0
 
 ///////////
 // TYPES //
