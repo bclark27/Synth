@@ -9,6 +9,9 @@
 #define IN_VOLT_STREAM_PORT(mod, port)           (((PolyKeys*)(mod))->inputPorts[port])
 #define IN_MIDIDADA_PORT(mod, port)           (((PolyKeys*)(mod))->inputMIDIPorts[port])
 
+#define IN_PORT_GATE(mod)		((mod)->inputPorts[POLYKEYS_INPUT_GATE])
+#define IN_PORT_PITCH(mod)		((mod)->inputPorts[POLYKEYS_INPUT_PITCH])
+
 #define PREV_VOLT_STREAM_PORT_ADDR(mod, port) (((PolyKeys*)(mod))->outputPortsPrev + (MODULE_BUFFER_SIZE * (port)))
 #define CURR_VOLT_STREAM_PORT_ADDR(mod, port) (((PolyKeys*)(mod))->outputPortsCurr + (MODULE_BUFFER_SIZE * (port)))
 #define PREV_MIDIDATA_PORT_ADDR(mod, port)    (((PolyKeys*)(mod))->outputMIDIPortsPrev + (port))
@@ -42,12 +45,14 @@ static void initAdsrInputBuffers(void);
 static void initVoice(PolyKeysVoice* voice);
 static inline U4 getFreeOrOldVoice(PolyKeys* pk);
 static void consumeMidiMessage(PolyKeys* pk);
+static void consumeCVInputs(PolyKeys* pk);
 static inline Volt midiNoteToFreqVolt(int midi_note);
 static void voiceOnSetup(PolyKeys* pk, PolyKeysVoice* voice);
 static void applyControlValsToModules(PolyKeys* pk, PolyKeysVoice* voice); // skip if voice setup ran, it will put in the values
 static inline void assignADSRBuffer(PolyKeys* pk, PolyKeysVoice* voice);
 static void updateVoice(PolyKeys* pk, PolyKeysVoice* voice);
 static inline void checkADSRDone(PolyKeys* pk, PolyKeysVoice* voice);
+static void cleanVoicesForModeSwitch(PolyKeys* pk);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -59,7 +64,9 @@ static Volt fakeAdsrSustain[MODULE_BUFFER_SIZE];
 static Volt fakeAdsrRelease[MODULE_BUFFER_SIZE];
 
 static char * inPortNames[POLYKEYS_INCOUNT + POLYKEYS_MIDI_INCOUNT] = {
-    "MidiIn"
+    "Gate",
+    "Pitch",
+    "MidiIn",
 };
 
 static char * outPortNames[POLYKEYS_OUTCOUNT + POLYKEYS_MIDI_OUTCOUNT] = {
@@ -169,9 +176,28 @@ static void free_poly(void * modPtr)
 
 static void updateState(void * modPtr)
 {
+    
     PolyKeys * pk = (PolyKeys*)modPtr;
 
-    consumeMidiMessage(pk);
+    
+    // check what mode we are int
+    PolyKeysMode newMode = IN_PORT_GATE(pk) && IN_PORT_PITCH(pk) ? PolyKeysMode_CV : PolyKeysMode_MIDI;
+
+    if (newMode != pk->mode)
+    {
+        pk->mode = newMode;
+        cleanVoicesForModeSwitch(pk);
+    }
+
+    if (pk->mode == PolyKeysMode_MIDI)
+    {
+        consumeMidiMessage(pk);
+    }
+    else
+    {
+        consumeCVInputs(pk);
+    }
+    
     bool compileVoice[POLYKEYS_MAX_VOICES];
     for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
     {
@@ -454,7 +480,6 @@ static void consumeMidiMessage(PolyKeys* pk)
     // if the note is turning on for the first time then set noteIsOn, adsrActive, firstOnSignal, note, startVelocity
 
     PolyKeysVoice* v;
-    int idx;
     for (int i = 0; i < MIDI_STREAM_BUFFER_SIZE; i++)
     {
         MIDIData data = IN_MIDIDADA_PORT(pk, POLYKEYS_MIDI_INPUT_MIDIIN)[i];
@@ -484,8 +509,15 @@ static void consumeMidiMessage(PolyKeys* pk)
                 v->adsrActive = true;
                 v->firstOnSignal = true;
                 v->note = data.data1;
+                v->noteFreqVolt = midiNoteToFreqVolt(v->note);
                 v->startVelocity = data.data2;
                 v->velocityAmplitudeMultiplier = data.data2 / 127.0f;
+
+                v->adsr.section = ADSR_ASection;
+                v->adsr.timeSinceSectionStart = 0;
+                v->adsr.envelopeActive = 0;
+                v->adsr.releaseStartVal = 0;
+
                 //printf("Turning on voice %d with note %d\n", idx, v->note);
                 break;
             }
@@ -521,6 +553,47 @@ static void consumeMidiMessage(PolyKeys* pk)
     }
 }
 
+static void consumeCVInputs(PolyKeys* pk)
+{
+    PolyKeysVoice* v;
+    for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+    {
+        bool gateWentHigh = pk->lastGateSampleVolts < VOLTSTD_GATE_HIGH_THRESH && IN_PORT_GATE(pk)[i] >= VOLTSTD_GATE_HIGH_THRESH;
+        bool gateWentLow = pk->lastGateSampleVolts >= VOLTSTD_GATE_HIGH_THRESH && IN_PORT_GATE(pk)[i] < VOLTSTD_GATE_HIGH_THRESH;
+
+        //if (data.type != MIDIDataType_None) printf("%d: %02x, %d\n", i, data.type, data.data1);
+
+        if (gateWentHigh)
+        {
+            pk->pitchVoltsAtGateStart = IN_PORT_GATE(pk)[i];
+            v = &pk->voices[getFreeOrOldVoice(pk)];
+            v->noteIsOn = true;
+            v->adsrActive = true;
+            v->firstOnSignal = true;
+            v->noteFreqVolt = midiNoteToFreqVolt(v->note);
+            v->startVelocity = 127;
+            v->velocityAmplitudeMultiplier = 1;
+        }
+        else if (gateWentLow)
+        {
+            v = NULL;
+            for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
+            {
+                if (pk->voices[i].noteFreqVolt == pk->pitchVoltsAtGateStart)
+                {
+                    v = &pk->voices[i];
+                    //printf("Turning OFF voice %d with note %d\n", i, v->note);
+                    break;
+                }
+            }
+
+            if (!v) break;
+
+            v->noteIsOn = false;
+        }
+    }
+}
+
 static inline Volt midiNoteToFreqVolt(int midi_note)
 {
     return (midi_note - 48) / 12.0f;
@@ -540,10 +613,10 @@ static void voiceOnSetup(PolyKeys* pk, PolyKeysVoice* voice)
     fill up the voiceInputFreqBuffer with currect note freq
     */
 
-    Volt freq = midiNoteToFreqVolt(voice->note);
+    
     for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-        voice->voiceInputFreqBuffer[i] = freq;
+        voice->voiceInputFreqBuffer[i] = voice->noteFreqVolt;
     }
 
     // put control updates here
@@ -630,4 +703,13 @@ static inline void checkADSRDone(PolyKeys* pk, PolyKeysVoice* voice)
 {
     // the main metric for if a note is still hanging on is if the adsr has finished its envelope
     voice->adsrActive = voice->adsr.envelopeActive;
+}
+
+static void cleanVoicesForModeSwitch(PolyKeys* pk)
+{
+    for (int i = 0; i < POLYKEYS_MAX_VOICES; i++)
+    {
+        pk->voices[i].adsrActive = false;
+        pk->voices[i].noteIsOn = false;
+    }
 }

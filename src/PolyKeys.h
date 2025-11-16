@@ -32,9 +32,12 @@
 */
 #define POLYKEYS_MAX_VOICES 5
 
-#define POLYKEYS_INCOUNT           0
+#define POLYKEYS_INCOUNT           2
 #define POLYKEYS_OUTCOUNT          1
 #define POLYKEYS_CONTROLCOUNT      10
+
+#define POLYKEYS_INPUT_GATE   0
+#define POLYKEYS_INPUT_PITCH  1
 
 #define POLYKEYS_OUTPORT_AUDIO      0
 
@@ -60,6 +63,12 @@
 // TYPES //
 ///////////
 
+typedef enum PolyKeysMode
+{
+  PolyKeysMode_MIDI,
+  PolyKeysMode_CV,
+} PolyKeysMode;
+
 typedef struct PolyKeysVoice
 {
     VCO vco;
@@ -71,7 +80,7 @@ typedef struct PolyKeysVoice
 
     U8 noteAge;
     R4 velocityAmplitudeMultiplier;
-    Volt noteFreq;
+    Volt noteFreqVolt;
     U1 note;
     U1 startVelocity;
     bool noteIsOn;
@@ -105,6 +114,11 @@ typedef struct PolyKeys
   MIDIData midiControlsRingBuffer[POLYKEYS_MIDI_CONTROLCOUNT * MIDI_STREAM_BUFFER_SIZE];
 
   PolyKeysVoice voices[POLYKEYS_MAX_VOICES];
+
+  PolyKeysMode mode;
+
+  R4 pitchVoltsAtGateStart;
+  R4 lastGateSampleVolts;
 
 } PolyKeys;
 
