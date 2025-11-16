@@ -47,6 +47,6 @@ Oscillator * Oscillator_init(Waveform waveform);
 void Oscillator_initInPlace(Oscillator * osc, Waveform waveform);
 void Oscillator_free(Oscillator * osc);
 
-void Oscillator_sampleWithStrideAndPWTable(Oscillator * osc, R4 * samples, U4 samplesSize, R4 * strideTable, R4 * pwTable, U1 unison, R4 detune);
+void Oscillator_sampleWithStrideAndPWTable(Oscillator * osc, R4 * samples, U4 samplesSize, R4 * strideTable, R4 * pwTable, U1 unison, R4 detune, bool* phaseCompleted);
 
 #endif

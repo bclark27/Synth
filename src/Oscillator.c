@@ -66,7 +66,7 @@ void Oscillator_free(Oscillator * osc)
 }
 
 // IMPORTANT the samples range should be just [-VOLTSTD_AUD_MAX, VOLTSTD_AUD_MAX], not 0,1 or -1,1 or something
-void Oscillator_sampleWithStrideAndPWTable(Oscillator * osc, R4 * samples, U4 samplesSize, R4 * strideTable, R4 * pwTable, U1 unison, R4 detune)
+void Oscillator_sampleWithStrideAndPWTable(Oscillator * osc, R4 * samples, U4 samplesSize, R4 * strideTable, R4 * pwTable, U1 unison, R4 detune, bool* phaseCompleted)
 {
   if (unison == 1)
   {
@@ -79,7 +79,8 @@ void Oscillator_sampleWithStrideAndPWTable(Oscillator * osc, R4 * samples, U4 sa
           samples[i] = (1 - osc->phase[0]) * 2 * VOLTSTD_AUD_MAX - VOLTSTD_AUD_MAX;
           
           osc->phase[0] += strideTable[i];
-          if (osc->phase[0] >= 1)
+          phaseCompleted[i] = osc->phase[0] >= 1;
+          if (phaseCompleted[i])
           {
             osc->phase[0] -= 1;
           }
@@ -94,7 +95,8 @@ void Oscillator_sampleWithStrideAndPWTable(Oscillator * osc, R4 * samples, U4 sa
           samples[i] = (osc->phase[0] < pwTable[i]) * 2 * VOLTSTD_AUD_MAX - VOLTSTD_AUD_MAX;
           
           osc->phase[0] += strideTable[i];
-          if (osc->phase[0] >= 1)
+          phaseCompleted[i] = osc->phase[0] >= 1;
+          if (phaseCompleted[i])
           {
             osc->phase[0] -= 1;
           }
@@ -109,7 +111,8 @@ void Oscillator_sampleWithStrideAndPWTable(Oscillator * osc, R4 * samples, U4 sa
           samples[i] = triWave(PI2 * osc->phase[0]) * 2 * VOLTSTD_AUD_MAX - VOLTSTD_AUD_MAX;
           
           osc->phase[0] += strideTable[i];
-          if (osc->phase[0] >= 1)
+          phaseCompleted[i] = osc->phase[0] >= 1;
+          if (phaseCompleted[i])
           {
             osc->phase[0] -= 1;
           }
@@ -126,7 +129,8 @@ void Oscillator_sampleWithStrideAndPWTable(Oscillator * osc, R4 * samples, U4 sa
           osc->phase[0] += strideTable[i];
 
           // Wrap phase back to [0,1)
-          if (osc->phase[0] >= 1.0f)
+          phaseCompleted[i] = osc->phase[0] >= 1;
+          if (phaseCompleted[i])
               osc->phase[0] -= 1.0f;
         }
         break;

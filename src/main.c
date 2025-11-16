@@ -11,7 +11,7 @@ ModularSynth_update();
 memcpy(signalBuffers[idx], synthOutput, sizeof(R4) * STREAM_BUFFER_SIZE);
 */
 
-#define PATH "/home/ben/projects/github/Synth/config/synth2"
+#define PATH "/home/ben/projects/github/my/Synth/config/synth2"
 #define SCREEN_WIDTH        300
 #define SCREEN_HEIGHT       300
 #define FPS                 60
@@ -373,6 +373,7 @@ int main(void)
   initColors();
   ModularSynth_init();
   ModularSynth_readConfig(PATH);
+  //ModularSynth_exportConfig(PATH);
   //while (1){ModularSynth_update();}
   inputMidiChord();
   AudioDevice_init();

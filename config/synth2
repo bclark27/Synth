@@ -1,26 +1,65 @@
 __OUTPUT__ OutputModule
 lfo LFO
 vco VCO
+seq Sequencer
 clk Clock
 +++
 __OUTPUT__
-#connect Left lfo Sig
-#connect Left clk Clock
 connect Left vco Audio
++++
+lfo
+connect Clock clk Clock
+control Freq -9.000000
+control PW 5.000000
+control Min -1.000000
+control Max 1.000000
+control Waveform 0.300000
 +++
 vco
 connect Freq lfo Sig
-control Waveform 2.3
-control Freq 0
+control Freq 0.000000
+control PW 0.500000
+control Waveform 2.300000
+control Unison 1.000000
+control Detune 1.030000
 +++
-lfo
-control Waveform 0.3
-connect Clock clk Clock
-control Freq -9
-control PW 5
-control Min -1
-control Max 1
+seq
+control NoteOn_0 1.000000
+control Pitch_0 0.000000
+control NoteOn_1 1.000000
+control Pitch_1 0.333333
+control NoteOn_2 1.000000
+control Pitch_2 0.583333
+control NoteOn_3 1.000000
+control Pitch_3 0.750000
+control NoteOn_4 1.000000
+control Pitch_4 0.000000
+control NoteOn_5 1.000000
+control Pitch_5 0.000000
+control NoteOn_6 1.000000
+control Pitch_6 0.000000
+control NoteOn_7 1.000000
+control Pitch_7 0.000000
+control NoteOn_8 1.000000
+control Pitch_8 0.000000
+control NoteOn_9 1.000000
+control Pitch_9 0.000000
+control NoteOn_10 1.000000
+control Pitch_10 0.000000
+control NoteOn_11 1.000000
+control Pitch_11 0.000000
+control NoteOn_12 1.000000
+control Pitch_12 0.000000
+control NoteOn_13 1.000000
+control Pitch_13 0.000000
+control NoteOn_14 1.000000
+control Pitch_14 0.000000
+control NoteOn_15 1.000000
+control Pitch_15 0.000000
+control NoteLen 0.100000
+control SeqLen 4.000000
+control Rand 0.000000
 +++
 clk
-control Freq 1
+control Freq 1.000000
 +++

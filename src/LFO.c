@@ -206,13 +206,16 @@ static void updateState(void * modPtr)
     if (wave == Waveform_sqr)
         createPwTable(lfo, pwTable);
 
-    Oscillator_sampleWithStrideAndPWTable(&lfo->osc, OUT_PORT_SIG(lfo), MODULE_BUFFER_SIZE, strideTable, pwTable, 1, 0);
+    bool phaseCompleted[MODULE_BUFFER_SIZE];
+    Oscillator_sampleWithStrideAndPWTable(&lfo->osc, OUT_PORT_SIG(lfo), MODULE_BUFFER_SIZE, strideTable, pwTable, 1, 0, phaseCompleted);
 
     for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
         R4 min = INTERP(GET_CONTROL_PREV_MIN(lfo), GET_CONTROL_CURR_MIN(lfo), MODULE_BUFFER_SIZE, i);
         R4 max = INTERP(GET_CONTROL_PREV_MAX(lfo), GET_CONTROL_CURR_MAX(lfo), MODULE_BUFFER_SIZE, i);
         OUT_PORT_SIG(lfo)[i] = MAP(VOLTSTD_AUD_MIN, VOLTSTD_AUD_MAX, min, max, OUT_PORT_SIG(lfo)[i]);
+
+        OUT_PORT_CLK(lfo)[i] = ((int)phaseCompleted[i]) * VOLTSTD_GATE_HIGH;
     }
 }
 

@@ -191,7 +191,8 @@ static void updateState(void * modPtr)
 
   R4 detune = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 1.f, 2.f, GET_CONTROL_CURR_DET(vco));
   U1 unison = CLAMP(1, MAX_UNISON, (int)GET_CONTROL_CURR_UNI(vco));
-  Oscillator_sampleWithStrideAndPWTable(&vco->osc, OUT_PORT_AUD(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, unison, detune);
+  bool phaseCompleted[MODULE_BUFFER_SIZE];
+  Oscillator_sampleWithStrideAndPWTable(&vco->osc, OUT_PORT_AUD(vco), MODULE_BUFFER_SIZE, strideTable, pwTable, unison, detune, phaseCompleted);
 }
 
 static void pushCurrToPrev(void * modPtr)
