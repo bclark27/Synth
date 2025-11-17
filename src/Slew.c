@@ -61,6 +61,7 @@ static U4 getControlCount(void * modPtr);
 static void setControlVal(void * modPtr, ModularPortID id, void* val);
 static void getControlVal(void * modPtr, ModularPortID id, void* ret);
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
+static inline float fastVoltToSlewAlpha(float v);
 static void initTables();
 
 
@@ -72,6 +73,8 @@ static void initTables();
 static bool tableInitDone = false;
 static R4 maxVoltTable[MODULE_BUFFER_SIZE];
 static R4 zeroVoltTable[MODULE_BUFFER_SIZE];
+#define SLEW_VOLT_TO_ALPHA_TABLE_SIZE 1024
+static R4 voltToAlphaTable[SLEW_VOLT_TO_ALPHA_TABLE_SIZE];
 
 static char * inPortNames[SLEW_INCOUNT] = {
 	"In0",
@@ -184,20 +187,20 @@ static void updateState(void * modPtr)
 {
     Slew * slew = (Slew*)modPtr;
 
-    R4 controlSlew0Alpha = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, GET_CONTROL_CURR_SLEW0(slew)) / VOLTSTD_MOD_CV_MAX;
-    R4 controlSlew1Alpha = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, GET_CONTROL_CURR_SLEW1(slew)) / VOLTSTD_MOD_CV_MAX;
-    R4 controlSlew2Alpha = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, GET_CONTROL_CURR_SLEW2(slew)) / VOLTSTD_MOD_CV_MAX;
-    R4 controlSlew3Alpha = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, GET_CONTROL_CURR_SLEW3(slew)) / VOLTSTD_MOD_CV_MAX;
+    R4 controlSlew0 = GET_CONTROL_CURR_SLEW0(slew);
+    R4 controlSlew1 = GET_CONTROL_CURR_SLEW1(slew);
+    R4 controlSlew2 = GET_CONTROL_CURR_SLEW2(slew);
+    R4 controlSlew3 = GET_CONTROL_CURR_SLEW3(slew);
 
     R4* in0 = IN_PORT_IN0(slew) ? IN_PORT_IN0(slew) : zeroVoltTable;
     R4* in1 = IN_PORT_IN1(slew) ? IN_PORT_IN1(slew) : zeroVoltTable;
     R4* in2 = IN_PORT_IN2(slew) ? IN_PORT_IN2(slew) : zeroVoltTable;
     R4* in3 = IN_PORT_IN3(slew) ? IN_PORT_IN3(slew) : zeroVoltTable;
 
-    R4* slewCv0 = IN_PORT_SLEW0(slew) ? IN_PORT_SLEW0(slew) : maxVoltTable;
-    R4* slewCv1 = IN_PORT_SLEW1(slew) ? IN_PORT_SLEW1(slew) : maxVoltTable;
-    R4* slewCv2 = IN_PORT_SLEW2(slew) ? IN_PORT_SLEW2(slew) : maxVoltTable;
-    R4* slewCv3 = IN_PORT_SLEW3(slew) ? IN_PORT_SLEW3(slew) : maxVoltTable;
+    R4* slewCv0 = IN_PORT_SLEW0(slew) ? IN_PORT_SLEW0(slew) : zeroVoltTable;
+    R4* slewCv1 = IN_PORT_SLEW1(slew) ? IN_PORT_SLEW1(slew) : zeroVoltTable;
+    R4* slewCv2 = IN_PORT_SLEW2(slew) ? IN_PORT_SLEW2(slew) : zeroVoltTable;
+    R4* slewCv3 = IN_PORT_SLEW3(slew) ? IN_PORT_SLEW3(slew) : zeroVoltTable;
 
     R4 prevSlew0 = slew->prevSlew[0];
     R4 prevSlew1 = slew->prevSlew[1];
@@ -206,12 +209,13 @@ static void updateState(void * modPtr)
 
     for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-        prevSlew0 = prevSlew0 + (in0[i] - prevSlew0) * (controlSlew0Alpha * CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv0[i]) / VOLTSTD_MOD_CV_MAX);
-        prevSlew1 = prevSlew1 + (in1[i] - prevSlew1) * (controlSlew1Alpha * CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv1[i]) / VOLTSTD_MOD_CV_MAX);
-        prevSlew2 = prevSlew2 + (in2[i] - prevSlew2) * (controlSlew2Alpha * CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv2[i]) / VOLTSTD_MOD_CV_MAX);
-        prevSlew3 = prevSlew3 + (in3[i] - prevSlew3) * (controlSlew3Alpha * CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv3[i]) / VOLTSTD_MOD_CV_MAX);
+        prevSlew0 = prevSlew0 + (in0[i] - prevSlew0) * fastVoltToSlewAlpha(CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv0[i] + controlSlew0));
+        prevSlew1 = prevSlew1 + (in1[i] - prevSlew1) * fastVoltToSlewAlpha(CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv1[i] + controlSlew1));
+        prevSlew2 = prevSlew2 + (in2[i] - prevSlew2) * fastVoltToSlewAlpha(CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv2[i] + controlSlew2));
+        prevSlew3 = prevSlew3 + (in3[i] - prevSlew3) * fastVoltToSlewAlpha(CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv3[i] + controlSlew3));
 
         OUT_PORT_OUT0(slew)[i] = prevSlew0;
+        printf("%f\n", prevSlew0);
         OUT_PORT_OUT1(slew)[i] = prevSlew1;
         OUT_PORT_OUT2(slew)[i] = prevSlew2;
         OUT_PORT_OUT3(slew)[i] = prevSlew3;
@@ -333,11 +337,30 @@ static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
   else if ((port - SLEW_INCOUNT) < SLEW_MIDI_INCOUNT) mi->inputMIDIPorts[port - SLEW_INCOUNT] = (MIDIData*)readAddr;
 }
 
+static inline float fastVoltToSlewAlpha(float v)
+{
+  v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+  float idx = (v / (VOLTSTD_MOD_CV_MAX - VOLTSTD_MOD_CV_ZERO)) * (SLEW_VOLT_TO_ALPHA_TABLE_SIZE - 1);
+  int i = (int)idx;
+  float frac = idx - i;
+  float ret = voltToAlphaTable[i] * (1.0f - frac)
+       + voltToAlphaTable[i + 1] * frac;
+  return ret;
+}
+
 static void initTables()
 {
     for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
         maxVoltTable[i] = VOLTSTD_MOD_CV_MAX;
         zeroVoltTable[i] = VOLTSTD_MOD_CV_ZERO;
+    }
+
+    float inc = (VOLTSTD_MOD_CV_MAX - VOLTSTD_MOD_CV_ZERO) / (float)SLEW_VOLT_TO_ALPHA_TABLE_SIZE;
+    float v = VOLTSTD_MOD_CV_ZERO;
+    for (int i = 0; i < SLEW_VOLT_TO_ALPHA_TABLE_SIZE; i++)
+    {
+        voltToAlphaTable[i] = 0.000001f * pow(3.9810717f, v);
+        v += inc;
     }
 }

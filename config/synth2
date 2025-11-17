@@ -16,7 +16,7 @@ slew Slew
 +++
 slew
 connect In0 lfo Sig
-control Slew0 0.01
+control Slew0 0
 +++
 attn2
 control Attn 3
@@ -34,9 +34,9 @@ noise
 connect Clock clk Clock
 +++
 mix
-#connect In0 noise White
-connect In1 pk Audio
-connect In2 attn3 Sig
+connect In0 lfo Sig
+# connect In1 pk Audio
+# connect In2 attn3 Sig
 +++
 vco2
 connect Freq attn2 Sig
@@ -46,10 +46,10 @@ __OUTPUT__
 connect Left mix Mix
 +++
 lfo
-control Freq -9.500000
+control Freq 1
 control PW 5.000000
-control Min -1.000000
-control Max 1.000000
+control Min -5.000000
+control Max 5.000000
 control Waveform 1.300000
 +++
 vco
