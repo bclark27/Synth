@@ -74,7 +74,7 @@ static inline void updateClockInputStats(LFO* lfo, R4 thisSample);
 static bool tableInitDone = false;
 static R4 zeroVoltTable[MODULE_BUFFER_SIZE];
 static R4 minVoltTable[MODULE_BUFFER_SIZE];
-#define FREQ_TABLE_SIZE 2048
+#define FREQ_TABLE_SIZE 256
 static float volt_to_freq_table[FREQ_TABLE_SIZE];
 
 static char * inPortNames[LFO_INCOUNT] = {
