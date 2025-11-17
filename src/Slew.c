@@ -73,7 +73,7 @@ static void initTables();
 static bool tableInitDone = false;
 static R4 maxVoltTable[MODULE_BUFFER_SIZE];
 static R4 zeroVoltTable[MODULE_BUFFER_SIZE];
-#define SLEW_VOLT_TO_ALPHA_TABLE_SIZE 1024
+#define SLEW_VOLT_TO_ALPHA_TABLE_SIZE 256
 static R4 voltToAlphaTable[SLEW_VOLT_TO_ALPHA_TABLE_SIZE];
 
 static char * inPortNames[SLEW_INCOUNT] = {
