@@ -22,7 +22,7 @@
 
 #define ATTN_INCOUNT        2
 #define ATTN_OUTCOUNT       1
-#define ATTN_CONTROLCOUNT   1
+#define ATTN_CONTROLCOUNT   2
 
 #define ATTN_IN_PORT_ATTN    0
 #define ATTN_IN_PORT_SIG    1
@@ -30,6 +30,7 @@
 #define ATTN_OUT_PORT_SIG   0
 
 #define ATTN_CONTROL_ATTN    0
+#define ATTN_CONTROL_DCOFF    1
 
 #define ATTN_MIDI_INCOUNT    0
 #define ATTN_MIDI_OUTCOUNT    0

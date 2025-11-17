@@ -1,16 +1,24 @@
 __OUTPUT__ OutputModule
 lfo LFO
 vco VCO
+vco2 VCO
 pk PolyKeys
 attn Attenuverter
 adsr ADSR
 seq Sequencer
 clk Clock
+noise Noise
++++
+noise
+connect Clock clk Clock
++++
+vco2
+connect Freq noise Random
+control Waveform 2.300000
 +++
 __OUTPUT__
-#connect Left attn Sig
 connect Left pk Audio
-#connect Left clk Clock
+#connect Left vco2 Audio
 +++
 lfo
 connect Clock clk Clock
@@ -20,25 +28,43 @@ control Min -1.000000
 control Max 1.000000
 control Waveform 0.300000
 +++
+vco
+connect Freq seq Pitch
+control Freq -1.000000
+control PW 0.500000
+control Waveform 2.300000
+control Unison 5.000000
+control Detune 0.050000
++++
+pk
+connect Pitch seq Pitch
+connect Gate seq Gate
+control Attack 0.000000
+control Decay 0.140000
+control Sustain 0.100000
+control Release 0.100000
+control FltEnvAmt 2.749909
+control FltFreq 2.739998
+control FltRes 2.500000
+control Waveform 2.500000
+control Unison 1.259990
+control Detune 0.295000
++++
 attn
 connect Attn adsr Env
 connect Sig vco Audio
+control Attn 10.000000
 +++
 adsr
 connect Gate seq Gate
-control Attack 0.01
-control Decay 0.2
-control Sustain 0.0
-control Release 0.2
-+++
-vco
-control Waveform 2.300000
-connect Freq seq Pitch
-control Freq -1
-control Unison 5
-control Detune 0.05
+control Attack 0.010000
+control Decay 0.200000
+control Sustain 0.000000
+control Release 0.200000
+control Attn 10.000000
 +++
 seq
+connect Clock clk Clock
 control NoteOn_0 1.000000
 control Pitch_0 0.000000
 control NoteOn_1 1.000000
@@ -49,25 +75,32 @@ control NoteOn_3 1.000000
 control Pitch_3 0.750000
 control NoteOn_4 1.000000
 control Pitch_4 0.000000
+control NoteOn_5 1.000000
+control Pitch_5 0.000000
+control NoteOn_6 1.000000
+control Pitch_6 0.000000
+control NoteOn_7 1.000000
+control Pitch_7 0.000000
+control NoteOn_8 1.000000
+control Pitch_8 0.000000
+control NoteOn_9 1.000000
+control Pitch_9 0.000000
+control NoteOn_10 1.000000
+control Pitch_10 0.000000
+control NoteOn_11 1.000000
+control Pitch_11 0.000000
+control NoteOn_12 1.000000
+control Pitch_12 0.000000
+control NoteOn_13 1.000000
+control Pitch_13 0.000000
+control NoteOn_14 1.000000
+control Pitch_14 0.000000
+control NoteOn_15 1.000000
+control Pitch_15 0.000000
 control NoteLen 0.100000
 control SeqLen 4.000000
 control Rand 0.000000
-connect Clock clk Clock
 +++
 clk
 control Freq 8.000000
-+++
-pk
-connect Pitch seq Pitch
-connect Gate seq Gate
-control Attack 0.001
-control Decay 0.20000
-control Sustain 0.100000
-control Release 0.1
-control FltEnvAmt 5.419927
-control FltFreq 1.099999
-control FltRes 2.500000
-control Waveform 2.500000
-control Unison 8.820007
-control Detune 0.165000
 +++

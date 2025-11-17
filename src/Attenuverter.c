@@ -18,15 +18,22 @@
 
 #define GET_CONTROL_CURR_ATTN(attn)        ((attn)->controlsCurr[ATTN_CONTROL_ATTN])
 #define GET_CONTROL_PREV_ATTN(attn)        ((attn)->controlsPrev[ATTN_CONTROL_ATTN])
+#define GET_CONTROL_CURR_DCOFF(attn)        ((attn)->controlsCurr[ATTN_CONTROL_DCOFF])
+#define GET_CONTROL_PREV_DCOFF(attn)        ((attn)->controlsPrev[ATTN_CONTROL_DCOFF])
 
 #define SET_CONTROL_CURR_ATTN(attn, v)     ((attn)->controlsCurr[ATTN_CONTROL_ATTN] = (v))
 #define SET_CONTROL_PREV_ATTN(attn, v)     ((attn)->controlsPrev[ATTN_CONTROL_ATTN] = (v))
+#define SET_CONTROL_CURR_DCOFF(attn, v)     ((attn)->controlsCurr[ATTN_CONTROL_DCOFF] = (v))
+#define SET_CONTROL_PREV_DCOFF(attn, v)     ((attn)->controlsPrev[ATTN_CONTROL_DCOFF] = (v))
 
 #define CONTROL_PUSH_TO_PREV(vco)         for (U4 i = 0; i < ATTN_CONTROLCOUNT; i++) {(vco)->controlsPrev[i] = (vco)->controlsCurr[i];} for (U4 i = 0; i < ATTN_MIDI_CONTROLCOUNT; i++) {(vco)->midiControlsPrev[i] = (vco)->midiControlsCurr[i];}
 
 /////////////////////////////
 //  FUNCTION DECLERATIONS  //
 /////////////////////////////
+
+bool initTablesDone = false;
+R4 maxVoltTable[MODULE_BUFFER_SIZE];
 
 static char * inPortNames[ATTN_INCOUNT] = {
   "Attn",
@@ -39,6 +46,7 @@ static char * outPortNames[ATTN_OUTCOUNT] = {
 
 static char * controlNames[ATTN_CONTROLCOUNT] = {
   "Attn",
+  "DcOff",
 };
 
 static void free_attn(void * modPtr);
@@ -55,6 +63,7 @@ static U4 getControlCount(void * modPtr);
 static void setControlVal(void * modPtr, ModularPortID id, void* val);
 static void getControlVal(void * modPtr, ModularPortID id, void* ret);
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
+static void initTables();
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -85,19 +94,25 @@ static Module vtable = {
 };
 
 #define DEFAULT_CONTROL_ATTN   VOLTSTD_MOD_CV_MAX
+#define DEFAULT_CONTROL_DCOFF   VOLTSTD_MOD_CV_ZERO
 
 //////////////////////
 // PUBLIC FUNCTIONS //
 //////////////////////
 void Attenuverter_initInPlace(Attenuverter* attn, char* name)
 {
-
+  if (!initTablesDone)
+  {
+    initTablesDone = true;
+    initTables();
+  }
   // set vtable
   attn->module = vtable;
   attn->module.name = name;
 
   //set controls
   SET_CONTROL_CURR_ATTN(attn, DEFAULT_CONTROL_ATTN);
+  SET_CONTROL_CURR_DCOFF(attn, DEFAULT_CONTROL_DCOFF);
 
   // push curr to prev
   CONTROL_PUSH_TO_PREV(attn);
@@ -134,21 +149,20 @@ static void updateState(void * modPtr)
     return;
   }
 
+  R4* attnCvInput = IN_PORT_ATTN(attn) ? IN_PORT_ATTN(attn) : maxVoltTable;
+  R4 controlAttnMult = MAP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, -1.f, 1.f, GET_CONTROL_CURR_ATTN(attn));
+  R4 controlDcOff = GET_CONTROL_CURR_DCOFF(attn);
+
   for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
   {
-
     // get the input voltage
-    R4 inVolts = IN_PORT_ATTN(attn) ? IN_PORT_ATTN(attn)[i] : VOLTSTD_MOD_CV_MAX; // [-10v, +10v]
-
-    // interp the control input
-    R4 controlVolts = INTERP(GET_CONTROL_PREV_ATTN(attn), GET_CONTROL_CURR_ATTN(attn), MODULE_BUFFER_SIZE, i); //[-10v, +10v]
-    R4 controlAsMultiplier = MAP(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, -1.f, 1.f, controlVolts); // [-1, 1]
+    R4 attnCvVolts = attnCvInput[i]; // [-10v, +10v]
 
     // convert voltage into attn multiplier
-    R4 attnMult = VoltUtils_voltDbToAttenuverterMult(inVolts * controlAsMultiplier);
+    R4 attnMult = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, attnCvVolts * controlAttnMult) / (VOLTSTD_MOD_CV_MAX);
 
     // out = mult * inputSig
-    OUT_PORT_SIG(attn)[i] = IN_PORT_SIG(attn)[i] * attnMult;
+    OUT_PORT_SIG(attn)[i] = IN_PORT_SIG(attn)[i] * attnMult + controlDcOff;
   }
 }
 
@@ -220,6 +234,10 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
       v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
       break;
       
+      case ATTN_CONTROL_DCOFF:
+      v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
+      break;
+      
       default:
         break;
     }
@@ -246,4 +264,12 @@ static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
 
   Attenuverter * attn = (Attenuverter *)modPtr;
   attn->inputPorts[port] = readAddr;
+}
+
+static void initTables()
+{
+  for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+  {
+    maxVoltTable[i] = VOLTSTD_MOD_CV_MAX;
+  }
 }

@@ -58,6 +58,10 @@ Module * ModuleFactory_createModule(ModuleType type, char * name)
     case ModuleType_LFO:
     mod = LFO_init(name);
     break;
+
+    case ModuleType_Noise:
+    mod = Noise_init(name);
+    break;
   }
 
   return mod;

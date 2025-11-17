@@ -27,6 +27,7 @@ typedef enum ModuleType
   ModuleType_MidiInput,
   ModuleType_PolyKeys,
   ModuleType_LFO,
+  ModuleType_Noise,
 
   ModuleType_COUNT,
 } ModuleType;

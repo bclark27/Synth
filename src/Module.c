@@ -24,6 +24,7 @@ const char * const ModuleTypeNames[ModuleType_COUNT] = {
     "MidiInput",
     "PolyKeys",
     "LFO",
+    "Noise",
   };
   
 /////////////////////////////

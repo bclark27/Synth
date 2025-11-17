@@ -17,6 +17,7 @@
 #include "MidiInput.h"
 #include "PolyKeys.h"
 #include "LFO.h"
+#include "Noise.h"
 
 ///////////
 // TYPES //
