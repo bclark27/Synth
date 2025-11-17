@@ -209,7 +209,7 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
     {
       case 0:
       {
-        knobHelper("pk", "Attack", id, dir, 100);
+        knobHelper("lfo", "Freq", id, dir, 100);
         break;
       }
       case 1:

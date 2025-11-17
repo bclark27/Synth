@@ -209,50 +209,66 @@ static void updateState(void * modPtr)
     bool phaseCompleted[MODULE_BUFFER_SIZE];
     Oscillator_sampleWithStrideAndPWTable(&lfo->osc, OUT_PORT_SIG(lfo), MODULE_BUFFER_SIZE, strideTable, pwTable, 1, 0, phaseCompleted);
 
+    R4 min = GET_CONTROL_CURR_MIN(lfo);
+    R4 max = GET_CONTROL_CURR_MAX(lfo);
     for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-        R4 min = INTERP(GET_CONTROL_PREV_MIN(lfo), GET_CONTROL_CURR_MIN(lfo), MODULE_BUFFER_SIZE, i);
-        R4 max = INTERP(GET_CONTROL_PREV_MAX(lfo), GET_CONTROL_CURR_MAX(lfo), MODULE_BUFFER_SIZE, i);
-        OUT_PORT_SIG(lfo)[i] = MAP(VOLTSTD_AUD_MIN, VOLTSTD_AUD_MAX, min, max, OUT_PORT_SIG(lfo)[i]);
-
-        OUT_PORT_CLK(lfo)[i] = ((int)phaseCompleted[i]) * VOLTSTD_GATE_HIGH;
+      OUT_PORT_SIG(lfo)[i] = MAP(VOLTSTD_AUD_MIN, VOLTSTD_AUD_MAX, min, max, OUT_PORT_SIG(lfo)[i]);
+      OUT_PORT_CLK(lfo)[i] = ((int)phaseCompleted[i]) * VOLTSTD_GATE_HIGH;
     }
 }
 
 static void createStrideTable(LFO * lfo, R4 * table)
 {
-    R4* fTable = IN_PORT_FREQ(lfo) ? IN_PORT_FREQ(lfo) : minVoltTable;
-    R4* clockFreq = zeroVoltTable;
-    
-    R4 clockFreqFilledIn[MODULE_BUFFER_SIZE];
     if (IN_PORT_CLK(lfo))
     {
-        clockFreq = clockFreqFilledIn;
-        for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
-        {
-            updateClockInputStats(lfo, IN_PORT_CLK(lfo)[i]);
-            clockFreq[i] = lfo->currentClockFreq;
-        }
+      for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+      {
+        updateClockInputStats(lfo, IN_PORT_CLK(lfo)[i]);
+        R4 clockFreq = lfo->currentClockFreq;
+        table[i] = clockFreq / SAMPLE_RATE;
+      }
+      return;
     }
-    
-    for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+
+    R4 freqControlVolts = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, GET_CONTROL_CURR_FREQ(lfo));
+    if (IN_PORT_FREQ(lfo))
     {
-        R4 freqControlVolts = INTERP(GET_CONTROL_PREV_FREQ(lfo), GET_CONTROL_CURR_FREQ(lfo), MODULE_BUFFER_SIZE, i);    
-        R4 voltSum = (fTable[i] + -(VOLTSTD_MOD_CV_MIN)) + (freqControlVolts + -(VOLTSTD_MOD_CV_MIN));
-        R4 realFreq = voltSum + clockFreq[i];
+      for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+      { 
+        R4 inFreqVolt = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, IN_PORT_FREQ(lfo)[i]);
+        R4 voltSum = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, VOLTSTD_MOD_CV_ZERO, freqControlVolts, inFreqVolt);
+        R4 realFreq = fastVoltToFreq(voltSum);
         table[i] = realFreq / SAMPLE_RATE;
+      }
+      return;
+    }
+
+    for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+    { 
+      R4 realFreq = fastVoltToFreq(freqControlVolts);
+      table[i] = realFreq / SAMPLE_RATE;
     }
 }
 
 static void createPwTable(LFO * lfo, R4 * table)
 {
-    R4* pwTable = IN_PORT_PW(lfo) ? IN_PORT_PW(lfo) : zeroVoltTable;
+    R4 pwControl = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.01f, 0.99f, GET_CONTROL_CURR_PW(lfo));
+    if (IN_PORT_PW(lfo))
+    {
+      for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
+      {
+        R4 cvPwVolts = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, IN_PORT_PW(lfo)[i]);
+        table[i] = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.01f, pwControl, cvPwVolts);
+      }
+      return;
+    }
+    
     for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-      R4 cvPwVolts = pwTable[i];
-      R4 pwControlVolts = INTERP(GET_CONTROL_PREV_PW(lfo), GET_CONTROL_CURR_PW(lfo), MODULE_BUFFER_SIZE, i);
-      table[i] = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.01f, 0.99f, CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, cvPwVolts + pwControlVolts));
+      table[i] = pwControl;
     }
+    
 }
 
 static void pushCurrToPrev(void * modPtr)
@@ -324,12 +340,12 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
     {
 
         case LFO_CONTROL_FREQ:
-        v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
+        v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
         break;
     
 
         case LFO_CONTROL_PW:
-        v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
+        v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
         break;
     
 
@@ -344,7 +360,7 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
     
 
         case LFO_CONTROL_WAVE:
-        v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
+        v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
         break;
     
 
@@ -374,19 +390,19 @@ static void initTables()
     {
         minVoltTable[i] = VOLTSTD_MOD_CV_MIN;
     }
-    float inc = VOLTSTD_MOD_CV_RANGE / (float)FREQ_TABLE_SIZE;
-    float v = VOLTSTD_MOD_CV_MIN;
+    float inc = (VOLTSTD_MOD_CV_MAX - VOLTSTD_MOD_CV_ZERO) / (float)FREQ_TABLE_SIZE;
+    float v = VOLTSTD_MOD_CV_ZERO;
     for (int i = 0; i < FREQ_TABLE_SIZE; i++)
     {
-        volt_to_freq_table[i] = VOLTSTD_C3_FREQ * pow(2, v - VOLTSTD_C3_VOLTAGE);
+        volt_to_freq_table[i] = 0.0166667f * pow(0.44089482306f, -v);
         v += inc;
     }
 }
 
 static inline float fastVoltToFreq(float v)
 {
-  v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
-  float idx = (v + (-VOLTSTD_MOD_CV_MIN)) / VOLTSTD_MOD_CV_RANGE * (FREQ_TABLE_SIZE - 1);
+  v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+  float idx = (v / (VOLTSTD_MOD_CV_MAX - VOLTSTD_MOD_CV_ZERO)) * (FREQ_TABLE_SIZE - 1);
   int i = (int)idx;
   float frac = idx - i;
   float ret = volt_to_freq_table[i] * (1.0f - frac)
