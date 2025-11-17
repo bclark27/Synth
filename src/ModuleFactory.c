@@ -62,6 +62,10 @@ Module * ModuleFactory_createModule(ModuleType type, char * name)
     case ModuleType_Noise:
     mod = Noise_init(name);
     break;
+
+    case ModuleType_SampleHold:
+    mod = SampleHold_init(name);
+    break;
   }
 
   return mod;

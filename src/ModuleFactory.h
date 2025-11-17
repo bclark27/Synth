@@ -18,6 +18,7 @@
 #include "PolyKeys.h"
 #include "LFO.h"
 #include "Noise.h"
+#include "SampleHold.h"
 
 ///////////
 // TYPES //

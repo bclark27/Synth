@@ -25,6 +25,7 @@ const char * const ModuleTypeNames[ModuleType_COUNT] = {
     "PolyKeys",
     "LFO",
     "Noise",
+    "SampleHold",
   };
   
 /////////////////////////////

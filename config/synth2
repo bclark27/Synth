@@ -4,11 +4,26 @@ vco VCO
 vco2 VCO
 pk PolyKeys
 attn Attenuverter
+attn2 Attenuverter
+attn3 Attenuverter
 adsr ADSR
 seq Sequencer
 clk Clock
 noise Noise
 mix Mixer
+sh SampleHold
++++
+attn2
+control Attn 3
+connect Sig sh Out0
++++
+attn3
+control Attn 1
+connect Sig vco2 Audio
++++
+sh
+connect In0 noise White
+connect Trigger0 clk Clock
 +++
 noise
 connect Clock clk Clock
@@ -16,9 +31,10 @@ connect Clock clk Clock
 mix
 #connect In0 noise White
 connect In1 pk Audio
+connect In2 attn3 Sig
 +++
 vco2
-connect Freq noise Random
+connect Freq attn2 Sig
 control Waveform 2.300000
 +++
 __OUTPUT__
