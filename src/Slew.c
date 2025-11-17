@@ -209,13 +209,17 @@ static void updateState(void * modPtr)
 
     for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
     {
-        prevSlew0 = prevSlew0 + (in0[i] - prevSlew0) * fastVoltToSlewAlpha(CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv0[i] + controlSlew0));
-        prevSlew1 = prevSlew1 + (in1[i] - prevSlew1) * fastVoltToSlewAlpha(CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv1[i] + controlSlew1));
-        prevSlew2 = prevSlew2 + (in2[i] - prevSlew2) * fastVoltToSlewAlpha(CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv2[i] + controlSlew2));
-        prevSlew3 = prevSlew3 + (in3[i] - prevSlew3) * fastVoltToSlewAlpha(CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv3[i] + controlSlew3));
+        R4 volt0 = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, VOLTSTD_MOD_CV_ZERO, controlSlew0, CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv0[i]));
+        R4 volt1 = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, VOLTSTD_MOD_CV_ZERO, controlSlew1, CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv1[i]));
+        R4 volt2 = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, VOLTSTD_MOD_CV_ZERO, controlSlew2, CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv2[i]));
+        R4 volt3 = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, VOLTSTD_MOD_CV_ZERO, controlSlew3, CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, slewCv3[i]));
+
+        prevSlew0 = prevSlew0 + (in0[i] - prevSlew0) * fastVoltToSlewAlpha(volt0);
+        prevSlew1 = prevSlew1 + (in1[i] - prevSlew1) * fastVoltToSlewAlpha(volt1);
+        prevSlew2 = prevSlew2 + (in2[i] - prevSlew2) * fastVoltToSlewAlpha(volt2);
+        prevSlew3 = prevSlew3 + (in3[i] - prevSlew3) * fastVoltToSlewAlpha(volt3);
 
         OUT_PORT_OUT0(slew)[i] = prevSlew0;
-        printf("%f\n", prevSlew0);
         OUT_PORT_OUT1(slew)[i] = prevSlew1;
         OUT_PORT_OUT2(slew)[i] = prevSlew2;
         OUT_PORT_OUT3(slew)[i] = prevSlew3;
