@@ -1,15 +1,15 @@
 # module_defines_generator.py
 
 # Configuration for your module
-module_name = "LFO"
+module_name = "Slew"
 module_name_u = module_name.upper()
 module_name_l = module_name.lower()
 
-inputs = ["FREQ", "CLK", "PW"]
-outputs = ["SIG", "CLK"]
-inputs_m = ["MIDI_asdasd"]
-outputs_m = ["MIDI_okok"]
-controls = ["FREQ", "PW", "MIN", "MAX", "WAVE"]
+inputs = ["IN0", "IN1", "IN2", "IN3", "SLEW0", "SLEW1", "SLEW2", "SLEW3"]
+outputs = ["OUT0", "OUT1", "OUT2", "OUT3"]
+inputs_m = []
+outputs_m = []
+controls = ["SLEW0", "SLEW1", "SLEW2", "SLEW3"]
 
 module_buffer_size = "MODULE_BUFFER_SIZE"  # keep as define
 module_midi_buffer_size = "MIDI_STREAM_BUFFER_SIZE"  # keep as define
@@ -224,7 +224,7 @@ static Module vtable = {{
 ''')
 
 for inp in controls:
-    print(f"#define DEFAULT_CONTROL_{inp}\t0")
+    print(f"#define DEFAULT_CONTROL_{inp}    0")
 
 
 print(f'''
