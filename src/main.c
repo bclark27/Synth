@@ -336,8 +336,37 @@ void SIMDTesting()
 
 void ModuleTesting()
 {
+  const int iterCount = 100000000;
+  double start;
+  double end;
+  start = now_ms();
+  float sum = 0;
+  for (int i = 0; i < iterCount; i++)
+  {
+    sum += MAP(0, 10, 0, 2, (float)i);
+  }
+  end = now_ms();
+  double t0 = end - start;
+  printf("A: %lf, %f\n", t0, sum);
+
+  start = now_ms();
+  sum = 0;
+  for (int i = 0; i < iterCount; i++)
+  {
+    sum += CLAMPF(0, 10, (float)i) / 10.f;
+  }
+  end = now_ms();
+  double t1 = end - start;
+  printf("B: %lf, %f\n", t1, sum);
+
+  return;
+
+
+
+
+
+
   const int vcoCount = 500;
-  const int iterCount = 10000;
   VCO vcos[vcoCount];
   float inputBuff[MODULE_BUFFER_SIZE];
   for (int i = 0; i < vcoCount; i++)

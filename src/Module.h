@@ -29,6 +29,7 @@ typedef enum ModuleType
   ModuleType_LFO,
   ModuleType_Noise,
   ModuleType_SampleHold,
+  ModuleType_Slew,
 
   ModuleType_COUNT,
 } ModuleType;

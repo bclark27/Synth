@@ -12,6 +12,11 @@ clk Clock
 noise Noise
 mix Mixer
 sh SampleHold
+slew Slew
++++
+slew
+connect In0 lfo Sig
+control Slew0 0.01
 +++
 attn2
 control Attn 3
@@ -41,12 +46,11 @@ __OUTPUT__
 connect Left mix Mix
 +++
 lfo
-connect Clock clk Clock
-control Freq -9.000000
+control Freq -9.500000
 control PW 5.000000
 control Min -1.000000
 control Max 1.000000
-control Waveform 0.300000
+control Waveform 1.300000
 +++
 vco
 connect Freq seq Pitch
