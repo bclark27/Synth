@@ -70,6 +70,10 @@ Module * ModuleFactory_createModule(ModuleType type, char * name)
     case ModuleType_Slew:
     mod = Slew_init(name);
     break;
+
+    case ModuleType_Quantize:
+    mod = Quantize_init(name);
+    break;
   }
 
   return mod;
