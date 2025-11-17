@@ -28,6 +28,7 @@ typedef enum ModuleType
   ModuleType_PolyKeys,
   ModuleType_LFO,
   ModuleType_Noise,
+  ModuleType_SampleHold,
 
   ModuleType_COUNT,
 } ModuleType;

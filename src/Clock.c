@@ -124,15 +124,11 @@ static void updateState(void * modPtr)
 {
   Clock * clk = (Clock*)modPtr;
 
+  R4 step = GET_CONTROL_CURR_CLOCK(clk) / SAMPLE_RATE;
   for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
   {
-    // interp the control rate
-    R4 thisRate = INTERP(GET_CONTROL_PREV_CLOCK(clk), GET_CONTROL_CURR_CLOCK(clk), MODULE_BUFFER_SIZE, i);
-
     // calculate the step
-    R4 step = thisRate / SAMPLE_RATE;
     clk->phase += step;
-
     if (clk->phase >= 1)
     {
       clk->phase = 0;

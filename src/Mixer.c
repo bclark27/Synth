@@ -45,16 +45,21 @@ static U4 getControlCount(void * modPtr);
 static void setControlVal(void * modPtr, ModularPortID id, void* val);
 static void getControlVal(void * modPtr, ModularPortID id, void* ret);
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
+static void initTables();
 
 //////////////////////
 //  DEFAULT VALUES  //
 //////////////////////
 
+static bool initTablesDone = false;
+static R4 maxCvTable[MODULE_BUFFER_SIZE];
+static R4 zeroCvTable[MODULE_BUFFER_SIZE];
+
 static char * inPortNames[MIXER_INCOUNT] = {
-  "Input0",
-  "Input1",
-  "Input2",
-  "Input3",
+  "In0",
+  "In1",
+  "In2",
+  "In3",
   "Volume",
 };
 
@@ -98,6 +103,12 @@ static Module vtable = {
 
 Module * Mixer_init(char* name)
 {
+  if (!initTablesDone)
+  {
+    initTablesDone = true;
+    initTables();
+  }
+
   Mixer * mix = calloc(1, sizeof(Mixer));
 
   mix->module = vtable;
@@ -130,22 +141,26 @@ static void updateState(void * modPtr)
 {
   Mixer * mix = (Mixer *)modPtr;
 
-  R4 * sum = OUT_PORT_SUM(mix);
+  R4 controlVolts = GET_CONTROL_CURR_VOL(mix); // [0v, +10v]
+  R4 controlAsMultiplier = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.f, 1.f, controlVolts); // [0, 1]
+  R4* inputVoltsPort = IN_PORT_VOL(mix) ? IN_PORT_VOL(mix) : maxCvTable;
+  R4* in0 = IN_PORT_AUDIO0(mix) ? IN_PORT_AUDIO0(mix) : zeroCvTable;
+  R4* in1 = IN_PORT_AUDIO1(mix) ? IN_PORT_AUDIO1(mix) : zeroCvTable;
+  R4* in2 = IN_PORT_AUDIO2(mix) ? IN_PORT_AUDIO2(mix) : zeroCvTable;
+  R4* in3 = IN_PORT_AUDIO3(mix) ? IN_PORT_AUDIO3(mix) : zeroCvTable; 
   for (U4 i = 0; i < MODULE_BUFFER_SIZE; i++)
   {
-    sum[i] = 0;
+    R4 sum = 0;
 
-    sum[i] += IN_PORT_AUDIO0(mix) ? IN_PORT_AUDIO0(mix)[i] : 0;
-    sum[i] += IN_PORT_AUDIO1(mix) ? IN_PORT_AUDIO1(mix)[i] : 0;
-    sum[i] += IN_PORT_AUDIO2(mix) ? IN_PORT_AUDIO2(mix)[i] : 0;
-    sum[i] += IN_PORT_AUDIO3(mix) ? IN_PORT_AUDIO3(mix)[i] : 0;
+    sum += in0[i];
+    sum += in1[i];
+    sum += in2[i];
+    sum += in3[i];
 
+    R4 inputVolts = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, inputVoltsPort[i]); // [0v, +10v]
+    R4 inAsMultiplier = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.f, 1.f, inputVolts); // [0, 1]
     
-    R4 inputVolts = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, IN_PORT_VOL(mix) ? IN_PORT_VOL(mix)[i] : VOLTSTD_MOD_CV_MAX); // [0v, +10v]
-    R4 controlVolts = INTERP(GET_CONTROL_PREV_VOL(mix), GET_CONTROL_CURR_VOL(mix), MODULE_BUFFER_SIZE, i); // [0v, +10v]
-    
-    R4 controlAsMultiplier = MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, 0.f, 1.f, controlVolts); // [0, 1]
-    sum[i] *= VoltUtils_voltDbToAmpl(inputVolts * controlVolts);
+    OUT_PORT_SUM(mix)[i] = sum * inAsMultiplier * controlAsMultiplier;
   }
 }
 
@@ -242,4 +257,13 @@ static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
 
   Mixer * mix = (Mixer *)modPtr;
   mix->inputPorts[port] = readAddr;
+}
+
+static void initTables()
+{
+  for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+  {
+    maxCvTable[i] = VOLTSTD_MOD_CV_MAX;
+    zeroCvTable[i] = VOLTSTD_MOD_CV_ZERO;
+  }
 }

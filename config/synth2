@@ -8,17 +8,21 @@ adsr ADSR
 seq Sequencer
 clk Clock
 noise Noise
+mix Mixer
 +++
 noise
 connect Clock clk Clock
++++
+mix
+#connect In0 noise White
+connect In1 pk Audio
 +++
 vco2
 connect Freq noise Random
 control Waveform 2.300000
 +++
 __OUTPUT__
-connect Left pk Audio
-#connect Left vco2 Audio
+connect Left mix Mix
 +++
 lfo
 connect Clock clk Clock
