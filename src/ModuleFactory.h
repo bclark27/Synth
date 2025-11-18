@@ -20,7 +20,7 @@
 #include "Noise.h"
 #include "SampleHold.h"
 #include "Slew.h"
-#include "Quantize.h"
+#include "QuantizeCv.h"
 
 ///////////
 // TYPES //

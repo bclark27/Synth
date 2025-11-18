@@ -71,8 +71,8 @@ Module * ModuleFactory_createModule(ModuleType type, char * name)
     mod = Slew_init(name);
     break;
 
-    case ModuleType_Quantize:
-    mod = Quantize_init(name);
+    case ModuleType_QuantizeCv:
+    mod = QuantizeCv_init(name);
     break;
   }
 

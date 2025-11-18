@@ -30,7 +30,7 @@ typedef enum ModuleType
   ModuleType_Noise,
   ModuleType_SampleHold,
   ModuleType_Slew,
-  ModuleType_Quantize,
+  ModuleType_QuantizeCv,
 
   ModuleType_COUNT,
 } ModuleType;

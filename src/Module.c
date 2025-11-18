@@ -27,7 +27,7 @@ const char * const ModuleTypeNames[ModuleType_COUNT] = {
     "Noise",
     "SampleHold",
     "Slew",
-    "Quantize",
+    "QuantizeCv",
   };
   
 /////////////////////////////
