@@ -204,7 +204,7 @@ static void updateState(void * modPtr)
       
       R4 quantSig = quantizeSignal(transposedInputSignal, scale);
       
-      OUT_PORT_TRIGGER(quantize)[i] = (int)(quantSig == quantize->lastQuantize) * VOLTSTD_GATE_HIGH;
+      OUT_PORT_TRIGGER(quantize)[i] = (int)(quantSig != quantize->lastQuantize) * VOLTSTD_GATE_HIGH;
       OUT_PORT_OUT(quantize)[i] = quantSig;
       quantize->lastQuantize = quantSig;
     }
@@ -222,7 +222,7 @@ static void updateState(void * modPtr)
   
         R4 quantSig = quantizeSignal(transposedInputSignal, scale);
   
-        OUT_PORT_TRIGGER(quantize)[i] = (int)(quantSig == quantize->lastQuantize) * VOLTSTD_GATE_HIGH;
+        OUT_PORT_TRIGGER(quantize)[i] = (int)(quantSig != quantize->lastQuantize) * VOLTSTD_GATE_HIGH;
         OUT_PORT_OUT(quantize)[i] = quantSig;
         quantize->lastQuantize = quantSig;
       }

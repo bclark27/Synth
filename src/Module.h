@@ -31,6 +31,7 @@ typedef enum ModuleType
   ModuleType_SampleHold,
   ModuleType_Slew,
   ModuleType_QuantizeCv,
+  ModuleType_GateExtender,
 
   ModuleType_COUNT,
 } ModuleType;

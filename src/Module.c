@@ -28,6 +28,7 @@ const char * const ModuleTypeNames[ModuleType_COUNT] = {
     "SampleHold",
     "Slew",
     "QuantizeCv",
+    "GateExtender",
   };
   
 /////////////////////////////

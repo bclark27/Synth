@@ -74,6 +74,10 @@ Module * ModuleFactory_createModule(ModuleType type, char * name)
     case ModuleType_QuantizeCv:
     mod = QuantizeCv_init(name);
     break;
+
+    case ModuleType_GateExtender:
+    mod = GateExtender_init(name);
+    break;
   }
 
   return mod;

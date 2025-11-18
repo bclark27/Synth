@@ -21,6 +21,7 @@
 #include "SampleHold.h"
 #include "Slew.h"
 #include "QuantizeCv.h"
+#include "GateExtender.h"
 
 ///////////
 // TYPES //
