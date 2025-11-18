@@ -3,7 +3,6 @@ lfo LFO
 vco VCO
 vco2 VCO
 flt Filter
-#pk PolyKeys
 attn Attenuverter
 attn2 Attenuverter
 attn3 Attenuverter
@@ -13,57 +12,15 @@ clk Clock
 noise Noise
 mix Mixer
 sh SampleHold
-slew Slew
+slew ADSR
 quant QuantizeCv
 ge GateExtender
-+++
-flt
-control Freq 0
-connect Freq adsr Env
-connect Audio vco2 Audio
-+++
-ge
-connect In quant Trigger
-control Length 4
-+++
-quant
-connect In lfo Sig
-control Scale 1
-+++
-slew
-connect In0 lfo Sig
-control Slew0 0
-+++
-attn2
-control Attn 3
-connect Sig sh Out0
-+++
-attn3
-control Attn 1
-connect Sig vco2 Audio
-+++
-sh
-connect In0 noise White
-connect Trigger0 clk Clock
-+++
-noise
-connect Clock clk Clock
-+++
-mix
-# connect In0 lfo Sig
-# connect In1 pk Audio
-connect In2 flt Audio
-connect In3 attn Sig
-+++
-vco2
-connect Freq quant Out
-control Waveform 2.300000
 +++
 __OUTPUT__
 connect Left mix Mix
 +++
 lfo
-control Freq 3
+control Freq 4.299870
 control PW 5.000000
 control Min 0.000000
 control Max 1.000000
@@ -76,32 +33,46 @@ control PW 0.500000
 control Waveform 2.300000
 control Unison 5.000000
 control Detune 0.050000
-#+++
-#pk
-#connect Pitch seq Pitch
-#connect Gate seq Gate
-#control Attack 0.000000
-#control Decay 0.140000
-#control Sustain 0.100000
-#control Release 0.100000
-#control FltEnvAmt 2.749909
-#control FltFreq 2.739998
-#control FltRes 2.500000
-#control Waveform 2.500000
-#control Unison 1.259990
-#control Detune 0.295000
++++
+vco2
+connect Freq quant Out
+control Freq 0.000000
+control PW 0.500000
+control Waveform 2.300000
+control Unison 1.000000
+control Detune 1.030000
++++
+flt
+connect Freq adsr Env
+connect Audio vco2 Audio
+control Freq 0.000000
+control Q 2.500000
+control DB 0.000000
+control Env 10.000000
+control Type 0.000000
 +++
 attn
 connect Attn adsr Env
 connect Sig vco2 Audio
 control Attn 10.000000
+control DcOff 0.000000
++++
+attn2
+connect Sig sh Out0
+control Attn 3.000000
+control DcOff 0.000000
++++
+attn3
+connect Sig vco2 Audio
+control Attn 1.000000
+control DcOff 0.000000
 +++
 adsr
 connect Gate ge Out
-control Attack 0.010000
-control Decay 0.200000
+control Attack 0.000000
+control Decay 0.080000
 control Sustain 0.000000
-control Release 0.200000
+control Release 0.000000
 control Attn 10.000000
 +++
 seq
@@ -144,4 +115,36 @@ control Rand 0.000000
 +++
 clk
 control Freq 8.000000
++++
+noise
+connect Clock clk Clock
+control NoiseLevel 5.000000
+control ColoredLow 0.000000
+control ColoredHigh 0.000000
+control RandomLevel 2.000000
++++
+mix
+connect In2 flt Audio
+connect In3 attn Sig
+control Volume 10.000000
++++
+sh
+connect In0 noise White
+connect Trigger0 clk Clock
++++
+slew
+connect In0 lfo Sig
+control Slew0 0.000000
+control Slew1 1.000000
+control Slew2 1.000000
+control Slew3 1.000000
++++
+quant
+connect In lfo Sig
+control Scale 1.000000
+control Transpose 0.000000
++++
+ge
+connect In quant Trigger
+control Length 4.000000
 +++

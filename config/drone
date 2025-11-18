@@ -1,0 +1,61 @@
+__OUTPUT__ OutputModule
+mdin MidiInput
+pk PolyKeys
+mix Mixer
+lfo LFO
+sh SampleHold
+quant QuantizeCv
+noise Noise
+attn1 Attenuverter
+ge GateExtender
++++
+__OUTPUT__
+connect Left mix Mix
++++
+mdin
+control MidiIn 0.000000
++++
+pk
+# connect MidiIn mdin MidiOut
+control Attack 0.069998
+control Decay 0.879998
+control Sustain 0.520000
+control Release 0.129998
+control FltEnvAmt 6.079940
+control FltFreq 1.799998
+control FltRes 2.500000
+control Waveform 2.500000
+control Unison 5.486672
+control Detune 0.085000
+connect Pitch sh Out0
+connect Gate ge Out
++++
+mix
+connect In0 pk Audio
+control Volume 10.000000
++++
+lfo
+control Freq 2
+control PW 5.000000
+control Min 0.000000
+control Max 1.000000
+control Waveform 3.300000
++++
+noise
+control NoiseLevel 0.5
++++
+sh
+connect In0 noise White
+connect Trigger LFO Clock
++++
+attn1
+connect Sig noise White
+controll DcOff 1
++++
+quant
+connect In attn1 Sig
++++
+ge
+connect In quant Trigger
+control Length 8
++++
