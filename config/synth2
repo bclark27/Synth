@@ -2,7 +2,8 @@ __OUTPUT__ OutputModule
 lfo LFO
 vco VCO
 vco2 VCO
-pk PolyKeys
+flt Filter
+#pk PolyKeys
 attn Attenuverter
 attn2 Attenuverter
 attn3 Attenuverter
@@ -13,6 +14,21 @@ noise Noise
 mix Mixer
 sh SampleHold
 slew Slew
+quant QuantizeCv
+ge GateExtender
++++
+flt
+control Freq 0
+connect Freq adsr Env
+connect Audio vco2 Audio
++++
+ge
+connect In quant Trigger
+control Length 4
++++
+quant
+connect In lfo Sig
+control Scale 1
 +++
 slew
 connect In0 lfo Sig
@@ -34,23 +50,24 @@ noise
 connect Clock clk Clock
 +++
 mix
-connect In0 lfo Sig
+# connect In0 lfo Sig
 # connect In1 pk Audio
-# connect In2 attn3 Sig
+connect In2 flt Audio
+connect In3 attn Sig
 +++
 vco2
-connect Freq attn2 Sig
+connect Freq quant Out
 control Waveform 2.300000
 +++
 __OUTPUT__
 connect Left mix Mix
 +++
 lfo
-control Freq 1
+control Freq 3
 control PW 5.000000
-control Min -5.000000
-control Max 5.000000
-control Waveform 1.300000
+control Min 0.000000
+control Max 1.000000
+control Waveform 3.300000
 +++
 vco
 connect Freq seq Pitch
@@ -59,28 +76,28 @@ control PW 0.500000
 control Waveform 2.300000
 control Unison 5.000000
 control Detune 0.050000
-+++
-pk
-connect Pitch seq Pitch
-connect Gate seq Gate
-control Attack 0.000000
-control Decay 0.140000
-control Sustain 0.100000
-control Release 0.100000
-control FltEnvAmt 2.749909
-control FltFreq 2.739998
-control FltRes 2.500000
-control Waveform 2.500000
-control Unison 1.259990
-control Detune 0.295000
+#+++
+#pk
+#connect Pitch seq Pitch
+#connect Gate seq Gate
+#control Attack 0.000000
+#control Decay 0.140000
+#control Sustain 0.100000
+#control Release 0.100000
+#control FltEnvAmt 2.749909
+#control FltFreq 2.739998
+#control FltRes 2.500000
+#control Waveform 2.500000
+#control Unison 1.259990
+#control Detune 0.295000
 +++
 attn
 connect Attn adsr Env
-connect Sig vco Audio
+connect Sig vco2 Audio
 control Attn 10.000000
 +++
 adsr
-connect Gate seq Gate
+connect Gate ge Out
 control Attack 0.010000
 control Decay 0.200000
 control Sustain 0.000000
