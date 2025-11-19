@@ -3,7 +3,7 @@ CC := gcc# FILL: the compiler
 CCFLAGS := -O2 # FILL: compile flags
 DBGFLAGS := -Wall -Werror -g
 CCOBJFLAGS := $(CCFLAGS) -c
-LIBS := -L./lib/ -lcomm -lm -lpthread -ldl -lrt -lsoundio -lasound -lpulse -lpulse-simple
+LIBS := -L./lib/ -lm -lpthread -ldl -lrt -lsoundio -lasound -lpulse -lpulse-simple -lpush -lcomm -lusb-1.0 
 
 # path macros
 BIN_PATH := bin

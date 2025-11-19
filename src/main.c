@@ -6,6 +6,8 @@
 #include <xmmintrin.h>   // SSE
 #include <pmmintrin.h>   // SSE3
 #include "comm/IPC.h"
+#include "PushController.h"
+
 /*
 ModularSynth_update();
 memcpy(signalBuffers[idx], synthOutput, sizeof(R4) * STREAM_BUFFER_SIZE);
@@ -397,8 +399,24 @@ int main(void)
   // return 1;
   // timetest();
   // return 0;
-  IPC_StartService("Controller"); 
-  IPC_ConnectToService("PushEvents", OnPushEvent);
+  // IPC_StartService("Controller"); 
+  // IPC_ConnectToService("PushEvents", OnPushEvent);
+  
+  pid_t pid = fork();
+
+  if (pid == 0) {
+      // Child
+      PushController_run();
+      return 0;
+  }
+  
+  // give controller a chance to start its service
+  sleep(1);
+
+  IPC_StartService(SYNTH_NAME); 
+  IPC_ConnectToService(PUSH_CONTROLLER_NAME, OnPushEvent);
+
+
   initColors();
   ModularSynth_init();
   ModularSynth_readConfig(PATH);
