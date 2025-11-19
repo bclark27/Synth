@@ -13,6 +13,11 @@
 // TYPES //
 ///////////
 
+#define TESTING_PKT 123
+typedef struct TestingPacket
+{
+    int test;
+} TestingPacket;
 
 ////////////////////////
 //  PUBLIC FUNCTIONS  //

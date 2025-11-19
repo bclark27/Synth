@@ -203,6 +203,11 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
 
   if (t == MSG_TYPE_ABL_KNOB)
   {
+    TestingPacket p = {
+      .test=123123,
+    };
+    IPC_PostMessage(TESTING_PKT, &p, sizeof(TestingPacket));
+
     AbletonPkt_knob* knob = d;
     int id = knob->id;
     int dir = knob->direction;

@@ -34,7 +34,7 @@ void PushController_run(void)
     s = -1;
     while (s != CC_SUCCESS)
     {
-        s = PushManager_ReceiveCommandsFromService(SYNTH_NAME);//IPC_ConnectToService(SYNTH_NAME, onSynthMessage);
+        s = IPC_ConnectToService(SYNTH_NAME, onSynthMessage); //PushManager_ReceiveCommandsFromService(SYNTH_NAME);
         printf("connection status: %d\n", s);
 
         if (s != CC_SUCCESS)
@@ -58,7 +58,8 @@ void PushController_run(void)
 // priv
 static void onSynthMessage(MessageType t, void* d, MessageSize s)
 {
-
+    // if (t == TESTING_PKT)
+    //     printf("Push Controller %d\n", ((TestingPacket*)d)->test);
 }
 
 // static void CloseBtnListener(void * sub, void * args)
