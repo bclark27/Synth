@@ -56,6 +56,7 @@ typedef struct ModularSynth
 
   SynthThreadPool threadpool;
 
+  atomic_flag moduleUpdateLock;
 } ModularSynth;
 
 ////////////////////////

@@ -37,6 +37,9 @@ static void getAllOutPortConnections(ModularID id, ModularPortID port, ModuleCon
 static ModuleConnection getConnectionToDestInPort(ModularID id, ModularPortID port, bool* found);
 static bool addConnectionHelper(Module * srcMod, ModularID srcId, ModularPortID srcPort, Module * destMod, ModularID destId, ModularPortID destPort);
 void* updateWorkerThread(void *arg);
+static void spinlockInit();
+static void spinlockLock();
+static void spinlockUnlock();
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -65,6 +68,8 @@ void ModularSynth_init(void)
   _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
 
   memset(synth, 0, sizeof(ModularSynth));
+
+  spinlockInit();
 
   synth->modulesCount = 1;
   synth->moduleIDtoIdx[OUT_MODULE_ID] = OUT_MODULE_IDX;
@@ -126,8 +131,8 @@ void ModularSynth_update()
   U4 modulesCount = synth->modulesCount;
   R4 * currOutputPtrLeft = synth->outputBufferLeft;
   R4 * currOutputPtrRight = synth->outputBufferRight;
-  
 
+  spinlockLock();
   for (U4 i = 0; i < MODULE_BUFS_PER_STREAM_BUF; i++)
   {
 #ifdef MULTITHREAD_UPDATE_LOOP
@@ -161,6 +166,7 @@ void ModularSynth_update()
     currOutputPtrLeft += MODULE_BUFFER_SIZE;
     currOutputPtrRight += MODULE_BUFFER_SIZE;
   }
+  spinlockUnlock();
 
 }
 
@@ -392,11 +398,17 @@ bool ModularSynth_setControlByName(char * name, char * controlName, void* val)
   if (!name || !controlName) return 0;
 
   Module * mod = getModuleByName(name);
-  if (!mod) return 0;
+  if (!mod)
+  {
+    return 0;
+  }
   
   bool found;
   ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
-  if (!found) return 0;
+  if (!found)
+  {
+    return 0;
+  }
   
   mod->setControlVal(mod, controlID, val);
   return 1;
@@ -847,4 +859,29 @@ void* updateWorkerThread(void *arg)
   }
 
   return NULL;
+}
+
+static void spinlockInit()
+{
+  atomic_flag_clear_explicit(&synth->moduleUpdateLock, memory_order_release);
+}
+
+static void spinlockLock()
+{
+  const int SPINS = 100; // tune for your CPU and sample block size
+  for (int i = 0; i < SPINS; ++i) 
+  {
+    if (!atomic_flag_test_and_set_explicit(&synth->moduleUpdateLock, memory_order_acquire)) return;
+    // pause instruction could be used with inline asm on x86: __builtin_ia32_pause();
+  }
+  // fallback: yield CPU (gives up slice, avoids hogging)
+  while (atomic_flag_test_and_set_explicit(&synth->moduleUpdateLock, memory_order_acquire)) 
+  {
+    sched_yield();
+  }
+}
+
+static void spinlockUnlock()
+{
+  atomic_flag_clear_explicit(&synth->moduleUpdateLock, memory_order_release);
 }
