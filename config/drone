@@ -16,46 +16,51 @@ mdin
 control MidiIn 0.000000
 +++
 pk
-# connect MidiIn mdin MidiOut
-control Attack 0.069998
-control Decay 0.879998
-control Sustain 0.520000
-control Release 0.129998
+connect Pitch quant Out
+connect Gate ge Out
+control Attack 0.000000
+control Decay 0.119998
+control Sustain 0.000000
+control Release 0.000000
 control FltEnvAmt 6.079940
-control FltFreq 1.799998
+control FltFreq 3.679996
 control FltRes 2.500000
 control Waveform 2.500000
-control Unison 5.486672
+control Unison 0.000000
 control Detune 0.085000
-connect Pitch sh Out0
-connect Gate ge Out
 +++
 mix
 connect In0 pk Audio
 control Volume 10.000000
 +++
 lfo
-control Freq 2
+control Freq 5.680016
 control PW 5.000000
 control Min 0.000000
 control Max 1.000000
 control Waveform 3.300000
 +++
-noise
-control NoiseLevel 0.5
-+++
 sh
 connect In0 noise White
-connect Trigger LFO Clock
-+++
-attn1
-connect Sig noise White
-controll DcOff 1
+connect Trigger lfo Clock
 +++
 quant
 connect In attn1 Sig
+control Scale 1.000000
+control Transpose 0.000000
++++
+noise
+control NoiseLevel 0.500000
+control ColoredLow 0.000000
+control ColoredHigh 0.000000
+control RandomLevel 2.000000
++++
+attn1
+connect Sig sh Out0
+control Attn 10.000000
+control DcOff 1.000000
 +++
 ge
 connect In quant Trigger
-control Length 8
+control Length 5.000000
 +++

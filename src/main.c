@@ -11,7 +11,7 @@ ModularSynth_update();
 memcpy(signalBuffers[idx], synthOutput, sizeof(R4) * STREAM_BUFFER_SIZE);
 */
 
-#define PATH "/home/ben/projects/github/my/Synth/config/synth2"
+#define PATH "/home/ben/projects/github/my/Synth/config/drone"
 #define SCREEN_WIDTH        300
 #define SCREEN_HEIGHT       300
 #define FPS                 60
@@ -214,22 +214,22 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
       }
       case 1:
       {
-        knobHelper("pk", "Decay", id, dir, 100);
+        knobHelper("pk", "Attack", id, dir, 100);
         break;
       }
       case 2:
       {
-        knobHelper("pk", "Sustain", id, dir, 100);
+        knobHelper("pk", "Decay", id, dir, 100);
         break;
       }
       case 3:
       {
-        knobHelper("pk", "Release", id, dir, 100);
+        knobHelper("pk", "Sustain", id, dir, 100);
         break;
       }
       case 4:
       {
-        knobHelper("pk", "FltEnvAmt", id, dir, 100);
+        knobHelper("pk", "Release", id, dir, 100);
         break;
       }
       case 5:
@@ -244,7 +244,7 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
       }
       case 7:
       {
-        knobHelper("pk", "Unison", id, dir, 100);
+        knobHelper("pk", "Unison", id, dir, 12);
         break;
       }
       default:

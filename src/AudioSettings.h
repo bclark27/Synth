@@ -12,7 +12,7 @@
 
 #define SAMPLE_RATE                 44100
 #define STREAM_BUFFER_SIZE          100
-#define MODULE_BUFFER_SIZE          20 // do not go bellow 10
+#define MODULE_BUFFER_SIZE          50 // do not go bellow 10
 #define MODULE_BUFS_PER_STREAM_BUF  (STREAM_BUFFER_SIZE / MODULE_BUFFER_SIZE)
 #define SEC_PER_SAMPLE              (1 / (double)SAMPLE_RATE)
 
