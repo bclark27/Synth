@@ -84,6 +84,7 @@ void ModularSynth_init(void)
   synth->outModuleRight = outMod->getOutputAddr(outMod, OUTPUT_OUT_PORT_RIGHT);
 
   memset(&synth->threadpool, 0, sizeof(SynthThreadPool));
+#ifdef MULTITHREAD_UPDATE_LOOP
   synth->threadpool.running = 1;
   pthread_barrier_init(&synth->threadpool.barrier, NULL, MAX_SYNTH_THREADS + 1);
   pthread_mutex_init(&synth->threadpool.mutex, NULL);
@@ -91,15 +92,18 @@ void ModularSynth_init(void)
   {
     pthread_create(&synth->threadpool.threads[i], NULL, updateWorkerThread, (void*)i);
   }
+#endif
 }
 
 void ModularSynth_free()
 {
+#ifdef MULTITHREAD_UPDATE_LOOP
   atomic_store(&synth->threadpool.phase, SHUTDOWN_PHASE);
   atomic_store(&synth->threadpool.running, true);
   pthread_barrier_wait(&synth->threadpool.barrier);
   pthread_barrier_wait(&synth->threadpool.barrier);
   pthread_barrier_destroy(&synth->threadpool.barrier);
+#endif
 
   for (U4 i = 0; i < synth->modulesCount; i++)
   {
