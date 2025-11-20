@@ -6,7 +6,7 @@
 #include <xmmintrin.h>   // SSE
 #include <pmmintrin.h>   // SSE3
 #include "comm/IPC.h"
-#include "PushController.h"
+#include "controllers/push/PushController.h"
 #include "ModularSynthServer.h"
 
 /*

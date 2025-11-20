@@ -1,7 +1,7 @@
 #ifndef CONTROLLER_COMMON_H_
 #define CONTROLLER_COMMON_H_
 
-#include "modules/Module.h"
+#include "../modules/Module.h"
 
 ///////////////
 //  DEFINES  //

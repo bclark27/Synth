@@ -1,9 +1,9 @@
 #include "PushController.h"
 
-#include "push/OutputMessageBuilder.h"
-#include "push/PushEventManager.h"
-#include "push/PushManager.h"
-#include "push/PushUsbDriver.h"
+#include "../../push/OutputMessageBuilder.h"
+#include "../../push/PushEventManager.h"
+#include "../../push/PushManager.h"
+#include "../../push/PushUsbDriver.h"
 
 
 /////////////////////////////
@@ -100,6 +100,10 @@ static void onSynthMessage(MessageType t, void* d, MessageSize s)
         {
             ControllerMessage_RespGetSummary* res = (ControllerMessage_RespGetSummary*)d;
             
+            for (int i = 0; i < res->length; i++)
+            {
+                printf("%s\n", res->names[i]);
+            }
             // TODO fill in some push state here
         }
         default:
