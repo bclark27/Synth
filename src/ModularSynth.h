@@ -18,6 +18,13 @@
 //  TYPES  //
 /////////////
 
+typedef struct SynthRecLock
+{
+  atomic_flag lock;
+  atomic_int owner;
+  int depth;
+} SynthRecLock;
+
 typedef struct {
   pthread_t threads[MAX_SYNTH_THREADS];
   pthread_barrier_t barrier;
@@ -56,8 +63,8 @@ typedef struct ModularSynth
 
   SynthThreadPool threadpool;
 
-  atomic_flag moduleLayoutLock;
-  atomic_flag modulePropertyReadLock;
+  SynthRecLock updateLoopLock;
+  SynthRecLock moduleControlReadLock;
 } ModularSynth;
 
 ////////////////////////

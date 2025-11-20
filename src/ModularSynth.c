@@ -15,8 +15,8 @@
 #define PUSH_BUFFERS_PHASE  1
 #define SHUTDOWN_PHASE  2
 
-#define MOD_LAYOUT_LOCK(lock) spinlockLock(&synth->moduleLayoutLock, (lock))
-#define MOD_PROP_READ_LOCK(lock) spinlockLock(&synth->modulePropertyReadLock, (lock))
+#define UPDATE_LOOP_LOCK(lock) spinlockLock(&synth->updateLoopLock, (lock))
+#define CONTROL_READ_LOCK(lock) spinlockLock(&synth->moduleControlReadLock, (lock))
 
 /////////////
 //  TYPES  //
@@ -40,8 +40,8 @@ static void getAllOutPortConnections(ModularID id, ModularPortID port, ModuleCon
 static ModuleConnection getConnectionToDestInPort(ModularID id, ModularPortID port, bool* found);
 static bool addConnectionHelper(Module * srcMod, ModularID srcId, ModularPortID srcPort, Module * destMod, ModularID destId, ModularPortID destPort);
 void* updateWorkerThread(void *arg);
-static void spinlockInit(atomic_flag* flag);
-static void spinlockLock(atomic_flag* flag, bool lock);
+static void spinlockInit(SynthRecLock* s);
+static void spinlockLock(SynthRecLock* s, bool lock);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -71,8 +71,8 @@ void ModularSynth_init(void)
 
   memset(synth, 0, sizeof(ModularSynth));
 
-  spinlockInit(&synth->moduleLayoutLock);
-  spinlockInit(&synth->modulePropertyReadLock);
+  spinlockInit(&synth->updateLoopLock);
+  spinlockInit(&synth->moduleControlReadLock);
 
   synth->modulesCount = 1;
   synth->moduleIDtoIdx[OUT_MODULE_ID] = OUT_MODULE_IDX;
@@ -139,7 +139,7 @@ void ModularSynth_update()
   R4 * currOutputPtrLeft = synth->outputBufferLeft;
   R4 * currOutputPtrRight = synth->outputBufferRight;
 
-  MOD_LAYOUT_LOCK(true);
+  UPDATE_LOOP_LOCK(true);
   for (U4 i = 0; i < MODULE_BUFS_PER_STREAM_BUF; i++)
   {
 #ifdef MULTITHREAD_UPDATE_LOOP
@@ -173,7 +173,7 @@ void ModularSynth_update()
     currOutputPtrLeft += MODULE_BUFFER_SIZE;
     currOutputPtrRight += MODULE_BUFFER_SIZE;
   }
-  MOD_LAYOUT_LOCK(false);
+  UPDATE_LOOP_LOCK(false);
 
 }
 
@@ -868,29 +868,48 @@ void* updateWorkerThread(void *arg)
   return NULL;
 }
 
-static void spinlockInit(atomic_flag* flag)
+static void spinlockInit(SynthRecLock* s)
 {
-  atomic_flag_clear_explicit(flag, memory_order_release);
+  atomic_flag_clear(&s->lock);
+  atomic_store(&s->owner, 0);
+  s->depth = 0;
 }
 
-static void spinlockLock(atomic_flag* flag, bool lock)
+static void spinlockLock(SynthRecLock* s, bool lock)
 {
   if (lock)
   {
-    const int SPINS = 100; // tune for your CPU and sample block size
-    for (int i = 0; i < SPINS; ++i) 
-    {
-      if (!atomic_flag_test_and_set_explicit(flag, memory_order_acquire)) return;
-      // pause instruction could be used with inline asm on x86: __builtin_ia32_pause();
+    int tid = (int)pthread_self();
+
+    // If current thread already owns the lock → only increase depth
+    if (atomic_load(&s->owner) == tid) {
+        s->depth++;
+        return;
     }
-    // fallback: yield CPU (gives up slice, avoids hogging)
-    while (atomic_flag_test_and_set_explicit(flag, memory_order_acquire)) 
-    {
-      sched_yield();
+
+    // Normal spinlock acquire
+    while (atomic_flag_test_and_set_explicit(&s->lock, memory_order_acquire)) {
+        sched_yield(); // avoid hogging CPU
     }
+
+    // Now we own it
+    atomic_store(&s->owner, tid);
+    s->depth = 1;
   }
   else
   {
-    atomic_flag_clear_explicit(flag, memory_order_release);
+    int tid = (int)pthread_self();
+    if (atomic_load(&s->owner) != tid) {
+        // Serious bug — unlock by non-owner
+        return;
+    }
+
+    // Decrease recursion
+    s->depth--;
+    if (s->depth > 0) return;
+
+    // Actually release lock
+    atomic_store(&s->owner, 0);
+    atomic_flag_clear_explicit(&s->lock, memory_order_release);
   }
 }

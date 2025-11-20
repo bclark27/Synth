@@ -138,7 +138,7 @@ static void update_synth() {
 
     static double last_print = 0.0;
     double now = end.tv_sec + end.tv_nsec / 1e9;
-    if (now - last_print >= 1.0) {
+    if (now - last_print >= 10.0) {
         double avg = (total_time / count) / 1000.f;
         double mn = min_time / 1000.f;
         double mx = max_time / 1000.f;
