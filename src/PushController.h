@@ -1,23 +1,20 @@
 #ifndef PUSH_CONTROLLER_H_
 #define PUSH_CONTROLLER_H_
 
+#include "ControllerCommon.h"
 
 ///////////////
 //  DEFINES  //
 ///////////////
 
-#define PUSH_CONTROLLER_NAME "Controller"
-#define SYNTH_NAME "Synth"
-
 ///////////
 // TYPES //
 ///////////
 
-#define TESTING_PKT 123
-typedef struct TestingPacket
+typedef struct PushControllerState
 {
-    int test;
-} TestingPacket;
+    int id;
+} PushControllerState;
 
 ////////////////////////
 //  PUBLIC FUNCTIONS  //

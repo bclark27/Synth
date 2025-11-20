@@ -170,7 +170,7 @@ static void updateState(void * modPtr)
         }
 
         gateextender->gateHighNext = false;
-        U4 gateExpire = fastVoltToSampleTime(controlLengthVolt);
+        U4 gateExpire = fastVoltToSampleTime(MAP(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, VOLTSTD_MOD_CV_ZERO, controlLengthVolt, inLengthVolt[i]));
         
         if (gateextender->samplesSinceLastTrigger < gateExpire)
         {

@@ -802,6 +802,60 @@ char* ModularSynth_PrintFullModuleInfo(ModularID id)
   return buffer; // caller must free()
 }
 
+void ModularSynth_readLock(bool lock)
+{
+  CONTROL_READ_LOCK(lock);
+}
+
+void ModularSynth_GetAllModulrIDs(ModularID* ids, int* len)
+{
+  CONTROL_READ_LOCK(true);
+
+  *len = synth->modulesCount;
+  for (int i = 0; i < synth->modulesCount; i++)
+  {
+    Module * mod = synth->modules[i];
+    ModularID id = getModuleIdByIdx(i);
+    ids[i] = id;
+  }
+  
+  CONTROL_READ_LOCK(false);
+}
+
+ModuleType ModularSynth_GetModuleType(ModularID id)
+{
+  CONTROL_READ_LOCK(true);
+  Module* mod = getModuleById(id);
+  if (!mod)
+  {
+    CONTROL_READ_LOCK(false);
+    return -1;
+  }
+
+  ModuleType t = mod->type;
+
+  CONTROL_READ_LOCK(false);
+
+  return t;
+}
+
+void ModularSynth_CopyModuleName(ModularID id, char* buffer)
+{
+  CONTROL_READ_LOCK(true);
+  Module* mod = getModuleById(id);
+  if (!mod)
+  {
+    CONTROL_READ_LOCK(false);
+    return;
+  }
+
+  int len = strlen(mod->name);
+  memcpy(buffer, mod->name, len);
+  CONTROL_READ_LOCK(false);
+  
+  buffer[len] = 0;
+}
+
 /////////////////////////
 //  PRIVATE FUNCTIONS  //
 /////////////////////////

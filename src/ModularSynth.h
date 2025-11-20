@@ -35,7 +35,7 @@ typedef struct {
   U4 moduleCount;
 } SynthThreadPool;
 
-typedef U2 ModularID;
+
 
 typedef struct ModuleConnection
 {
@@ -94,5 +94,10 @@ bool ModularSynth_setControlByName(char * name, char * controlName, void* val);
 void ModularSynth_getControlByName(char * name, char * controlName, void* ret);
 ModulePortType ModularSynth_getControlTypeByName(char * name, char * controlName);
 char* ModularSynth_PrintFullModuleInfo(ModularID id);
+
+void ModularSynth_readLock(bool lock);
+void ModularSynth_GetAllModulrIDs(ModularID* ids, int* len);
+ModuleType ModularSynth_GetModuleType(ModularID id);
+void ModularSynth_CopyModuleName(ModularID id, char* buffer);
 
 #endif

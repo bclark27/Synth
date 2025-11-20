@@ -2,13 +2,11 @@
 #define CONFIG_PARSER_H_
 
 #include "comm/Common.h"
+#include "Module.h"
 
 //////////////
 // DEFINES  //
 //////////////
-
-#define MAX_RACK_SIZE   200
-#define MAX_CONN_COUNT  1000
 
 /////////////
 //  TYPES  //

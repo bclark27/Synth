@@ -9,6 +9,10 @@
 //  DEFINES  //
 ///////////////
 
+#define MAX_RACK_SIZE   200
+#define MAX_CONN_COUNT  1000
+#define MAX_MODULE_NAME_LEN 32
+
 ///////////
 // TYPES //
 ///////////
@@ -51,6 +55,7 @@ typedef Volt* VoltStream;
 typedef MIDIData* MIDISataStream;
 
 typedef U2 ModularPortID;
+typedef U2 ModularID;
 
 typedef struct Module
 {

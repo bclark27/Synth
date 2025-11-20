@@ -7,6 +7,7 @@
 #include <pmmintrin.h>   // SSE3
 #include "comm/IPC.h"
 #include "PushController.h"
+#include "ModularSynthServer.h"
 
 /*
 ModularSynth_update();
@@ -204,11 +205,6 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
 
   if (t == MSG_TYPE_ABL_KNOB)
   {
-    TestingPacket p = {
-      .test=123123,
-    };
-    IPC_PostMessage(TESTING_PKT, &p, sizeof(TestingPacket));
-
     AbletonPkt_knob* knob = d;
     int id = knob->id;
     int dir = knob->direction;
@@ -284,121 +280,6 @@ void inputMidiChord()
   ModularSynth_setControlByName("mdin", "MidiIn", &md);
 }
 
-static inline double now_ms() {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec * 1000.0 + ts.tv_nsec / 1e6;
-}
-
-
-#define N (1 << 26)
-void SIMDTesting()
-{
-  float *A = aligned_alloc(16, N * sizeof(float));
-    float *B = aligned_alloc(16, N * sizeof(float));
-    float *C = aligned_alloc(16, N * sizeof(float));
-
-    for (size_t i = 0; i < N; i++) {
-        A[i] = 0.001f * (float)(i & 0xFF);
-        B[i] = 0.002f * (float)((i * 7) & 0xFF);
-    }
-
-    // --------------------------------------------------------------
-    // A: Scalar C[i] = A[i] + B[i]
-    // --------------------------------------------------------------
-    double startA = now_ms();
-
-    for (size_t i = 0; i < N; i++) {
-        C[i] = A[i] + B[i];
-    }
-
-    double endA = now_ms();
-    printf("Scalar A+B = %.3f ms\n", endA - startA);
-
-    // --------------------------------------------------------------
-    // B: SIMD C[i] = A[i] + B[i]
-    // --------------------------------------------------------------
-    double startB = now_ms();
-
-    size_t i = 0;
-    for (; i + 4 <= N; i += 4) {
-        __m128 a = _mm_load_ps(&A[i]);
-        __m128 b = _mm_load_ps(&B[i]);
-        __m128 r = _mm_add_ps(a, b);
-        _mm_store_ps(&C[i], r);
-    }
-
-    // Remainder
-    for (; i < N; i++) {
-        C[i] = A[i] + B[i];
-    }
-
-    double endB = now_ms();
-    printf("SIMD A+B   = %.3f ms\n", endB - startB);
-
-    free(A);
-    free(B);
-    free(C);
-    return 0;
-}
-
-void ModuleTesting()
-{
-  const int iterCount = 100000000;
-  double start;
-  double end;
-  start = now_ms();
-  float sum = 0;
-  for (int i = 0; i < iterCount; i++)
-  {
-    sum += MAP(0, 10, 0, 2, (float)i);
-  }
-  end = now_ms();
-  double t0 = end - start;
-  printf("A: %lf, %f\n", t0, sum);
-
-  start = now_ms();
-  sum = 0;
-  for (int i = 0; i < iterCount; i++)
-  {
-    sum += CLAMPF(0, 10, (float)i) / 10.f;
-  }
-  end = now_ms();
-  double t1 = end - start;
-  printf("B: %lf, %f\n", t1, sum);
-
-  return;
-
-
-
-
-
-
-  const int vcoCount = 500;
-  VCO vcos[vcoCount];
-  float inputBuff[MODULE_BUFFER_SIZE];
-  for (int i = 0; i < vcoCount; i++)
-  {
-    VCO_initInPlace(&vcos[i], malloc(4));
-    vcos[i].module.linkToInput(&vcos[i], VCO_IN_PORT_FREQ, inputBuff);
-    vcos[i].module.linkToInput(&vcos[i], VCO_IN_PORT_PW, inputBuff);
-  }
-
-  double startA = now_ms();
-
-  for (int i = 0; i < iterCount; i++)
-  {
-    for (int k = 0; k < vcoCount; k++)
-    {
-      vcos[k].module.updateState(&vcos[k]);
-      vcos[k].module.pushCurrToPrev(&vcos[k]);
-    }
-  }
-
-  double endA = now_ms();
-  printf("VCO time %.3f ms\n", endA - startA);
-}
-
 int main(void)
 {
   // ModuleTesting();
@@ -419,16 +300,13 @@ int main(void)
   // give controller a chance to start its service
   sleep(1);
 
-  IPC_StartService(SYNTH_NAME); 
-  IPC_ConnectToService(PUSH_CONTROLLER_NAME, OnPushEvent);
-
-
   initColors();
   ModularSynth_init();
   ModularSynth_readConfig(PATH);
-  //ModularSynth_exportConfig(PATH);
-  //while (1){ModularSynth_update();}
-  //inputMidiChord();
+
+  ModularSynthServer_init();
+  ModularSynthServer_connectToController(PUSH_CONTROLLER_NAME);
+  
   AudioDevice_init();
   AudioDevice_LoopForever();
   return 0;
