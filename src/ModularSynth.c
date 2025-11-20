@@ -179,10 +179,17 @@ void ModularSynth_update()
 
 }
 
+/////////////////////////////////
+//       START SECTION         //
+// MODULE GRAPH EDIT FUNCTIONS //
+/////////////////////////////////
+
 ModularID ModularSynth_addModule(ModuleType type, char * name)
 {
   // exclude all output module types
   if (type == ModuleType_OutputModule) return 0;
+
+  MODULE_GRAPH_LOCK(true);
 
   // get a valid id (if non exist ret 0)
   ModularID id = 0;
@@ -195,11 +202,19 @@ ModularID ModularSynth_addModule(ModuleType type, char * name)
     }
   }
 
-  if (!id) return 0;
+  if (!id)
+  {
+    MODULE_GRAPH_LOCK(false);
+    return -1;
+  }
 
   // create the module
   Module * module = ModuleFactory_createModule(type, name);
-  if (!module) return -1;
+  if (!module)
+  {
+    MODULE_GRAPH_LOCK(false);
+    return -1;
+  }
 
   // add ptr to the end of the list
   U2 idx = synth->modulesCount;
@@ -214,26 +229,36 @@ ModularID ModularSynth_addModule(ModuleType type, char * name)
   // mark the id as unavailable
   synth->moduleIDAvailability[id] = 0;
 
+  MODULE_GRAPH_LOCK(false);
+
   return id;
 }
-
-/////////////////////////////////
-//       START SECTION         //
-// MODULE GRAPH EDIT FUNCTIONS //
-/////////////////////////////////
 
 ModularID ModularSynth_addModuleByName(char* type, char * name)
 {
   if (!type || !name) return -1;
   bool found;
   ModuleType typeId = Module_GetModuleTypeByName(type, &found);
-  return ModularSynth_addModule(typeId, name);
+
+  if (!found) return -1;
+
+  MODULE_GRAPH_LOCK(true);
+  ModularID id = ModularSynth_addModule(typeId, name);
+
+  MODULE_GRAPH_LOCK(false);
+  return id;
 }
 
 bool ModularSynth_removeModule(ModularID id)
 {
+  MODULE_GRAPH_LOCK(true);
+
   Module * delMod = getModuleById(id);
-  if (!delMod || delMod->type == ModuleType_OutputModule) return 0;
+  if (!delMod || delMod->type == ModuleType_OutputModule)
+  {
+    MODULE_GRAPH_LOCK(false);
+    return 0;
+  }
   
   int idx = 0;
   for (int i = 0; i < synth->modulesCount; i++)
@@ -297,18 +322,30 @@ bool ModularSynth_removeModule(ModularID id)
   // mark the id as available
   synth->moduleIDAvailability[id] = 1;
 
+  MODULE_GRAPH_LOCK(false);
+
   return 1;
 }
 
 bool ModularSynth_removeModuleByName(char* name)
 {
   if (!name) return 0;
+  MODULE_GRAPH_LOCK(true);
+
   bool found;
   ModularID id = getModuleIdByName(name, &found);
   
-  if (!found) return 0;
+  if (!found)
+  {
+    MODULE_GRAPH_LOCK(false);
+    return 0;
+  }
 
-  return ModularSynth_removeModule(id);
+  bool success = ModularSynth_removeModule(id);
+
+  MODULE_GRAPH_LOCK(false);
+
+  return success;
 }
 
 bool ModularSynth_addConnection(ModularID srcId, ModularPortID srcPort, ModularID destId, ModularPortID destPort)
@@ -319,16 +356,30 @@ bool ModularSynth_addConnection(ModularID srcId, ModularPortID srcPort, ModularI
   // exclude out of bound id
   if (srcId >= MAX_RACK_SIZE || destId >= MAX_RACK_SIZE) return 0;
 
+  MODULE_GRAPH_LOCK(true);
+  
   // check that we have enough space to add a connection
-  if (synth->portConnectionsCount >= MAX_CONN_COUNT) return 0;
+  if (synth->portConnectionsCount >= MAX_CONN_COUNT)
+  {
+    MODULE_GRAPH_LOCK(false);
+    return 0;
+  }
 
   // cheeck that the modules exist
   Module * srcMod = getModuleById(srcId);
   Module * destMod = getModuleById(destId);
 
-  if (!srcMod || !destMod) return 0;
+  if (!srcMod || !destMod)
+  {
+    MODULE_GRAPH_LOCK(false);
+    return 0;
+  }
 
-  return addConnectionHelper(srcMod, srcId, srcPort, destMod, destId, destPort);
+  bool success = addConnectionHelper(srcMod, srcId, srcPort, destMod, destId, destPort);
+
+  MODULE_GRAPH_LOCK(false);
+
+  return success;
 }
 
 bool ModularSynth_addConnectionByName(char* srcModuleName, char* srcPortName, char* destModuleName, char* destPortName)
