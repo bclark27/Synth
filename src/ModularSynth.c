@@ -615,11 +615,19 @@ bool ModularSynth_exportConfig(char * fname)
 
 bool ModularSynth_setControl(ModularID id, ModularPortID controlID, void* val)
 {
+  CONTROL_READ_LOCK(true);
   Module * mod = getModuleById(id);
 
-  if (!mod) return 0;
+  if (!mod)
+  {
+    CONTROL_READ_LOCK(false);
+    return 0;
+  }
 
   mod->setControlVal(mod, controlID, val);
+
+  CONTROL_READ_LOCK(false);
+  
   return 1;
 }
 
@@ -627,9 +635,11 @@ bool ModularSynth_setControlByName(char * name, char * controlName, void* val)
 {
   if (!name || !controlName) return 0;
 
+  CONTROL_READ_LOCK(true);
   Module * mod = getModuleByName(name);
   if (!mod)
   {
+    CONTROL_READ_LOCK(false);
     return 0;
   }
   
@@ -637,10 +647,12 @@ bool ModularSynth_setControlByName(char * name, char * controlName, void* val)
   ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
   if (!found)
   {
+    CONTROL_READ_LOCK(false);
     return 0;
   }
   
   mod->setControlVal(mod, controlID, val);
+  CONTROL_READ_LOCK(false);
   return 1;
 }
 
@@ -648,42 +660,77 @@ void ModularSynth_getControlByName(char * name, char * controlName, void* ret)
 {
   if (!name || !controlName || !ret) return;
 
+  CONTROL_READ_LOCK(true);
+
   Module * mod = getModuleByName(name);
-  if (!mod) return;
+  if (!mod)
+  {
+    CONTROL_READ_LOCK(false);
+    return;
+  }
 
   bool found;
   ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
-  if (!found) return;
+  if (!found)
+  {
+    CONTROL_READ_LOCK(false);
+    return;
+  }
 
   mod->getControlVal(mod, controlID, ret);
+  CONTROL_READ_LOCK(false);
 }
 
 ModulePortType ModularSynth_getControlTypeByName(char * name, char * controlName)
 {
   if (!name || !controlName) return 0;
 
+  CONTROL_READ_LOCK(true);
+
   Module * mod = getModuleByName(name);
-  if (!mod) return 0;
+  if (!mod)
+  {
+    CONTROL_READ_LOCK(false);
+    return 0;
+  }
 
   bool found;
   ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
-  if (!found) return 0;
+  if (!found)
+  {
+    CONTROL_READ_LOCK(false);
+    return 0;
+  }
 
-  return mod->getControlType(mod, controlID);
+  ModulePortType type = mod->getControlType(mod, controlID);
+
+  CONTROL_READ_LOCK(false);
+
+  return type;
 }
 
 char* ModularSynth_PrintFullModuleInfo(ModularID id)
 {
+  CONTROL_READ_LOCK(true);
+
   Module * mod = getModuleById(id);
   
-  if (!mod) return NULL;
+  if (!mod)
+  {
+    CONTROL_READ_LOCK(false);
+    return NULL;
+  }
   
   // Estimate buffer size (roughly)
   size_t bufSize = 256;
   bufSize += 64 * (mod->inPortNamesCount + mod->outPortNamesCount + mod->controlNamesCount);
   
   char* buffer = malloc(bufSize);
-  if (!buffer) return NULL;
+  if (!buffer)
+  {
+    CONTROL_READ_LOCK(false);
+    return NULL;
+  }
   buffer[0] = '\0';
   
   // Compose
@@ -751,6 +798,7 @@ char* ModularSynth_PrintFullModuleInfo(ModularID id)
       strcat(buffer, "\n");
   }
 
+  CONTROL_READ_LOCK(false);
   return buffer; // caller must free()
 }
 

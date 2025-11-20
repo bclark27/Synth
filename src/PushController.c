@@ -34,7 +34,8 @@ void PushController_run(void)
     s = -1;
     while (s != CC_SUCCESS)
     {
-        s = IPC_ConnectToService(SYNTH_NAME, onSynthMessage); //PushManager_ReceiveCommandsFromService(SYNTH_NAME);
+        //s = IPC_ConnectToService(SYNTH_NAME, onSynthMessage);
+        s = PushManager_ReceiveCommandsFromService(SYNTH_NAME);
         printf("connection status: %d\n", s);
 
         if (s != CC_SUCCESS)
