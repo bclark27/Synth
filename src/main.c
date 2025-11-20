@@ -127,6 +127,7 @@ void knobHelper(char* modName, char* cvName, int knobNum, int direction, float d
   IPC_PostMessage(MSG_TYPE_ABL_CMD_TEXT, &cmd_t3, sizeof(AbletonPkt_Cmd_Text));
 }
 
+static bool flipper = false;
 void OnPushEvent(MessageType t, void* d, MessageSize s)
 {
   if (t == MSG_TYPE_ABL_BUTTON)

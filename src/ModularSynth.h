@@ -86,12 +86,13 @@ bool ModularSynth_addConnection(ModularID srcId, ModularPortID srcPort, ModularI
 bool ModularSynth_addConnectionByName(char* srcModuleName, char* srcPortName, char* destModuleName, char* destPortName);
 void ModularSynth_removeConnection(ModularID destId, ModularPortID destPort);
 void ModularSynth_removeConnectionByName(char* destModuleName, char* destPortName);
+bool ModularSynth_readConfig(char * fname);
+bool ModularSynth_exportConfig(char * fname);
+
 bool ModularSynth_setControl(ModularID id, ModularPortID controlID, void* val);
 bool ModularSynth_setControlByName(char * name, char * controlName, void* val);
 void ModularSynth_getControlByName(char * name, char * controlName, void* ret);
 ModulePortType ModularSynth_getControlTypeByName(char * name, char * controlName);
-bool ModularSynth_readConfig(char * fname);
-bool ModularSynth_exportConfig(char * fname);
 char* ModularSynth_PrintFullModuleInfo(ModularID id);
 
 #endif

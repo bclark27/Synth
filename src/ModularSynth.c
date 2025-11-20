@@ -18,6 +18,8 @@
 #define UPDATE_LOOP_LOCK(lock) spinlockLock(&synth->updateLoopLock, (lock))
 #define CONTROL_READ_LOCK(lock) spinlockLock(&synth->moduleControlReadLock, (lock))
 
+#define MODULE_GRAPH_LOCK(lock) if (lock) { CONTROL_READ_LOCK(lock); UPDATE_LOOP_LOCK(lock); } else { UPDATE_LOOP_LOCK(lock); CONTROL_READ_LOCK(lock); }
+
 /////////////
 //  TYPES  //
 /////////////
@@ -215,6 +217,10 @@ ModularID ModularSynth_addModule(ModuleType type, char * name)
   return id;
 }
 
+/////////////////////////////////
+//       START SECTION         //
+// MODULE GRAPH EDIT FUNCTIONS //
+/////////////////////////////////
 
 ModularID ModularSynth_addModuleByName(char* type, char * name)
 {
@@ -329,22 +335,37 @@ bool ModularSynth_addConnectionByName(char* srcModuleName, char* srcPortName, ch
 {
   if (!srcModuleName || !srcPortName || !destModuleName || !destPortName) return 0;
 
+  MODULE_GRAPH_LOCK(true);
+
   bool srcFound;
   bool destFound;
   ModularID srcId = getModuleIdByName(srcModuleName, &srcFound);
   ModularID destId = getModuleIdByName(destModuleName, &destFound);
-  if (!srcFound || !destFound) return 0;
+  if (!srcFound || !destFound)
+  {
+    MODULE_GRAPH_LOCK(false);
+    return 0;
+  }
   
   Module * srcMod = getModuleById(srcId);
   Module * destMod = getModuleById(destId);
-  if (!srcMod || !destMod) return 0;
+  if (!srcMod || !destMod)
+  {
+    MODULE_GRAPH_LOCK(false);
+    return 0;
+  }
   
   ModularPortID srcPort = Module_GetOutPortId(srcMod, srcPortName, &srcFound);
   ModularPortID destPort = Module_GetInPortId(destMod, destPortName, &destFound);
-  if (!srcFound || !destFound) return 0;
+  if (!srcFound || !destFound)
+  {
+    MODULE_GRAPH_LOCK(false);
+    return 0;
+  }
 
-
-  return addConnectionHelper(srcMod, srcId, srcPort, destMod, destId, destPort);
+  bool success = addConnectionHelper(srcMod, srcId, srcPort, destMod, destId, destPort);
+  MODULE_GRAPH_LOCK(false);
+  return success;
 }
 
 void ModularSynth_removeConnection(ModularID destId, ModularPortID destPort)
@@ -378,76 +399,29 @@ void ModularSynth_removeConnection(ModularID destId, ModularPortID destPort)
 void ModularSynth_removeConnectionByName(char* destModuleName, char* destPortName)
 {
   if (!destModuleName || !destPortName) return;
-
+  
+  MODULE_GRAPH_LOCK(true);
+  
   bool found;
   ModularID id = getModuleIdByName(destModuleName, &found);
-  if (!found) return;
+  if (!found)
+  {
+    MODULE_GRAPH_LOCK(false);
+    return;
+  }
 
   Module* mod = getModuleById(id);
   ModularPortID port = Module_GetInPortId(mod, destPortName, &found);
-  if (!found) return;
-
-  ModularSynth_removeConnection(id, port);
-}
-
-bool ModularSynth_setControl(ModularID id, ModularPortID controlID, void* val)
-{
-  Module * mod = getModuleById(id);
-
-  if (!mod) return 0;
-
-  mod->setControlVal(mod, controlID, val);
-  return 1;
-}
-
-bool ModularSynth_setControlByName(char * name, char * controlName, void* val)
-{
-  if (!name || !controlName) return 0;
-
-  Module * mod = getModuleByName(name);
-  if (!mod)
-  {
-    return 0;
-  }
-  
-  bool found;
-  ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
   if (!found)
   {
-    return 0;
+    MODULE_GRAPH_LOCK(false);
+    return;
   }
-  
-  mod->setControlVal(mod, controlID, val);
-  return 1;
+
+  ModularSynth_removeConnection(id, port);
+  MODULE_GRAPH_LOCK(false);
 }
 
-void ModularSynth_getControlByName(char * name, char * controlName, void* ret)
-{
-  if (!name || !controlName || !ret) return;
-
-  Module * mod = getModuleByName(name);
-  if (!mod) return;
-
-  bool found;
-  ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
-  if (!found) return;
-
-  mod->getControlVal(mod, controlID, ret);
-}
-
-ModulePortType ModularSynth_getControlTypeByName(char * name, char * controlName)
-{
-  if (!name || !controlName) return 0;
-
-  Module * mod = getModuleByName(name);
-  if (!mod) return 0;
-
-  bool found;
-  ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
-  if (!found) return 0;
-
-  return mod->getControlType(mod, controlID);
-}
 
 bool ModularSynth_readConfig(char * fname)
 {
@@ -455,6 +429,7 @@ bool ModularSynth_readConfig(char * fname)
   bool success = ConfigParser_Parse(&config, fname);
   if (!success) return 0;
 
+  MODULE_GRAPH_LOCK(true);
   // ok so first we want to make sure all the modules exist (special exception for output module. it is always where regardless)
 
   // first step then is to add all the modules that do not exist
@@ -526,10 +501,13 @@ bool ModularSynth_readConfig(char * fname)
       ModularSynth_setControlByName(modConfig->name, ctrlInfo->controlName, &ctrlInfo->value);
     }
   }
+
+  MODULE_GRAPH_LOCK(false);
 }
 
 bool ModularSynth_exportConfig(char * fname)
 {
+  MODULE_GRAPH_LOCK(true);
   memset(&config, 0, sizeof(config));
 
   // first get in the raw number of modules
@@ -574,6 +552,73 @@ bool ModularSynth_exportConfig(char * fname)
   }
 
   ConfigParser_Write(&config, fname);
+
+  MODULE_GRAPH_LOCK(false);
+}
+
+
+/////////////////////////////////
+//         END SECTION         //
+// MODULE GRAPH EDIT FUNCTIONS //
+/////////////////////////////////
+
+bool ModularSynth_setControl(ModularID id, ModularPortID controlID, void* val)
+{
+  Module * mod = getModuleById(id);
+
+  if (!mod) return 0;
+
+  mod->setControlVal(mod, controlID, val);
+  return 1;
+}
+
+bool ModularSynth_setControlByName(char * name, char * controlName, void* val)
+{
+  if (!name || !controlName) return 0;
+
+  Module * mod = getModuleByName(name);
+  if (!mod)
+  {
+    return 0;
+  }
+  
+  bool found;
+  ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
+  if (!found)
+  {
+    return 0;
+  }
+  
+  mod->setControlVal(mod, controlID, val);
+  return 1;
+}
+
+void ModularSynth_getControlByName(char * name, char * controlName, void* ret)
+{
+  if (!name || !controlName || !ret) return;
+
+  Module * mod = getModuleByName(name);
+  if (!mod) return;
+
+  bool found;
+  ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
+  if (!found) return;
+
+  mod->getControlVal(mod, controlID, ret);
+}
+
+ModulePortType ModularSynth_getControlTypeByName(char * name, char * controlName)
+{
+  if (!name || !controlName) return 0;
+
+  Module * mod = getModuleByName(name);
+  if (!mod) return 0;
+
+  bool found;
+  ModularPortID controlID = Module_GetControlId(mod, controlName, &found);
+  if (!found) return 0;
+
+  return mod->getControlType(mod, controlID);
 }
 
 char* ModularSynth_PrintFullModuleInfo(ModularID id)
