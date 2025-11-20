@@ -1,7 +1,7 @@
 #ifndef MODULAR_SYNTH_H_
 #define MODULAR_SYNTH_H_
 
-#include "Module.h"
+#include "modules/Module.h"
 #include "ModuleFactory.h"
 #include "ConfigParser.h"
 #include <pthread.h>

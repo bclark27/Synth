@@ -2,7 +2,7 @@
 #define CONFIG_PARSER_H_
 
 #include "comm/Common.h"
-#include "Module.h"
+#include "modules/Module.h"
 
 //////////////
 // DEFINES  //
