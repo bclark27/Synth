@@ -53,3 +53,11 @@ void PushScreenManager_notify_configChanged(ModularID id)
         manager->currentScreen->configChanged(manager->currentScreen, id);
     }
 }
+
+void PushScreenManager_notify_pushEvent(void* event, MessageType type)
+{
+    if (manager->currentScreen)
+    {
+        manager->currentScreen->onPushEvent(manager->currentScreen, event, type);
+    }
+}

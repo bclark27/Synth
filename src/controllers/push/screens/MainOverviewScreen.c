@@ -8,6 +8,7 @@ static void freeScreen(void* screen);
 static void configChanged(void* screen, ModularID id);
 static void mouted(void* screen);
 static void unmounted(void* screen);
+static void onPushEvent(void* screen, void* event, MessageType type);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -19,6 +20,7 @@ static PushScreen vtable = {
     .configChanged = configChanged,
     .mouted = mouted,
     .unmounted = unmounted,
+    .onPushEvent = onPushEvent,
   };
   
 ////////////////////////
@@ -47,16 +49,49 @@ static void freeScreen(void* screen)
 static void configChanged(void* screen, ModularID id)
 {
     MainOverviewScreen* mo = (MainOverviewScreen*)screen;
-    printf("udpated\n");
 }
 
 static void mouted(void* screen)
 {
     MainOverviewScreen* mo = (MainOverviewScreen*)screen;
-    printf("ASDASDASDASDASD\n");
 }
 
 static void unmounted(void* screen)
 {
     MainOverviewScreen* mo = (MainOverviewScreen*)screen;
+}
+
+static void onPushEvent(void* screen, void* event, MessageType type)
+{
+    switch (type)
+    {
+        case MSG_TYPE_ABL_PAD:
+        {
+            AbletonPkt_pad* pad = event;
+            printf("PAD\n");
+            break;
+        }
+        case MSG_TYPE_ABL_BUTTON:
+        {
+            AbletonPkt_button* btn = event;
+            printf("BTN\n");
+            break;
+        }
+        case MSG_TYPE_ABL_KNOB:
+        {
+            AbletonPkt_knob* knob = event;
+            printf("KNOB\n");
+            break;
+        }
+        case MSG_TYPE_ABL_SLIDER:
+        {
+            AbletonPkt_slider* slider = event;
+            printf("SLIDER\n");
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
 }

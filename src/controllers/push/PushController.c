@@ -87,30 +87,22 @@ void PushController_run(void)
 
 void onPad(void * sub, void * args)
 {
-    AbletonPkt_pad* pkt = args;
-
-    ControllerMessage_ReqGetSummary req = {
-        .header = {
-            .controllerId = push->id,
-        },
-        .fullSummaryReq = true,
-    };
-    IPC_PostMessage(ControllerMessageType_ReqGetSummary, &req, sizeof(req));
+    PushScreenManager_notify_pushEvent(args, MSG_TYPE_ABL_PAD);
 }
 
 void onBtn(void * sub, void * args)
 {
-    AbletonPkt_button* pkt = args;
+    PushScreenManager_notify_pushEvent(args, MSG_TYPE_ABL_BUTTON);
 }
 
 void onKnob(void * sub, void * args)
 {
-    AbletonPkt_knob* pkt = args;
+    PushScreenManager_notify_pushEvent(args, MSG_TYPE_ABL_KNOB);
 }
 
 void onSlider(void * sub, void * args)
 {
-    AbletonPkt_slider* pkt = args;
+    PushScreenManager_notify_pushEvent(args, MSG_TYPE_ABL_SLIDER);
 }
 
 // priv

@@ -2,6 +2,7 @@
 #define PUSH_SCREEN_H_
 
 #include "../../ControllerCommon.h"
+#include "../../../comm/IPC.h"
 
 ///////////
 // TYPES //
@@ -20,6 +21,7 @@ typedef struct PushScreen
     void (*configChanged)(void*, ModularID);
     void (*mouted)(void*);
     void (*unmounted)(void*);
+    void (*onPushEvent)(void*,void*,MessageType);
 } PushScreen;
 
 ////////////////////////
