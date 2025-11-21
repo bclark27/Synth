@@ -4,6 +4,7 @@
 #include "../../push/PushEventManager.h"
 #include "../../push/PushManager.h"
 #include "../../push/PushUsbDriver.h"
+#include "screens/PushScreenManager.h"
 
 
 /////////////////////////////
@@ -23,7 +24,7 @@ static void onSynthMessage(MessageType t, void* d, MessageSize s);
 
 static bool initDone = false;
 static PushControllerState instance;
-static PushControllerState* push;
+static PushControllerState* push = &instance;
 
 ////////////////////////
 //  PUBLIC FUNCTIONS  //
@@ -34,8 +35,10 @@ void PushController_run(void)
     if (initDone) exit(0);
     initDone = true;
 
-    push = calloc(1, sizeof(PushControllerState));
+    memset(push, 0, sizeof(PushControllerState));
     push->id = -1;
+
+    push->state = PushSynthState_getState();
 
     PushManager_Init();
     int s = PushManager_InitServer(PUSH_CONTROLLER_NAME);
@@ -53,6 +56,9 @@ void PushController_run(void)
         if (s != CC_SUCCESS)
         sleep(1);
     }
+
+    PushScreenManager_init();
+    PushScreenManager_navigate(PushScreenType_MainOverview);
 
     printf("cycling push\n");
 
@@ -77,6 +83,34 @@ void PushController_run(void)
     // pushEventManager_unsubscribeToNewButtonPackets(&btnHandler);
     // PushManager_Free();
 
+}
+
+void onPad(void * sub, void * args)
+{
+    AbletonPkt_pad* pkt = args;
+
+    ControllerMessage_ReqGetSummary req = {
+        .header = {
+            .controllerId = push->id,
+        },
+        .fullSummaryReq = true,
+    };
+    IPC_PostMessage(ControllerMessageType_ReqGetSummary, &req, sizeof(req));
+}
+
+void onBtn(void * sub, void * args)
+{
+    AbletonPkt_button* pkt = args;
+}
+
+void onKnob(void * sub, void * args)
+{
+    AbletonPkt_knob* pkt = args;
+}
+
+void onSlider(void * sub, void * args)
+{
+    AbletonPkt_slider* pkt = args;
 }
 
 // priv
@@ -108,45 +142,23 @@ static void onSynthMessage(MessageType t, void* d, MessageSize s)
             for (int i = 0; i < res->length; i++)
             {
                 ControllerCommon_ModuleConfig* config = configs + i;
+                PushSynthState_updateSynthModuleConfig(config);
+                PushScreenManager_notify_configChanged(config->id);
+                
             }
-            // TODO fill in some push state here
+            break;
         }
         case ControllerMessageType_RespGetModuleSummary:
         {
             ControllerMessage_RespGetModuleSummary* res = (ControllerMessage_RespGetModuleSummary*)d;
             ControllerCommon_ModuleConfig* config = &res->module;
+            PushSynthState_updateSynthModuleConfig(config);
+            PushScreenManager_notify_configChanged(config->id);
+            break;
         }
         default:
         {
             break;
         }
     }
-}
-
-void onPad(void * sub, void * args)
-{
-    AbletonPkt_pad* pkt = args;
-
-    ControllerMessage_ReqGetSummary req = {
-        .header = {
-            .controllerId = push->id,
-        },
-        .fullSummaryReq = true,
-    };
-    IPC_PostMessage(ControllerMessageType_ReqGetSummary, &req, sizeof(req));
-}
-
-void onBtn(void * sub, void * args)
-{
-    AbletonPkt_button* pkt = args;
-}
-
-void onKnob(void * sub, void * args)
-{
-    AbletonPkt_knob* pkt = args;
-}
-
-void onSlider(void * sub, void * args)
-{
-    AbletonPkt_slider* pkt = args;
 }

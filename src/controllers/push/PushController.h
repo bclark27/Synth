@@ -2,6 +2,7 @@
 #define PUSH_CONTROLLER_H_
 
 #include "../ControllerCommon.h"
+#include "PushSynthState.h"
 
 ///////////////
 //  DEFINES  //
@@ -14,6 +15,7 @@
 typedef struct PushControllerState
 {
     int id;
+    PushSynthState* state;
 } PushControllerState;
 
 ////////////////////////
