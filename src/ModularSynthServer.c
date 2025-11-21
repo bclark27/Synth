@@ -118,7 +118,64 @@ void handleSummaryReq(ControllerMessage_ReqGetSummary* req)
 
 void fillInModuleSummary(ControllerCommon_ModuleConfig* config, ModularID id)
 {
+    Module* mod = ModularSynth_GetModulePtr(id);
+    if (!mod)
+    {
+        return;
+    }
+
     config->id = id;
-    config->type = ModularSynth_GetModuleType(id);
-    ModularSynth_CopyModuleName(id, config->name);
+    config->type = mod->type;
+    
+    int len = strlen(mod->name);
+    memcpy(config->name, mod->name, len);
+    config->name[len] = 0;
+    
+    int inPortCount = mod->getInCount(mod);
+    int outPortCount = mod->getOutCount(mod);
+    int controlCount = mod->getContolCount(mod);
+
+    config->inPortCount = inPortCount;
+    config->outPortCount = outPortCount;
+    config->controlCount = controlCount;
+
+    for (int i = 0; i < inPortCount; i++)
+    {
+        ControllerCommon_InPortInfo* inConfig = &config->inPorts[i];
+        inConfig->type = mod->getInputType(mod, i);
+        
+        len = strlen(mod->inPortNames[i]);
+        memcpy(inConfig->name, mod->inPortNames[i], len);
+        inConfig->name[len] = 0;
+
+        ModularID srcMod;
+        ModularPortID srcPort;
+        inConfig->hasConnection = ModularSynth_GetInPortConnection(id, i, &srcMod, &srcPort);
+
+        if (inConfig->hasConnection)
+        {
+            inConfig->connection.module = srcMod;
+            inConfig->connection.port = srcPort;
+        }
+    }
+
+    for (int i = 0; i < outPortCount; i++)
+    {
+        ControllerCommon_OutPortInfo* outConfig = &config->outPorts[i];
+        outConfig->type = mod->getOutputType(mod, i);
+
+        len = strlen(mod->outPortNames[i]);
+        memcpy(outConfig->name, mod->outPortNames[i], len);
+        outConfig->name[len] = 0;
+    }
+
+    for (int i = 0; i < controlCount; i++)
+    {
+        ControllerCommon_ControlInfo* controlConfig = &config->controls[i];
+        controlConfig->type = mod->getControlType(mod, i);
+
+        len = strlen(mod->controlNames[i]);
+        memcpy(controlConfig->name, mod->controlNames[i], len);
+        controlConfig->name[len] = 0;
+    }
 }

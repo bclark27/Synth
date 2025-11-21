@@ -5,6 +5,7 @@
 /////////////////////////////
 
 static ControllerCommon_ModuleConfig* getFreeConfigSpot();
+static void PrintConfigState(ControllerCommon_ModuleConfig* config);
 
 //////////////////////
 //  DEFAULT VALUES  //
@@ -43,6 +44,7 @@ void PushSynthState_updateSynthModuleConfig(ControllerCommon_ModuleConfig* confi
     }
 
     *spot = *config;
+    PrintConfigState(config);
 }
 
 ControllerCommon_ModuleConfig* PushSynthState_getModuleConfigById(ModularID id)
@@ -67,4 +69,32 @@ static ControllerCommon_ModuleConfig* getFreeConfigSpot()
     }
 
     return NULL;
+}
+
+static void PrintConfigState(ControllerCommon_ModuleConfig* config)
+{
+    printf("Updated Config\nid: %d\nname: %s\n", config->id, config->name);
+    printf("\nIn Ports:\n");
+    for (int i = 0; i < config->inPortCount; i++)
+    {
+        if (config->inPorts[i].hasConnection)
+        {
+            printf("%d: %s -> %d.%d\n", i, config->inPorts[i].name, config->inPorts[i].connection.module, config->inPorts[i].connection.port);
+        }
+        else
+        {
+            printf("%d: %s -> null\n", i, config->inPorts[i].name);
+        }
+    }
+    printf("\nOut Ports:\n");
+    for (int i = 0; i < config->outPortCount; i++)
+    {
+        printf("%d: %s\n", i, config->outPorts[i].name);
+    }
+    printf("\nControls:\n");
+    for (int i = 0; i < config->controlCount; i++)
+    {
+        printf("%d: %s\n", i, config->controls[i].name);
+    }
+    printf("\n\n");
 }

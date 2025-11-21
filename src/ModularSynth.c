@@ -179,6 +179,14 @@ void ModularSynth_update()
 
 }
 
+Module* ModularSynth_GetModulePtr(ModularID id)
+{
+  CONTROL_READ_LOCK(true);
+  Module * mod = getModuleById(id);
+  CONTROL_READ_LOCK(false);
+  return mod;
+}
+
 /////////////////////////////////
 //       START SECTION         //
 // MODULE GRAPH EDIT FUNCTIONS //
@@ -854,6 +862,36 @@ void ModularSynth_CopyModuleName(ModularID id, char* buffer)
   CONTROL_READ_LOCK(false);
   
   buffer[len] = 0;
+}
+
+bool ModularSynth_GetInPortConnection(ModularID id, ModularPortID port, ModularID* srcId, ModularPortID* srcPort)
+{
+  CONTROL_READ_LOCK(true);
+  Module* mod = getModuleById(id);
+  if (!mod)
+  {
+    CONTROL_READ_LOCK(false);
+    return false;
+  }
+
+  for (int i = 0; i < synth->portConnectionsCount; i++)
+  {
+    if (synth->portConnections[i].destMod == id &&
+      synth->portConnections[i].destPort == port)
+    {
+
+      *srcId = synth->portConnections[i].srcMod;
+      *srcPort = synth->portConnections[i].srcPort;
+
+      CONTROL_READ_LOCK(false);
+      return true;
+    }
+  }
+
+
+  CONTROL_READ_LOCK(false);
+
+  return false;
 }
 
 /////////////////////////

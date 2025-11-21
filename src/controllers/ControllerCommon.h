@@ -32,6 +32,7 @@ typedef struct {
 typedef struct {
     ModulePortType type;
     char name[MAX_MODULE_NAME_LEN];
+    bool hasConnection;
     ControllerCommon_ConnectionInfo connection;
 } ControllerCommon_InPortInfo;
 
@@ -46,10 +47,11 @@ typedef struct {
     char name[MAX_MODULE_NAME_LEN];
 
     int outPortCount;
-    ControllerCommon_OutPortInfo outPorts[MAX_PORT_COUNT];
     int inPortCount;
-    ControllerCommon_InPortInfo inPorts[MAX_PORT_COUNT];
     int controlCount;
+
+    ControllerCommon_OutPortInfo outPorts[MAX_PORT_COUNT];
+    ControllerCommon_InPortInfo inPorts[MAX_PORT_COUNT];
     ControllerCommon_ControlInfo controls[MAX_PORT_COUNT];
 } ControllerCommon_ModuleConfig;
 
@@ -113,6 +115,7 @@ typedef struct ControllerMessage_RespControlValue
 
     ModularID module;
     ModularPortID controlId;
+    ModulePortType type;
     union
     {
         R4 controlVolt;
@@ -125,6 +128,7 @@ typedef struct ControllerMessage_ReqSetControlValue
 
     ModularID module;
     ModularPortID controlId;
+    ModulePortType type;
     union
     {
         R4 controlVolt;

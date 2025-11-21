@@ -78,6 +78,7 @@ R4 * ModularSynth_getLeftChannel();
 R4 * ModularSynth_getRightChannel();
 void ModularSynth_update();
 
+Module* ModularSynth_GetModulePtr(ModularID id);
 ModularID ModularSynth_addModule(ModuleType type, char * name);
 ModularID ModularSynth_addModuleByName(char* type, char * name);
 bool ModularSynth_removeModule(ModularID id);
@@ -99,5 +100,6 @@ void ModularSynth_readLock(bool lock);
 void ModularSynth_GetAllModulrIDs(ModularID* ids, int* len);
 ModuleType ModularSynth_GetModuleType(ModularID id);
 void ModularSynth_CopyModuleName(ModularID id, char* buffer);
+bool ModularSynth_GetInPortConnection(ModularID id, ModularPortID port, ModularID* srcId, ModularPortID* srcPort);
 
 #endif
