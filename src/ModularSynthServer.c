@@ -10,7 +10,8 @@
 /////////////////////////////
 
 void OnSynthRequest(MessageType t, void* d, MessageSize s);
-void handleDataRequest(ControllerMessage_ReqModuleData* req);
+void handleSummaryReq(ControllerMessage_ReqGetSummary* req);
+void fillInModuleSummary(ControllerCommon_ModuleConfig* config, ModularID id);
 
 ////////////////////
 //  PRIVATE VARS  //
@@ -40,7 +41,7 @@ void ModularSynthServer_connectToController(char* name)
     int newId = controllerCounter++;
     ControllerMessage_SetControllerID msg = {
         .header = {
-            .id = newId,
+            .controllerId = -1,
         },
         .id = newId,
     };
@@ -58,9 +59,9 @@ void OnSynthRequest(MessageType t, void* d, MessageSize s)
 {
     switch (t)
     {
-        case ControllerMessageType_ReqModuleData:
+        case ControllerMessageType_ReqGetSummary:
         {
-            handleDataRequest((ControllerMessage_ReqModuleData*)d);
+            handleSummaryReq((ControllerMessage_ReqGetSummary*)d);
         }
         default:
         {
@@ -69,34 +70,55 @@ void OnSynthRequest(MessageType t, void* d, MessageSize s)
     }
 }
 
-void handleDataRequest(ControllerMessage_ReqModuleData* req)
+void handleSummaryReq(ControllerMessage_ReqGetSummary* req)
 {
-    switch (req->type)
+    switch (req->fullSummaryReq)
     {
-        case ControllerDataRequestType_GetSummary:
+        case true:
         {
-            ControllerMessage_RespGetSummary sum;
-
             ModularSynth_readLock(true);
-
+            
             int len;
-            ModularSynth_GetAllModulrIDs(sum.ids, &len);
-            sum.length = len;
+            ModularID ids[MAX_RACK_SIZE];
+            ModularSynth_GetAllModulrIDs(ids, &len);
+            
+            int totalSize = sizeof(ControllerMessage_RespGetFullSummary) + sizeof(ControllerCommon_ModuleConfig) * len;
+            char data[totalSize];
+            
+            ControllerMessage_RespGetFullSummary* sum = (ControllerMessage_RespGetFullSummary*)data;
+            ControllerCommon_ModuleConfig* configs = (ControllerCommon_ModuleConfig*)(((char*)data) + sizeof(ControllerMessage_RespGetFullSummary));
+            sum->length = len;
+            sum->header.controllerId = req->header.controllerId;
 
             for (int i = 0; i < len; i++)
             {
-                sum.types[i] = ModularSynth_GetModuleType(sum.ids[i]);
-                ModularSynth_CopyModuleName(sum.ids[i], sum.names[i]);
+                fillInModuleSummary(&configs[i], ids[i]);
             }
 
             ModularSynth_readLock(false);
 
-            IPC_PostMessage(ControllerMessageType_RespGetSummary, &sum, sizeof(sum));
+            IPC_PostMessage(ControllerMessageType_RespGetFullSummary, data, totalSize);
             break;
         }
         default:
         {
+            ModularSynth_readLock(true);
+            
+            ModularID id = req->modId;
+            ControllerMessage_RespGetModuleSummary sum;
+            fillInModuleSummary(&sum.module, id);
+            sum.header.controllerId = req->header.controllerId;
+            ModularSynth_readLock(false);
+
+            IPC_PostMessage(ControllerMessageType_RespGetModuleSummary, &sum, sizeof(sum));
             break;
         }
     }
+}
+
+void fillInModuleSummary(ControllerCommon_ModuleConfig* config, ModularID id)
+{
+    config->id = id;
+    config->type = ModularSynth_GetModuleType(id);
+    ModularSynth_CopyModuleName(id, config->name);
 }

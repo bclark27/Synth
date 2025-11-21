@@ -35,6 +35,7 @@ void PushController_run(void)
     initDone = true;
 
     push = calloc(1, sizeof(PushControllerState));
+    push->id = -1;
 
     PushManager_Init();
     int s = PushManager_InitServer(PUSH_CONTROLLER_NAME);
@@ -81,30 +82,39 @@ void PushController_run(void)
 // priv
 static void onSynthMessage(MessageType t, void* d, MessageSize s)
 {
+    if (!MESSAGE_IS_CONTROLLER_TYPE(t) || !MESSAGE_SENT_TO_ME(d, push->id)) return;
+
     switch (t)
     {
         case ControllerMessageType_SetControllerID:
         {
+            if (push->id >= 0) break;
+
             push->id = ((ControllerMessage_SetControllerID*)d)->id;
 
-            ControllerMessage_ReqModuleData req = {
+            ControllerMessage_ReqGetSummary req = {
                 .header = {
-                    .id = push->id,
+                    .controllerId = push->id,
                 },
-                .type = ControllerDataRequestType_GetSummary,
+                .fullSummaryReq = true,
             };
-            IPC_PostMessage(ControllerMessageType_ReqModuleData, &req, sizeof(req));
+            IPC_PostMessage(ControllerMessageType_ReqGetSummary, &req, sizeof(req));
             break;
         }
-        case ControllerMessageType_RespGetSummary:
+        case ControllerMessageType_RespGetFullSummary:
         {
-            ControllerMessage_RespGetSummary* res = (ControllerMessage_RespGetSummary*)d;
-            
+            ControllerMessage_RespGetFullSummary* res = (ControllerMessage_RespGetFullSummary*)d;
+            ControllerCommon_ModuleConfig* configs = (ControllerCommon_ModuleConfig*)(((char*)res) + sizeof(ControllerMessage_RespGetFullSummary));
             for (int i = 0; i < res->length; i++)
             {
-                printf("%s\n", res->names[i]);
+                ControllerCommon_ModuleConfig* config = configs + i;
             }
             // TODO fill in some push state here
+        }
+        case ControllerMessageType_RespGetModuleSummary:
+        {
+            ControllerMessage_RespGetModuleSummary* res = (ControllerMessage_RespGetModuleSummary*)d;
+            ControllerCommon_ModuleConfig* config = &res->module;
         }
         default:
         {
@@ -116,6 +126,14 @@ static void onSynthMessage(MessageType t, void* d, MessageSize s)
 void onPad(void * sub, void * args)
 {
     AbletonPkt_pad* pkt = args;
+
+    ControllerMessage_ReqGetSummary req = {
+        .header = {
+            .controllerId = push->id,
+        },
+        .fullSummaryReq = true,
+    };
+    IPC_PostMessage(ControllerMessageType_ReqGetSummary, &req, sizeof(req));
 }
 
 void onBtn(void * sub, void * args)

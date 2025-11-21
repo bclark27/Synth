@@ -13,6 +13,7 @@
 #define MAX_RACK_SIZE   200
 #define MAX_CONN_COUNT  1000
 #define MAX_MODULE_NAME_LEN 32
+#define MAX_PORT_COUNT 64
 
 ///////////
 // TYPES //

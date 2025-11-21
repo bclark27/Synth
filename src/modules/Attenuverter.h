@@ -1,7 +1,6 @@
 #ifndef ATTENUVERTER_H_
 #define ATTENUVERTER_H_
 
-#include "../comm/Common.h"
 #include "Module.h"
 
 ///////////////
