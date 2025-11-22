@@ -20,12 +20,13 @@ typedef struct PushScreen
 {
     PushScreenType type;
     void (*freeScreen)(void*);
-    void (*configChanged)(void*,void*,PushSynthStateChangeType);
+    void (*configChanged)(void*,PushSynthStateChange);
     void (*mouted)(void*);
     void (*unmounted)(void*);
     void (*onPushEvent)(void*,void*,MessageType);
     bool screenIsVisible;
     pushStateObject pushState;
+    PushSynthState* state;
 } PushScreen;
 
 ////////////////////////

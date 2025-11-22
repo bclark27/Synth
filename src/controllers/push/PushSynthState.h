@@ -26,7 +26,46 @@ typedef enum PushSynthStateChangeType
 
 typedef struct PushSynthStateChange
 {
-    
+    PushSynthStateChangeType type;
+
+    union {
+        struct {
+            ModularID mod;
+        } ModuleAdd;
+
+        struct {
+            ModularID mod;
+        } ModuleRemoved;
+
+        struct {
+            ModularID srcMod;
+            ModularPortID srcPort;
+            ModularID destMod;
+            ModularPortID destPort;
+        } ConnectionAdded;
+
+        struct {
+            ModularID srcMod;
+            ModularPortID srcPort;
+            ModularID destMod;
+            ModularPortID destPort;
+        } ConnectionRemoved;
+
+        struct {
+            ModularID mod;
+            ModularPortID control;
+        } ControlValueChanged;
+
+        struct {
+            ModularID mod;
+            ModularPortID control;
+        } InPortValueChanged;
+
+        struct {
+            ModularID mod;
+            ModularPortID control;
+        } OutPortValueChanged;
+    };
 } PushSynthStateChange;
 
 typedef struct PushSynthState

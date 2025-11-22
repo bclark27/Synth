@@ -48,11 +48,11 @@ void PushScreenManager_navigate(PushScreenType dest)
     manager->currentScreen->mouted(manager->currentScreen);
 }
 
-void PushScreenManager_notify_configChanged(void* event, PushSynthStateChangeType type)
+void PushScreenManager_notify_configChanged(PushSynthStateChange event)
 {
     if (manager->currentScreen)
     {
-        manager->currentScreen->configChanged(manager->currentScreen, event, type);
+        manager->currentScreen->configChanged(manager->currentScreen, event);
     }
 }
 

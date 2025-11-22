@@ -3,6 +3,13 @@
 
 #include "PushScreen.h"
 
+typedef struct MainOverViewScreen_ColState
+{
+    ModularID module;
+    
+
+} MainOverViewScreen_ColState;
+
 ///////////
 // TYPES //
 ///////////
@@ -10,6 +17,8 @@
 typedef struct MainOverviewScreen
 {
     PushScreen screen;
+
+
 } MainOverviewScreen;
 
 ////////////////////////
