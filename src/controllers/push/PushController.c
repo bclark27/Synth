@@ -135,7 +135,7 @@ static void onSynthMessage(MessageType t, void* d, MessageSize s)
             {
                 ControllerCommon_ModuleConfig* config = configs + i;
                 PushSynthState_updateSynthModuleConfig(config);
-                PushScreenManager_notify_configChanged(config->id);
+                //PushScreenManager_notify_configChanged(config->id);
                 
             }
             break;
@@ -145,7 +145,7 @@ static void onSynthMessage(MessageType t, void* d, MessageSize s)
             ControllerMessage_RespGetModuleSummary* res = (ControllerMessage_RespGetModuleSummary*)d;
             ControllerCommon_ModuleConfig* config = &res->module;
             PushSynthState_updateSynthModuleConfig(config);
-            PushScreenManager_notify_configChanged(config->id);
+            //PushScreenManager_notify_configChanged(config->id);
             break;
         }
         default:

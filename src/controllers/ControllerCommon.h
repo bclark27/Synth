@@ -27,18 +27,33 @@ typedef struct {
 typedef struct {
     ModulePortType type;
     char name[MAX_MODULE_NAME_LEN];
+    union
+    {
+        R4 volt;
+        MIDIData midi;
+    } value;
 } ControllerCommon_ControlInfo;
 
 typedef struct {
     ModulePortType type;
     char name[MAX_MODULE_NAME_LEN];
     bool hasConnection;
+    union
+    {
+        R4 volt;
+        MIDIData midi;
+    } value;
     ControllerCommon_ConnectionInfo connection;
 } ControllerCommon_InPortInfo;
 
 typedef struct {
     ModulePortType type;
     char name[MAX_MODULE_NAME_LEN];
+    union
+    {
+        R4 volt;
+        MIDIData midi;
+    } value;
 } ControllerCommon_OutPortInfo;
 
 typedef struct {

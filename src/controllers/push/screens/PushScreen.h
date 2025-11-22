@@ -3,6 +3,8 @@
 
 #include "../../ControllerCommon.h"
 #include "../../../comm/IPC.h"
+#include "../PushSynthState.h"
+#include "../../../push/OutputMessageBuilder.h"
 
 ///////////
 // TYPES //
@@ -18,10 +20,12 @@ typedef struct PushScreen
 {
     PushScreenType type;
     void (*freeScreen)(void*);
-    void (*configChanged)(void*, ModularID);
+    void (*configChanged)(void*,void*,PushSynthStateChangeType);
     void (*mouted)(void*);
     void (*unmounted)(void*);
     void (*onPushEvent)(void*,void*,MessageType);
+    bool screenIsVisible;
+    pushStateObject pushState;
 } PushScreen;
 
 ////////////////////////

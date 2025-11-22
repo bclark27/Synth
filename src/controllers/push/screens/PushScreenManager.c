@@ -40,17 +40,19 @@ void PushScreenManager_navigate(PushScreenType dest)
     if (manager->currentScreen != NULL)
     {
         manager->currentScreen->unmounted(manager->currentScreen);
+        manager->currentScreen->screenIsVisible = false;
     }
 
     manager->currentScreen = manager->screens[dest];
+    manager->currentScreen->screenIsVisible = true;
     manager->currentScreen->mouted(manager->currentScreen);
 }
 
-void PushScreenManager_notify_configChanged(ModularID id)
+void PushScreenManager_notify_configChanged(void* event, PushSynthStateChangeType type)
 {
     if (manager->currentScreen)
     {
-        manager->currentScreen->configChanged(manager->currentScreen, id);
+        manager->currentScreen->configChanged(manager->currentScreen, event, type);
     }
 }
 

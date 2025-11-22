@@ -23,7 +23,7 @@ typedef struct PushScreenManager
 
 void PushScreenManager_init();
 void PushScreenManager_navigate(PushScreenType dest);
-void PushScreenManager_notify_configChanged(ModularID id);
+void PushScreenManager_notify_configChanged(void* event, PushSynthStateChangeType type);
 void PushScreenManager_notify_pushEvent(void* event, MessageType type);
 
 #endif

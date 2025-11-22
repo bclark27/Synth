@@ -11,6 +11,24 @@
 // TYPES //
 ///////////
 
+typedef enum PushSynthStateChangeType
+{
+    PushSynthStateChangeType_ModuleAdd,
+    PushSynthStateChangeType_ModuleRemove,
+    PushSynthStateChangeType_ConnectionAdd,
+    PushSynthStateChangeType_ConnectionRemove,
+    PushSynthStateChangeType_ControlValueChanged,
+    PushSynthStateChangeType_InPortValueChanged,
+    PushSynthStateChangeType_OutPortValueChanged,
+
+    PushSynthStateChangeType_Count,
+} PushSynthStateChangeType;
+
+typedef struct PushSynthStateChange
+{
+    
+} PushSynthStateChange;
+
 typedef struct PushSynthState
 {
     int id;
