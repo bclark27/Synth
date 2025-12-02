@@ -1,24 +1,28 @@
 # module_defines_generator.py
 
 # Configuration for your module
-module_name = "Slew"
+module_name = "Sampler"
 module_name_u = module_name.upper()
 module_name_l = module_name.lower()
 
-inputs = ["IN0", "IN1", "IN2", "IN3", "SLEW0", "SLEW1", "SLEW2", "SLEW3"]
-outputs = ["OUT0", "OUT1", "OUT2", "OUT3"]
-inputs_m = []
+inputs = ["Pitch", "Gate", "Attack", "Decay", "Sustain", "Release"]
+outputs = ["Left", "Right", "Mono"]
+inputs_m = ["Midi"]
 outputs_m = []
-controls = ["SLEW0", "SLEW1", "SLEW2", "SLEW3"]
+controls = ["Pitch", "Attack", "Decay", "Sustain", "Release"]
+controls_b = ["File"]
+controls_m = []
 
 module_buffer_size = "MODULE_BUFFER_SIZE"  # keep as define
 module_midi_buffer_size = "MIDI_STREAM_BUFFER_SIZE"  # keep as define
 
-print(f"#ifndef {module_name_u}_H_\n#define {module_name_u}_H_\n\n#include \"comm/Common.h\"\n#include \"Module.h\"\n\n")
+print(f"#ifndef {module_name_u}_H_\n#define {module_name_u}_H_\n\n#include \"Module.h\"\n\n")
 
 print(f"#define {module_name_u}_INCOUNT {len(inputs)}")
 print(f"#define {module_name_u}_OUTCOUNT {len(outputs)}")
 print(f"#define {module_name_u}_CONTROLCOUNT {len(controls)}")
+print(f"#define {module_name_u}_BYTE_CONTROLCOUNT {len(controls_b)}")
+print(f"#define {module_name_u}_MIDI_CONTROLCOUNT {len(controls_m)}")
 
 
 # Generate IN_PORT macros
@@ -30,6 +34,12 @@ for i, out in enumerate(outputs):
 print()
 for i, ctrl in enumerate(controls):
     print(f"#define {module_name_u}_CONTROL_{ctrl}\t{i}")
+print()
+for i, ctrl in enumerate(controls_b):
+    print(f"#define {module_name_u}_BYTE_CONTROL_{ctrl}\t{i}")
+print()
+for i, ctrl in enumerate(controls_m):
+    print(f"#define {module_name_u}_MIDI_CONTROL_{ctrl}\t{i}")
 print()
 print(f"#define {module_name_u}_MIDI_INCOUNT {len(inputs_m)}")
 print(f"#define {module_name_u}_MIDI_OUTCOUNT {len(outputs_m)}")
@@ -67,7 +77,16 @@ typedef struct {module_name}
   // output ports
   MIDIData outputMIDIPortsPrev[{module_name_u}_MIDI_OUTCOUNT * MIDI_STREAM_BUFFER_SIZE];
   MIDIData outputMIDIPortsCurr[{module_name_u}_MIDI_OUTCOUNT * MIDI_STREAM_BUFFER_SIZE];
+  
+  atomic_uint midiRingRead[{module_name_u}_MIDI_CONTROLCOUNT];
+  atomic_uint midiRingWrite[{module_name_u}_MIDI_CONTROLCOUNT];
+  MIDIData midiControlsRingBuffer[{module_name_u}_MIDI_CONTROLCOUNT * MIDI_STREAM_BUFFER_SIZE];
 
+  // byte array type storage
+  atomic_bool byteArrayLock[{module_name_u}_BYTE_CONTROLCOUNT];
+  volatile bool byteArrayDirty[{module_name_u}_BYTE_CONTROLCOUNT];
+  volatile unsigned int byteArrayLen[{module_name_u}_BYTE_CONTROLCOUNT];
+  char* byteArrayControlStorage[{module_name_u}_BYTE_CONTROLCOUNT];
 }} {module_name};
 
 ////////////////////////
@@ -96,7 +115,7 @@ void {module_name}_initInPlace({module_name} * {module_name_l}, char* name);
 
 
 
-print(f"\n\n\n\n\n\n\n\n#include \"{module_name}.h\"\n#include \"VoltUtils.h\"\n")
+print(f"\n\n\n\n\n\n\n\n#include \"{module_name}.h\"\n")
 
 print(f"#define IN_PORT_ADDR(mod, port)\t\t((({module_name}*)(mod))->inputPorts[port]);")
 print(f"#define PREV_PORT_ADDR(mod, port)\t((({module_name}*)(mod))->outputPortsPrev + {module_buffer_size} * (port))")
@@ -132,6 +151,11 @@ for ctrl in controls:
 
 
 print()
+print()
+print(f"#define GET_MIDI_CONTROL_RING_BUFFER(mod, port)   ((({module_name}*)(mod))->midiControlsRingBuffer + (MIDI_STREAM_BUFFER_SIZE * (port)))")
+
+print()
+
 print(f'''
 #define CONTROL_PUSH_TO_PREV({module_name_l})         for (U4 i = 0; i < {module_name_u}_CONTROLCOUNT; i++) {{({module_name_l})->controlsPrev[i] = ({module_name_l})->controlsCurr[i];}}
 
@@ -181,18 +205,26 @@ static bool tableInitDone = false;
 # };
 
 
-print(f"static char * inPortNames[{module_name_u}_INCOUNT] = {{")
+print(f"static char * inPortNames[{module_name_u}_INCOUNT + {module_name_u}_MIDI_INCOUNT] = {{")
 for inp in inputs:
     print(f"\t\"{inp}\",")
-print(f"}};")
-
-print(f"static char * outPortNames[{module_name_u}_OUTCOUNT] = {{")
-for inp in outputs:
+for inp in inputs_m:
     print(f"\t\"{inp}\",")
 print(f"}};")
 
-print(f"static char * controlNames[{module_name_u}_CONTROLCOUNT] = {{")
+print(f"static char * outPortNames[{module_name_u}_OUTCOUNT + {module_name_u}_MIDI_INCOUNT] = {{")
+for inp in outputs:
+    print(f"\t\"{inp}\",")
+for inp in outputs_m:
+    print(f"\t\"{inp}\",")
+print(f"}};")
+
+print(f"static char * controlNames[{module_name_u}_CONTROLCOUNT + {module_name_u}_MIDI_CONTROLCOUNT + {module_name_u}_BYTE_CONTROLCOUNT] = {{")
 for inp in controls:
+    print(f"\t\"{inp}\",")
+for inp in controls_m:
+  print(f"\t\"{inp}\",")
+for inp in controls_b:
     print(f"\t\"{inp}\",")
 print(f"}};")
 
@@ -241,6 +273,8 @@ void {module_name}_initInPlace({module_name}* {module_name_l}, char* name)
     tableInitDone = true;
   }}
 
+  memset({module_name_l}, 0, sizeof({module_name}));
+
   // set vtable
   {module_name_l}->module = vtable;
 
@@ -256,6 +290,12 @@ for i in controls:
 print(f'''
   // push curr to prev
   CONTROL_PUSH_TO_PREV({module_name_l});
+
+  for (int i = 0; i < {module_name_u}_MIDI_CONTROLCOUNT; i++)
+  {{
+    {module_name_l}->midiRingRead[i] = 0;
+    {module_name_l}->midiRingWrite[i] = 0;
+  }}
 
 }}
 
@@ -330,6 +370,8 @@ static ModulePortType getOutputType(void * modPtr, ModularPortID port)
 static ModulePortType getControlType(void * modPtr, ModularPortID port)
 {{
   if (port < {module_name_u}_CONTROLCOUNT) return ModulePortType_VoltControl;
+  else if ((port - {module_name_u}_CONTROLCOUNT) < {module_name_u}_MIDI_CONTROLCOUNT) return ModulePortType_MIDIControl;
+  else if ((port - {module_name_u}_CONTROLCOUNT - {module_name_u}_MIDI_CONTROLCOUNT) < {module_name_u}_BYTE_CONTROLCOUNT) return ModulePortType_ByteArrayControl;
   return ModulePortType_None;
 }}
 
@@ -345,7 +387,7 @@ static U4 getOutCount(void * modPtr)
 
 static U4 getControlCount(void * modPtr)
 {{
-  return {module_name_u}_CONTROLCOUNT;
+  return {module_name_u}_CONTROLCOUNT + {module_name_u}_MIDI_CONTROLCOUNT + {module_name_u}_BYTE_CONTROLCOUNT;
 }}
 
 
@@ -370,6 +412,43 @@ print(f'''
     }}
 
     (({module_name}*)modPtr)->controlsCurr[id] = v;
+  }}
+
+  else if ((id - {module_name_u}_CONTROLCOUNT) < {module_name_u}_MIDI_CONTROLCOUNT) 
+  {{
+    int p = id - {module_name_u}_CONTROLCOUNT;
+    bool good = MIDI_PushRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, p), *(MIDIData*)val, &((({module_name}*)modPtr)->midiRingWrite[p]), &((({module_name}*)modPtr)->midiRingRead[p]));
+    if (!good) printf("dropped midi packet\\n");
+  }}
+  else if ((id - ({module_name_u}_CONTROLCOUNT + {module_name_u}_MIDI_CONTROLCOUNT)) < {module_name_u}_BYTE_CONTROLCOUNT)
+  {{
+    ByteArray* ba = (ByteArray*)val;
+    int p = id - ({module_name_u}_CONTROLCOUNT + {module_name_u}_MIDI_CONTROLCOUNT);
+    {module_name}* s = ({module_name}*)modPtr;
+    while (!ByteArrayHelpers_TryGetLock(&s->byteArrayLock[p])) {{ }}
+    
+    if (ba && ba->length)
+    {{
+        char* newBuff = malloc(ba->length);
+        memcpy(newBuff, ba->bytes, ba->length);
+        s->byteArrayDirty[p] = 1;
+        if (s->byteArrayControlStorage[p])
+        {{
+            free(s->byteArrayControlStorage[p]);
+        }}
+        s->byteArrayControlStorage[p] = newBuff;
+        s->byteArrayLen[p] = ba->length;
+    
+        
+    }}
+    else
+    {{
+        s->byteArrayControlStorage[p] = NULL;
+        s->byteArrayLen[p] = 0;
+        s->byteArrayDirty[p] = 1;
+    }}
+
+    ByteArrayHelpers_FreeLock(&s->byteArrayLock[p]);
   }}
 }}
 

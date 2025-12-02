@@ -5,7 +5,7 @@
 SETUP INSTRUCTIONS:
     1: need to install packages
         This synth uses the soundio library with ALSA and Pulse in linux for audio output. install these packages for compilation and running:
-            sudo apt install libpulse-dev libasound2-dev
+            sudo apt install libpulse-dev libasound2-dev libsndfile-dev
     2: need to set controller permissions:
         This synth uses the Ableton Push MIDI controller and USB read write permissions must be set up for the controller to oporate
         1: create this permissions file for the ableton push
@@ -27,3 +27,26 @@ SETUP INSTRUCTIONS:
     compressor, include side chain
     sampler, read from wav files
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

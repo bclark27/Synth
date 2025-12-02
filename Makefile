@@ -2,7 +2,7 @@
 CC := gcc
 CCFLAGS := -O2
 DBGFLAGS := -Wall -Werror -g
-LIBS := -L./lib/ -lm -lpthread -ldl -lrt -lsoundio -lasound -lpulse -lpulse-simple -lpush -lcomm -lusb-1.0 
+LIBS := -L./lib/ -lm -lpthread -ldl -lrt -lsoundio -lasound -lpulse -lpulse-simple -lpush -lcomm -lusb-1.0 -lsndfile
 
 # path macros
 BIN_PATH := bin

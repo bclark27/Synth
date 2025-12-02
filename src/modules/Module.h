@@ -4,6 +4,7 @@
 #include "../comm/Common.h"
 #include "../AudioSettings.h"
 #include "../MIDI.h"
+#include "../ByteArrayHelpers.h"
 #include "../VoltUtils.h"
 
 ///////////////
@@ -38,6 +39,7 @@ typedef enum ModuleType
   ModuleType_Slew,
   ModuleType_QuantizeCv,
   ModuleType_GateExtender,
+  ModuleType_Sampler,
 
   ModuleType_COUNT,
 } ModuleType;
@@ -49,6 +51,8 @@ typedef enum ModulePortType
   ModulePortType_VoltControl,
   ModulePortType_MIDIStream,
   ModulePortType_MIDIControl,
+
+  ModulePortType_ByteArrayControl,
   ModulePortType_Count,
 } ModulePortType;
 

@@ -22,6 +22,7 @@
 #include "modules/Slew.h"
 #include "modules/QuantizeCv.h"
 #include "modules/GateExtender.h"
+#include "modules/Sampler.h"
 
 ///////////
 // TYPES //
