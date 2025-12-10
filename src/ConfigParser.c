@@ -111,13 +111,25 @@ bool ConfigParser_Parse(FullConfig* cfg, char* fname)
         else if (strcmp(word, COMMAND_CONTROL) == 0)
         {
             ControlInfo ctrl;
-            if (sscanf(line, "%*s %31s %f", ctrl.controlName, &ctrl.value) == 2)
+            memset(&ctrl, 0, sizeof(ctrl)); // recommended safety
+
+            // First: try to match a quoted string.
+            // Format:  control <name> "<string>"
+            char tmpString[MAX_BYTE_ARR + 1];
+            if (sscanf(line, "%*s %31s \"%149[^\"]\"", ctrl.controlName, tmpString) == 2)
             {
-                if (current->controlCount < (int)(sizeof(current->controls) / sizeof(current->controls[0])))
-                    current->controls[current->controlCount++] = ctrl;
-                else
-                    fprintf(stderr, "ConfigParser: too many controls for module %s\n", current->name);
+                ctrl.type = ModulePortType_ByteArrayControl; 
+                memcpy(ctrl.value.bytes, tmpString, MAX_BYTE_ARR);
+                ctrl.valueLen = MIN(MAX_BYTE_ARR, strlen(tmpString));
+                current->controls[current->controlCount++] = ctrl;
             }
+            // Otherwise: try to parse float
+            else if (sscanf(line, "%*s %31s %f", ctrl.controlName, &ctrl.value.volt) == 2)
+            {
+                ctrl.type = ModulePortType_VoltControl;
+                current->controls[current->controlCount++] = ctrl;
+            }
+            // Neither matched → error
             else {
                 fprintf(stderr, "ConfigParser: bad control line: '%s'\n", line);
             }
@@ -168,10 +180,32 @@ void ConfigParser_Write(FullConfig* cfg, char* fname)
         // Controls
         for (int j = 0; j < mod->controlCount; j++) {
             ControlInfo* ctrl = &mod->controls[j];
-            fprintf(f, "%s %s %f\n",
-                    COMMAND_CONTROL,
-                    ctrl->controlName,
-                    ctrl->value);
+            switch (ctrl->type)
+            {
+                case ModulePortType_VoltControl:
+                {
+                    fprintf(f, "%s %s %f\n",
+                            COMMAND_CONTROL,
+                            ctrl->controlName,
+                            ctrl->value.volt);
+                    break;
+                }
+                case ModulePortType_ByteArrayControl:
+                {
+                    char tmp[MAX_BYTE_ARR + 1];
+                    memcpy(tmp, ctrl->value.bytes, ctrl->valueLen);
+                    tmp[ctrl->valueLen] = 0;
+                    fprintf(f, "%s %s \"%s\"\n",
+                            COMMAND_CONTROL,
+                            ctrl->controlName,
+                            tmp);
+                    break;
+                }
+                default:
+                {
+
+                }
+            }
         }
 
         fprintf(f, "%s\n", SPLIT); // +++
@@ -203,7 +237,7 @@ void ConfigParser_Print(FullConfig* cfg)
         {
             ControlInfo* ctrl = &m->controls[j];
             printf("  control %-8s = %.3f\n",
-                   ctrl->controlName, ctrl->value);
+                   ctrl->controlName, ctrl->value.volt);
         }
 
         printf("\n");

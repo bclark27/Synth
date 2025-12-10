@@ -8,6 +8,8 @@
 // DEFINES  //
 //////////////
 
+#define MAX_BYTE_ARR 150
+
 /////////////
 //  TYPES  //
 /////////////
@@ -20,7 +22,14 @@ typedef struct {
 
 typedef struct {
     char controlName[32];
-    float value;
+    ModulePortType type;
+    unsigned int valueLen;
+    union
+    {
+        float volt;
+        MIDIData midi;
+        char bytes[MAX_BYTE_ARR];
+    } value;
 } ControlInfo;
 
 typedef struct {

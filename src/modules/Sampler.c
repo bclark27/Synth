@@ -171,10 +171,6 @@ void Sampler_initInPlace(Sampler* sampler, char* name)
     sampler->midiRingRead[i] = 0;
     sampler->midiRingWrite[i] = 0;
   }
-
-  sampler->byteArrayControlStorage[SAMPLER_BYTE_CONTROL_File] = "/media/ben/e872fd43-83e4-40e6-b40d-9b7bf7bd43d5/Ableton/All Stuffs Ableton/Drums/Kick/mhak Kicks/mhak Kick 08 F.wav";
-  sampler->byteArrayDirty[SAMPLER_BYTE_CONTROL_File] = 1;
-  sampler->byteArrayLen[SAMPLER_BYTE_CONTROL_File] = strlen("/media/ben/e872fd43-83e4-40e6-b40d-9b7bf7bd43d5/Ableton/All Stuffs Ableton/Drums/Kick/mhak Kicks/mhak Kick 08 F.wav");
 }
 
 
@@ -211,29 +207,29 @@ static void free_sampler(void * modPtr)
 
 static void updateState(void * modPtr)
 {
-    Sampler * sampler = (Sampler*)modPtr;
+  Sampler * sampler = (Sampler*)modPtr;
 
-    R4* out = OUT_PORT_Mono(sampler);
+  R4* out = OUT_PORT_Mono(sampler);
 
-    if (!AtomicHelpers_TryGetLock(&sampler->byteArrayLock[SAMPLER_BYTE_CONTROL_File]))
+  if (!AtomicHelpers_TryGetLock(&sampler->byteArrayLock[SAMPLER_BYTE_CONTROL_File]))
+  {
+    memset(out, 0, MODULE_BUFFER_SIZE);
+    return;
+  }
+
+  if (sampler->byteArrayDirty[SAMPLER_BYTE_CONTROL_File])
+  {
+    // load the new audio from wav file
+    bool suc = reloadAudioFile(sampler);
+    sampler->byteArrayDirty[SAMPLER_BYTE_CONTROL_File] = false;
+
+    if (suc)
     {
-        memset(out, 0, MODULE_BUFFER_SIZE);
-        return;
+      printf("YEAAAA WE GOT EM BOYS\n");
     }
+  }
 
-    if (sampler->byteArrayDirty[SAMPLER_BYTE_CONTROL_File])
-    {
-        // load the new audio from wav file
-        bool suc = reloadAudioFile(sampler);
-        sampler->byteArrayDirty[SAMPLER_BYTE_CONTROL_File] = false;
-
-        if (suc)
-        {
-            printf("YEAAAA WE GOT EM BOYS\n");
-        }
-    }
-
-    AtomicHelpers_FreeLock(&sampler->byteArrayLock[SAMPLER_BYTE_CONTROL_File]);
+  AtomicHelpers_FreeLock(&sampler->byteArrayLock[SAMPLER_BYTE_CONTROL_File]);
 }
 
 
@@ -301,7 +297,7 @@ static U4 getControlCount(void * modPtr)
 
 static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned int len)
 {
-    if (id < SAMPLER_CONTROLCOUNT)
+  if (id < SAMPLER_CONTROLCOUNT)
   {
     Volt v = *(Volt*)val;
     switch (id)
@@ -362,8 +358,6 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned i
         }
         s->byteArrayControlStorage[p] = newBuff;
         s->byteArrayLen[p] = len;
-    
-        
     }
     else
     {

@@ -8,12 +8,10 @@ quant QuantizeCv
 noise Noise
 attn1 Attenuverter
 ge GateExtender
+smpl Sampler
 +++
 __OUTPUT__
 connect Left mix Mix
-+++
-mdin
-control MidiIn 0.000000
 +++
 pk
 connect Pitch quant Out
@@ -64,3 +62,5 @@ ge
 connect In quant Trigger
 control Length 5.000000
 +++
+smpl
+control File "/media/ben/e872fd43-83e4-40e6-b40d-9b7bf7bd43d5/Ableton/All Stuffs Ableton/Drums/Kick/mhak Kicks/mhak Kick 01 G.wav"

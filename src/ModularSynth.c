@@ -557,7 +557,11 @@ bool ModularSynth_readConfig(char * fname)
     for (int k = 0; k < modConfig->controlCount; k++)
     {
       ControlInfo* ctrlInfo = &modConfig->controls[k];
-      ModularSynth_setControlByName(modConfig->name, ctrlInfo->controlName, &ctrlInfo->value, sizeof(float));
+      if (ModularSynth_getControlTypeByName(modConfig->name, ctrlInfo->controlName) == ctrlInfo->type)
+      {
+        printf("configing... %s %s\n", modConfig->name, ctrlInfo->controlName);
+        ModularSynth_setControlByName(modConfig->name, ctrlInfo->controlName, &ctrlInfo->value.bytes, ctrlInfo->valueLen);
+      }
     }
   }
 
@@ -596,6 +600,42 @@ bool ModularSynth_exportConfig(char * fname)
       }
     }
 
+    modConfig->controlCount = 0;
+    int controlCount = mod->getContolCount(mod);
+    for (int k = 0; k < controlCount; k++)
+    {
+      ModulePortType ctrlType = mod->getControlType(mod, k);
+      ControlInfo* ctrlInfo = &modConfig->controls[modConfig->controlCount];
+      switch (ctrlType)
+      {
+        case ModulePortType_VoltControl:
+        {
+          ctrlInfo->type = ModulePortType_VoltControl;
+          memcpy(ctrlInfo->controlName, mod->controlNames[k], strlen(mod->controlNames[k]) + 1);
+          unsigned int len;
+          mod->getControlVal(mod, k, &ctrlInfo->value.volt, &len);
+          ctrlInfo->valueLen = len;
+          modConfig->controlCount++;
+          break;
+        }
+        case ModulePortType_ByteArrayControl:
+        {
+          ctrlInfo->type = ModulePortType_ByteArrayControl;
+          memcpy(ctrlInfo->controlName, mod->controlNames[k], strlen(mod->controlNames[k]) + 1);
+          unsigned int len;
+          mod->getControlVal(mod, k, &ctrlInfo->value.volt, &len);
+          ctrlInfo->valueLen = len;
+          modConfig->controlCount++;
+          break;
+        }
+        default:
+        {
+
+        }
+      }
+    }
+
+    /*
     modConfig->controlCount = mod->controlNamesCount;
     for (int k = 0; k < mod->controlNamesCount; k++)
     {
@@ -606,11 +646,12 @@ bool ModularSynth_exportConfig(char * fname)
       if (found && mod->getControlType(mod, portid) == ModulePortType_VoltControl)
       {
         unsigned int len;
-        mod->getControlVal(mod, k, &ctrlInfo->value, &len);
+        mod->getControlVal(mod, k, &ctrlInfo->value.volt, &len);
       }
     }
+    */
   }
-
+  
   ConfigParser_Write(&config, fname);
 
   MODULE_GRAPH_LOCK(false);
