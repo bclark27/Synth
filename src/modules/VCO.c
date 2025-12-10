@@ -53,8 +53,8 @@ static ModulePortType getControlType(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, ModularPortID id, void* val);
-static void getControlVal(void * modPtr, ModularPortID id, void* ret);
+static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned int len);
+static void getControlVal(void * modPtr, ModularPortID id, void* ret, unsigned int* len);
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 static void initTables();
 static inline float fastVoltToFreq(float v);
@@ -248,7 +248,7 @@ static U4 getControlCount(void * modPtr)
   return VCO_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, ModularPortID id, void* val)
+static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned int len)
 {
   if (id < VCO_CONTROLCOUNT)
   {
@@ -287,12 +287,13 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
   }
 }
 
-static void getControlVal(void * modPtr, ModularPortID id, void* ret)
+static void getControlVal(void * modPtr, ModularPortID id, void* ret, unsigned int* len)
 {
   if (id >= VCO_CONTROLCOUNT) return;
 
   VCO * vco = (VCO *)modPtr;
   *((Volt*)ret) = vco->controlsCurr[id];
+  *len = sizeof(Volt);
 }
 
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)

@@ -36,8 +36,8 @@ static ModulePortType getControlType(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, ModularPortID id, void* val);
-static void getControlVal(void * modPtr, ModularPortID id, void* ret);
+static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned int len);
+static void getControlVal(void * modPtr, ModularPortID id, void* ret, unsigned int* len);
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 static void initAdsrInputBuffers(void);
 static void initVoice(PolyKeysVoice* voice);
@@ -305,7 +305,7 @@ static U4 getControlCount(void * modPtr)
   return POLYKEYS_CONTROLCOUNT + POLYKEYS_MIDI_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, ModularPortID id, void* val)
+static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned int len)
 {
     if (id < POLYKEYS_CONTROLCOUNT)
   {
@@ -365,10 +365,18 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
     }
 }
 
-static void getControlVal(void * modPtr, ModularPortID id, void* ret)
+static void getControlVal(void * modPtr, ModularPortID id, void* ret, unsigned int* len)
 {
-  if (id < POLYKEYS_CONTROLCOUNT) *(Volt*)ret = ((PolyKeys*)modPtr)->controlsCurr[id];
-  else if ((id - POLYKEYS_CONTROLCOUNT) < POLYKEYS_MIDI_CONTROLCOUNT) *(MIDIData*)ret = MIDI_PeakRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - POLYKEYS_CONTROLCOUNT), &(((PolyKeys*)modPtr)->midiRingRead[id - POLYKEYS_CONTROLCOUNT]));
+  if (id < POLYKEYS_CONTROLCOUNT)
+  {
+    *len = sizeof(Volt);
+    *(Volt*)ret = ((PolyKeys*)modPtr)->controlsCurr[id];
+  }
+  else if ((id - POLYKEYS_CONTROLCOUNT) < POLYKEYS_MIDI_CONTROLCOUNT)
+  {
+    *len = sizeof(MIDIData);  
+    *(MIDIData*)ret = MIDI_PeakRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, id - POLYKEYS_CONTROLCOUNT), &(((PolyKeys*)modPtr)->midiRingRead[id - POLYKEYS_CONTROLCOUNT]));
+  } 
 }
 
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)

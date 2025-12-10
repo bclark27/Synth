@@ -86,9 +86,10 @@ void knobHelper(char* modName, char* cvName, int knobNum, int direction, float d
   int t = ModularSynth_getControlTypeByName(modName, cvName);
   if (t != ModulePortType_VoltControl) return;
   
-  ModularSynth_getControlByName(modName, cvName, &knobs[knobNum]);
+  unsigned int len;
+  ModularSynth_getControlByName(modName, cvName, &knobs[knobNum], &len);
   knobs[knobNum] += direction / div;
-  ModularSynth_setControlByName(modName, cvName, &knobs[knobNum]);
+  ModularSynth_setControlByName(modName, cvName, &knobs[knobNum], sizeof(float));
 
   const int spacing = 8;
   char* str = malloc(68);
@@ -152,7 +153,7 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
         .data2=pad->padVelocity,
       };
       //printf("Pushing: %02x\n", md.type);
-      ModularSynth_setControlByName("mdin", "MidiIn", &md);
+      ModularSynth_setControlByName("mdin", "MidiIn", &md, sizeof(MIDIData));
 
       AbletonPkt_Cmd_Pad cmd_p = { 
         .x=pad->padX, 
@@ -170,7 +171,7 @@ void OnPushEvent(MessageType t, void* d, MessageSize s)
         .data2=pad->padVelocity,
       };
       //printf("Pushing: %02x\n", md.type);
-      ModularSynth_setControlByName("mdin", "MidiIn", &md);
+      ModularSynth_setControlByName("mdin", "MidiIn", &md, sizeof(MIDIData));
 
       AbletonPkt_Cmd_Pad cmd_p = { 
         .x=pad->padX, 
@@ -269,15 +270,15 @@ void inputMidiChord()
   
   int offset = 48;
   md.data1 = 0 + offset;
-  ModularSynth_setControlByName("mdin", "MidiIn", &md);
+  ModularSynth_setControlByName("mdin", "MidiIn", &md, sizeof(MIDIData));
   md.data1 = 4 + offset;
-  ModularSynth_setControlByName("mdin", "MidiIn", &md);
+  ModularSynth_setControlByName("mdin", "MidiIn", &md, sizeof(MIDIData));
   md.data1 = 7 + offset;
-  ModularSynth_setControlByName("mdin", "MidiIn", &md);
+  ModularSynth_setControlByName("mdin", "MidiIn", &md, sizeof(MIDIData));
   md.data1 = 9 + offset;
-  ModularSynth_setControlByName("mdin", "MidiIn", &md);
+  ModularSynth_setControlByName("mdin", "MidiIn", &md, sizeof(MIDIData));
   md.data1 = 12 + offset;
-  ModularSynth_setControlByName("mdin", "MidiIn", &md);
+  ModularSynth_setControlByName("mdin", "MidiIn", &md, sizeof(MIDIData));
 }
 
 int main(void)

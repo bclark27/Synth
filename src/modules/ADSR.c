@@ -61,8 +61,8 @@ static ModulePortType getControlType(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, ModularPortID id, void* val);
-static void getControlVal(void * modPtr, ModularPortID id, void* ret);
+static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned int len);
+static void getControlVal(void * modPtr, ModularPortID id, void* ret, unsigned int* len);
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 
 static void progressEnvelope(ADSR * adsr, R4 currA, R4 currD, R4 currS, R4 currR);
@@ -303,7 +303,7 @@ static U4 getControlCount(void * modPtr)
   return ADSR_CONTROLCOUNT;
 }
 
-static void setControlVal(void * modPtr, ModularPortID id, void* val)
+static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned int len)
 {
   if (id < ADSR_CONTROLCOUNT)
   {
@@ -342,12 +342,13 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
   }
 }
 
-static void getControlVal(void * modPtr, ModularPortID id, void* ret)
+static void getControlVal(void * modPtr, ModularPortID id, void* ret, unsigned int* len)
 {
   if (id >= ADSR_CONTROLCOUNT) return;
 
   ADSR * vco = (ADSR *)modPtr;
   *((Volt*)ret) = vco->controlsCurr[id];
+  *len = sizeof(Volt);
 }
 
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)

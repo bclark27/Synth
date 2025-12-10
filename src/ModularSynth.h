@@ -90,9 +90,9 @@ void ModularSynth_removeConnectionByName(char* destModuleName, char* destPortNam
 bool ModularSynth_readConfig(char * fname);
 bool ModularSynth_exportConfig(char * fname);
 
-bool ModularSynth_setControl(ModularID id, ModularPortID controlID, void* val);
-bool ModularSynth_setControlByName(char * name, char * controlName, void* val);
-void ModularSynth_getControlByName(char * name, char * controlName, void* ret);
+bool ModularSynth_setControl(ModularID id, ModularPortID controlID, void* val, unsigned int len);
+bool ModularSynth_setControlByName(char * name, char * controlName, void* val, unsigned int len);
+void ModularSynth_getControlByName(char * name, char * controlName, void* ret, unsigned int* len);
 ModulePortType ModularSynth_getControlTypeByName(char * name, char * controlName);
 char* ModularSynth_PrintFullModuleInfo(ModularID id);
 

@@ -4,7 +4,7 @@
 #include "../comm/Common.h"
 #include "../AudioSettings.h"
 #include "../MIDI.h"
-#include "../ByteArrayHelpers.h"
+#include "../AtomicHelpers.h"
 #include "../VoltUtils.h"
 
 ///////////////
@@ -77,8 +77,8 @@ typedef struct Module
   U4 (*getInCount)(void*);
   U4 (*getOutCount)(void*);
   U4 (*getContolCount)(void*);
-  void (*setControlVal)(void*,ModularPortID,void*);
-  void (*getControlVal)(void*,ModularPortID,void*); // caller should provide a buffer large enough
+  void (*setControlVal)(void*,ModularPortID,void*,unsigned int);
+  void (*getControlVal)(void*,ModularPortID,void*,unsigned int*); // caller should provide a buffer large enough
   void (*linkToInput)(void*,ModularPortID,void*);
 
   char* name;

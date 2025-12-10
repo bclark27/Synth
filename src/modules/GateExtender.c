@@ -36,8 +36,8 @@ static ModulePortType getControlType(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, ModularPortID id, void* val);
-static void getControlVal(void * modPtr, ModularPortID id, void* ret);
+static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned int len);
+static void getControlVal(void * modPtr, ModularPortID id, void* ret, unsigned int* len);
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 static void initTables();
 static inline U4 fastVoltToSampleTime(R4 v);
@@ -246,7 +246,7 @@ static U4 getControlCount(void * modPtr)
 }
 
 
-static void setControlVal(void * modPtr, ModularPortID id, void* val)
+static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned int len)
 {
     if (id < GATEEXTENDER_CONTROLCOUNT)
   {
@@ -268,9 +268,13 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
 }
 
 
-static void getControlVal(void * modPtr, ModularPortID id, void* ret)
+static void getControlVal(void * modPtr, ModularPortID id, void* ret, unsigned int* len)
 {
-  if (id < GATEEXTENDER_CONTROLCOUNT) *(Volt*)ret = ((GateExtender*)modPtr)->controlsCurr[id];
+  if (id < GATEEXTENDER_CONTROLCOUNT)
+  {
+    *len = sizeof(Volt);
+    *(Volt*)ret = ((GateExtender*)modPtr)->controlsCurr[id];
+  }
 }
 
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)

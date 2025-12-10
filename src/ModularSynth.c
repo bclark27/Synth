@@ -557,7 +557,7 @@ bool ModularSynth_readConfig(char * fname)
     for (int k = 0; k < modConfig->controlCount; k++)
     {
       ControlInfo* ctrlInfo = &modConfig->controls[k];
-      ModularSynth_setControlByName(modConfig->name, ctrlInfo->controlName, &ctrlInfo->value);
+      ModularSynth_setControlByName(modConfig->name, ctrlInfo->controlName, &ctrlInfo->value, sizeof(float));
     }
   }
 
@@ -605,7 +605,8 @@ bool ModularSynth_exportConfig(char * fname)
       ModularPortID portid = Module_GetControlId(mod, ctrlInfo->controlName, &found);
       if (found && mod->getControlType(mod, portid) == ModulePortType_VoltControl)
       {
-        mod->getControlVal(mod, k, &ctrlInfo->value);
+        unsigned int len;
+        mod->getControlVal(mod, k, &ctrlInfo->value, &len);
       }
     }
   }
@@ -621,7 +622,7 @@ bool ModularSynth_exportConfig(char * fname)
 // MODULE GRAPH EDIT FUNCTIONS //
 /////////////////////////////////
 
-bool ModularSynth_setControl(ModularID id, ModularPortID controlID, void* val)
+bool ModularSynth_setControl(ModularID id, ModularPortID controlID, void* val, unsigned int len)
 {
   CONTROL_READ_LOCK(true);
   Module * mod = getModuleById(id);
@@ -632,14 +633,14 @@ bool ModularSynth_setControl(ModularID id, ModularPortID controlID, void* val)
     return 0;
   }
 
-  mod->setControlVal(mod, controlID, val);
+  mod->setControlVal(mod, controlID, val, len);
 
   CONTROL_READ_LOCK(false);
   
   return 1;
 }
 
-bool ModularSynth_setControlByName(char * name, char * controlName, void* val)
+bool ModularSynth_setControlByName(char * name, char * controlName, void* val, unsigned int len)
 {
   if (!name || !controlName) return 0;
 
@@ -659,12 +660,12 @@ bool ModularSynth_setControlByName(char * name, char * controlName, void* val)
     return 0;
   }
   
-  mod->setControlVal(mod, controlID, val);
+  mod->setControlVal(mod, controlID, val, len);
   CONTROL_READ_LOCK(false);
   return 1;
 }
 
-void ModularSynth_getControlByName(char * name, char * controlName, void* ret)
+void ModularSynth_getControlByName(char * name, char * controlName, void* ret, unsigned int* len)
 {
   if (!name || !controlName || !ret) return;
 
@@ -685,7 +686,7 @@ void ModularSynth_getControlByName(char * name, char * controlName, void* ret)
     return;
   }
 
-  mod->getControlVal(mod, controlID, ret);
+  mod->getControlVal(mod, controlID, ret, len);
   CONTROL_READ_LOCK(false);
 }
 

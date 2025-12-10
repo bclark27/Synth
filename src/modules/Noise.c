@@ -49,8 +49,8 @@ static ModulePortType getControlType(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, ModularPortID id, void* val);
-static void getControlVal(void * modPtr, ModularPortID id, void* ret);
+static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned int len);
+static void getControlVal(void * modPtr, ModularPortID id, void* ret, unsigned int* len);
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 static void initTables();
 static inline float fastNoiseLCG(uint32_t* state);
@@ -303,7 +303,7 @@ static U4 getControlCount(void * modPtr)
 }
 
 
-static void setControlVal(void * modPtr, ModularPortID id, void* val)
+static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned int len)
 {
     if (id < NOISE_CONTROLCOUNT)
   {
@@ -340,9 +340,13 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val)
 }
 
 
-static void getControlVal(void * modPtr, ModularPortID id, void* ret)
+static void getControlVal(void * modPtr, ModularPortID id, void* ret, unsigned int* len)
 {
-  if (id < NOISE_CONTROLCOUNT) *(Volt*)ret = ((Noise*)modPtr)->controlsCurr[id];
+  if (id < NOISE_CONTROLCOUNT)
+  {
+    *len = sizeof(Volt);
+    *(Volt*)ret = ((Noise*)modPtr)->controlsCurr[id];
+  }
 }
 
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
