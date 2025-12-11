@@ -4,7 +4,6 @@
 #include <sndfile.h>
 #include <stdlib.h>
 #include <stdio.h>
-
 #define IN_PORT_ADDR(mod, port)		(((Sampler*)(mod))->inputPorts[port]);
 #define PREV_PORT_ADDR(mod, port)	(((Sampler*)(mod))->outputPortsPrev + MODULE_BUFFER_SIZE * (port))
 #define CURR_PORT_ADDR(mod, port)	(((Sampler*)(mod))->outputPortsCurr + MODULE_BUFFER_SIZE * (port))
@@ -19,9 +18,8 @@
 #define IN_PORT_Decay(sampler)		((sampler)->inputPorts[SAMPLER_IN_PORT_Decay])
 #define IN_PORT_Sustain(sampler)		((sampler)->inputPorts[SAMPLER_IN_PORT_Sustain])
 #define IN_PORT_Release(sampler)		((sampler)->inputPorts[SAMPLER_IN_PORT_Release])
-#define OUT_PORT_Left(sampler)		(CURR_PORT_ADDR(sampler, SAMPLER_OUT_PORT_Left))
-#define OUT_PORT_Right(sampler)		(CURR_PORT_ADDR(sampler, SAMPLER_OUT_PORT_Right))
-#define OUT_PORT_Mono(sampler)		(CURR_PORT_ADDR(sampler, SAMPLER_OUT_PORT_Mono))
+#define IN_PORT_RecordGate(sampler)		((sampler)->inputPorts[SAMPLER_IN_PORT_RecordGate])
+#define OUT_PORT_Audio(sampler)		(CURR_PORT_ADDR(sampler, SAMPLER_OUT_PORT_Audio))
 
 #define IN_MIDI_PORT_Midi(sampler)		((sampler)->inputPorts[SAMPLER_IN_PORT_Midi])
 #define GET_CONTROL_CURR_Pitch(sampler)	((sampler)->controlsCurr[SAMPLER_CONTROL_Pitch])
@@ -34,6 +32,16 @@
 #define GET_CONTROL_PREV_Sustain(sampler)	((sampler)->controlsPrev[SAMPLER_CONTROL_Sustain])
 #define GET_CONTROL_CURR_Release(sampler)	((sampler)->controlsCurr[SAMPLER_CONTROL_Release])
 #define GET_CONTROL_PREV_Release(sampler)	((sampler)->controlsPrev[SAMPLER_CONTROL_Release])
+#define GET_CONTROL_CURR_Source(sampler)	((sampler)->controlsCurr[SAMPLER_CONTROL_Source])
+#define GET_CONTROL_PREV_Source(sampler)	((sampler)->controlsPrev[SAMPLER_CONTROL_Source])
+#define GET_CONTROL_CURR_PlaybackMode(sampler)	((sampler)->controlsCurr[SAMPLER_CONTROL_PlaybackMode])
+#define GET_CONTROL_PREV_PlaybackMode(sampler)	((sampler)->controlsPrev[SAMPLER_CONTROL_PlaybackMode])
+#define GET_CONTROL_CURR_PlaybackStart(sampler)	((sampler)->controlsCurr[SAMPLER_CONTROL_PlaybackStart])
+#define GET_CONTROL_PREV_PlaybackStart(sampler)	((sampler)->controlsPrev[SAMPLER_CONTROL_PlaybackStart])
+#define GET_CONTROL_CURR_LoopStart(sampler)	((sampler)->controlsCurr[SAMPLER_CONTROL_LoopStart])
+#define GET_CONTROL_PREV_LoopStart(sampler)	((sampler)->controlsPrev[SAMPLER_CONTROL_LoopStart])
+#define GET_CONTROL_CURR_LoopEnd(sampler)	((sampler)->controlsCurr[SAMPLER_CONTROL_LoopEnd])
+#define GET_CONTROL_PREV_LoopEnd(sampler)	((sampler)->controlsPrev[SAMPLER_CONTROL_LoopEnd])
 
 #define SET_CONTROL_CURR_Pitch(sampler, v)	((sampler)->controlsCurr[SAMPLER_CONTROL_Pitch] = (v))
 #define SET_CONTROL_PREV_Pitch(sampler, v)	((sampler)->controlsPrev[SAMPLER_CONTROL_Pitch] = (v))
@@ -45,6 +53,16 @@
 #define SET_CONTROL_PREV_Sustain(sampler, v)	((sampler)->controlsPrev[SAMPLER_CONTROL_Sustain] = (v))
 #define SET_CONTROL_CURR_Release(sampler, v)	((sampler)->controlsCurr[SAMPLER_CONTROL_Release] = (v))
 #define SET_CONTROL_PREV_Release(sampler, v)	((sampler)->controlsPrev[SAMPLER_CONTROL_Release] = (v))
+#define SET_CONTROL_CURR_Source(sampler, v)	((sampler)->controlsCurr[SAMPLER_CONTROL_Source] = (v))
+#define SET_CONTROL_PREV_Source(sampler, v)	((sampler)->controlsPrev[SAMPLER_CONTROL_Source] = (v))
+#define SET_CONTROL_CURR_PlaybackMode(sampler, v)	((sampler)->controlsCurr[SAMPLER_CONTROL_PlaybackMode] = (v))
+#define SET_CONTROL_PREV_PlaybackMode(sampler, v)	((sampler)->controlsPrev[SAMPLER_CONTROL_PlaybackMode] = (v))
+#define SET_CONTROL_CURR_PlaybackStart(sampler, v)	((sampler)->controlsCurr[SAMPLER_CONTROL_PlaybackStart] = (v))
+#define SET_CONTROL_PREV_PlaybackStart(sampler, v)	((sampler)->controlsPrev[SAMPLER_CONTROL_PlaybackStart] = (v))
+#define SET_CONTROL_CURR_LoopStart(sampler, v)	((sampler)->controlsCurr[SAMPLER_CONTROL_LoopStart] = (v))
+#define SET_CONTROL_PREV_LoopStart(sampler, v)	((sampler)->controlsPrev[SAMPLER_CONTROL_LoopStart] = (v))
+#define SET_CONTROL_CURR_LoopEnd(sampler, v)	((sampler)->controlsCurr[SAMPLER_CONTROL_LoopEnd] = (v))
+#define SET_CONTROL_PREV_LoopEnd(sampler, v)	((sampler)->controlsPrev[SAMPLER_CONTROL_LoopEnd] = (v))
 
 
 #define GET_MIDI_CONTROL_RING_BUFFER(mod, port)   (((Sampler*)(mod))->midiControlsRingBuffer + (MIDI_STREAM_BUFFER_SIZE * (port)))
@@ -88,12 +106,11 @@ static char * inPortNames[SAMPLER_INCOUNT + SAMPLER_MIDI_INCOUNT] = {
 	"Decay",
 	"Sustain",
 	"Release",
+	"RecordGate",
 	"Midi",
 };
 static char * outPortNames[SAMPLER_OUTCOUNT + SAMPLER_MIDI_INCOUNT] = {
-	"Left",
-	"Right",
-	"Mono",
+	"Audio",
 };
 static char * controlNames[SAMPLER_CONTROLCOUNT + SAMPLER_MIDI_CONTROLCOUNT + SAMPLER_BYTE_CONTROLCOUNT] = {
 	"Pitch",
@@ -101,6 +118,11 @@ static char * controlNames[SAMPLER_CONTROLCOUNT + SAMPLER_MIDI_CONTROLCOUNT + SA
 	"Decay",
 	"Sustain",
 	"Release",
+	"Source",
+	"PlaybackMode",
+	"PlaybackStart",
+	"LoopStart",
+	"LoopEnd",
 	"File",
 };
 
@@ -129,10 +151,15 @@ static Module vtable = {
 };
 
 #define DEFAULT_CONTROL_Pitch    0
-#define DEFAULT_CONTROL_Attack    0
-#define DEFAULT_CONTROL_Decay    0
-#define DEFAULT_CONTROL_Sustain    0
-#define DEFAULT_CONTROL_Release    0
+#define DEFAULT_CONTROL_Attack    0.1
+#define DEFAULT_CONTROL_Decay    0.2
+#define DEFAULT_CONTROL_Sustain    10
+#define DEFAULT_CONTROL_Release    0.6
+#define DEFAULT_CONTROL_Source    0
+#define DEFAULT_CONTROL_PlaybackMode    0
+#define DEFAULT_CONTROL_PlaybackStart    0
+#define DEFAULT_CONTROL_LoopStart    0
+#define DEFAULT_CONTROL_LoopEnd    VOLTSTD_MOD_CV_MAX
 
 //////////////////////
 // PUBLIC FUNCTIONS //
@@ -162,6 +189,11 @@ void Sampler_initInPlace(Sampler* sampler, char* name)
 	SET_CONTROL_CURR_Decay(sampler, DEFAULT_CONTROL_Decay);
 	SET_CONTROL_CURR_Sustain(sampler, DEFAULT_CONTROL_Sustain);
 	SET_CONTROL_CURR_Release(sampler, DEFAULT_CONTROL_Release);
+	SET_CONTROL_CURR_Source(sampler, DEFAULT_CONTROL_Source);
+	SET_CONTROL_CURR_PlaybackMode(sampler, DEFAULT_CONTROL_PlaybackMode);
+	SET_CONTROL_CURR_PlaybackStart(sampler, DEFAULT_CONTROL_PlaybackStart);
+	SET_CONTROL_CURR_LoopStart(sampler, DEFAULT_CONTROL_LoopStart);
+	SET_CONTROL_CURR_LoopEnd(sampler, DEFAULT_CONTROL_LoopEnd);
 
   // push curr to prev
   CONTROL_PUSH_TO_PREV(sampler);
@@ -171,6 +203,8 @@ void Sampler_initInPlace(Sampler* sampler, char* name)
     sampler->midiRingRead[i] = 0;
     sampler->midiRingWrite[i] = 0;
   }
+
+  ADSR_initInPlace(&sampler->adsr, (char*)malloc(1));
 }
 
 
@@ -202,6 +236,8 @@ static void free_sampler(void * modPtr)
 
   if (sampler->audioBuffer.data) free(sampler->audioBuffer.data);
 
+  ADSR_freeInPlace(&sampler->adsr);
+
   free(sampler);
 }
 
@@ -209,27 +245,49 @@ static void updateState(void * modPtr)
 {
   Sampler * sampler = (Sampler*)modPtr;
 
-  R4* out = OUT_PORT_Mono(sampler);
+  R4* out = OUT_PORT_Audio(sampler);
 
-  if (!AtomicHelpers_TryGetLock(&sampler->byteArrayLock[SAMPLER_BYTE_CONTROL_File]))
+  bool srcModeIsFile = GET_CONTROL_CURR_Source(sampler) < 5; // lot voltage = file mode. high voltage = port input mode
+
+  sampler->adsr.inputPorts[ADSR_IN_PORT_GATE] = IN_PORT_Gate(sampler);
+  sampler->adsr.inputPorts[ADSR_IN_PORT_A] = IN_PORT_Attack(sampler);
+  sampler->adsr.inputPorts[ADSR_IN_PORT_D] = IN_PORT_Decay(sampler);
+  sampler->adsr.inputPorts[ADSR_IN_PORT_S] = IN_PORT_Sustain(sampler);
+  sampler->adsr.inputPorts[ADSR_IN_PORT_R] = IN_PORT_Release(sampler);
+  sampler->adsr.controlsCurr[ADSR_CONTROL_A] = GET_CONTROL_CURR_Attack(sampler);
+  sampler->adsr.controlsCurr[ADSR_CONTROL_D] = GET_CONTROL_CURR_Decay(sampler);
+  sampler->adsr.controlsCurr[ADSR_CONTROL_S] = GET_CONTROL_CURR_Sustain(sampler);
+  sampler->adsr.controlsCurr[ADSR_CONTROL_R] = GET_CONTROL_CURR_Release(sampler);
+  sampler->adsr.module.updateState(&sampler->adsr);
+  sampler->adsr.module.pushCurrToPrev(&sampler->adsr);
+  R4* envelop = sampler->adsr.outputPortsPrev + (MODULE_BUFFER_SIZE * ADSR_OUT_PORT_ENV);
+
+  if (srcModeIsFile)
   {
-    memset(out, 0, MODULE_BUFFER_SIZE);
-    return;
-  }
-
-  if (sampler->byteArrayDirty[SAMPLER_BYTE_CONTROL_File])
-  {
-    // load the new audio from wav file
-    bool suc = reloadAudioFile(sampler);
-    sampler->byteArrayDirty[SAMPLER_BYTE_CONTROL_File] = false;
-
-    if (suc)
+    if (!AtomicHelpers_TryGetLock(&sampler->byteArrayLock[SAMPLER_BYTE_CONTROL_File]))
     {
-      printf("YEAAAA WE GOT EM BOYS\n");
+      memset(out, 0, MODULE_BUFFER_SIZE);
+      return;
     }
+  
+    if (sampler->byteArrayDirty[SAMPLER_BYTE_CONTROL_File])
+    {
+      // load the new audio from wav file
+      bool loaded = reloadAudioFile(sampler);
+      sampler->byteArrayDirty[SAMPLER_BYTE_CONTROL_File] = false;
+  
+      if (loaded)
+      {
+        printf("YEAAAA WE GOT EM BOYS\n");
+      }
+      else
+      {
+        memset(out, 0, MODULE_BUFFER_SIZE);
+      }
+    }
+  
+    AtomicHelpers_FreeLock(&sampler->byteArrayLock[SAMPLER_BYTE_CONTROL_File]);
   }
-
-  AtomicHelpers_FreeLock(&sampler->byteArrayLock[SAMPLER_BYTE_CONTROL_File]);
 }
 
 
@@ -302,31 +360,54 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned i
     Volt v = *(Volt*)val;
     switch (id)
     {
+      case SAMPLER_CONTROL_Pitch:
+      v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
+      break;
+  
 
-        case SAMPLER_CONTROL_Pitch:
-        v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
-        break;
-    
+      case SAMPLER_CONTROL_Attack:
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+  
 
-        case SAMPLER_CONTROL_Attack:
-        v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
-        break;
-    
+      case SAMPLER_CONTROL_Decay:
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+  
 
-        case SAMPLER_CONTROL_Decay:
-        v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
-        break;
-    
+      case SAMPLER_CONTROL_Sustain:
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+  
 
-        case SAMPLER_CONTROL_Sustain:
-        v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
-        break;
-    
+      case SAMPLER_CONTROL_Release:
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+  
 
-        case SAMPLER_CONTROL_Release:
-        v = CLAMPF(VOLTSTD_MOD_CV_MIN, VOLTSTD_MOD_CV_MAX, v);
-        break;
-    
+      case SAMPLER_CONTROL_Source:
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+  
+
+      case SAMPLER_CONTROL_PlaybackMode:
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+  
+
+      case SAMPLER_CONTROL_PlaybackStart:
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+  
+
+      case SAMPLER_CONTROL_LoopStart:
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
+  
+
+      case SAMPLER_CONTROL_LoopEnd:
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
 
       default:
         break;

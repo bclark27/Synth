@@ -623,7 +623,7 @@ bool ModularSynth_exportConfig(char * fname)
           ctrlInfo->type = ModulePortType_ByteArrayControl;
           memcpy(ctrlInfo->controlName, mod->controlNames[k], strlen(mod->controlNames[k]) + 1);
           unsigned int len;
-          mod->getControlVal(mod, k, &ctrlInfo->value.volt, &len);
+          mod->getControlVal(mod, k, &ctrlInfo->value.bytes, &len);
           ctrlInfo->valueLen = len;
           modConfig->controlCount++;
           break;

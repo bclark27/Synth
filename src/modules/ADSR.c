@@ -155,6 +155,12 @@ Module * ADSR_init(char* name)
   return (Module*)adsr;
 }
 
+void ADSR_freeInPlace(ADSR* adsr)
+{
+  Module * mod = (Module*)adsr;
+  free(mod->name);
+}
+
 /////////////////////////
 //  PRIVATE FUNCTIONS  //
 /////////////////////////
@@ -162,9 +168,7 @@ Module * ADSR_init(char* name)
 static void free_adsr(void * modPtr)
 {
   ADSR * adsr = (ADSR *)modPtr;
-  
-  Module * mod = (Module*)modPtr;
-  free(mod->name);
+  ADSR_freeInPlace(adsr);
   
   free(adsr);
 }

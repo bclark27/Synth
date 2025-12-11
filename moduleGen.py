@@ -5,11 +5,11 @@ module_name = "Sampler"
 module_name_u = module_name.upper()
 module_name_l = module_name.lower()
 
-inputs = ["Pitch", "Gate", "Attack", "Decay", "Sustain", "Release"]
-outputs = ["Left", "Right", "Mono"]
+inputs = ["Pitch", "Gate", "Attack", "Decay", "Sustain", "Release", "RecordGate"]
+outputs = ["Audio"]
 inputs_m = ["Midi"]
 outputs_m = []
-controls = ["Pitch", "Attack", "Decay", "Sustain", "Release"]
+controls = ["Pitch", "Attack", "Decay", "Sustain", "Release", "Source", "PlaybackMode", "PlaybackStart", "LoopStart", "LoopEnd"]
 controls_b = ["File"]
 controls_m = []
 
@@ -174,8 +174,8 @@ static ModulePortType getControlType(void * modPtr, ModularPortID port);
 static U4 getInCount(void * modPtr);
 static U4 getOutCount(void * modPtr);
 static U4 getControlCount(void * modPtr);
-static void setControlVal(void * modPtr, ModularPortID id, void* val);
-static void getControlVal(void * modPtr, ModularPortID id, void* ret);
+static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned int len);
+static void getControlVal(void * modPtr, ModularPortID id, void* ret, unsigned int* len);
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 static void initTables();
 
@@ -391,7 +391,7 @@ static U4 getControlCount(void * modPtr)
 }}
 
 
-static void setControlVal(void * modPtr, ModularPortID id, void* val)
+static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned int len)
 {{
     if (id < {module_name_u}_CONTROLCOUNT)
   {{
@@ -422,45 +422,64 @@ print(f'''
   }}
   else if ((id - ({module_name_u}_CONTROLCOUNT + {module_name_u}_MIDI_CONTROLCOUNT)) < {module_name_u}_BYTE_CONTROLCOUNT)
   {{
-    ByteArray* ba = (ByteArray*)val;
     int p = id - ({module_name_u}_CONTROLCOUNT + {module_name_u}_MIDI_CONTROLCOUNT);
     {module_name}* s = ({module_name}*)modPtr;
-    while (!ByteArrayHelpers_TryGetLock(&s->byteArrayLock[p])) {{ }}
-    
-    if (ba && ba->length)
+    AtomicHelpers_TryGetLockSpin(&s->byteArrayLock[p]);
+
+    if (val && len)
     {{
-        char* newBuff = malloc(ba->length);
-        memcpy(newBuff, ba->bytes, ba->length);
-        s->byteArrayDirty[p] = 1;
-        if (s->byteArrayControlStorage[p])
-        {{
-            free(s->byteArrayControlStorage[p]);
-        }}
-        s->byteArrayControlStorage[p] = newBuff;
-        s->byteArrayLen[p] = ba->length;
-    
-        
+      char* newBuff = malloc(len);
+      memcpy(newBuff, val, len);
+      s->byteArrayDirty[p] = 1;
+      if (s->byteArrayControlStorage[p])
+      {{
+          free(s->byteArrayControlStorage[p]);
+      }}
+      s->byteArrayControlStorage[p] = newBuff;
+      s->byteArrayLen[p] = len;
     }}
     else
     {{
-        s->byteArrayControlStorage[p] = NULL;
-        s->byteArrayLen[p] = 0;
-        s->byteArrayDirty[p] = 1;
+      s->byteArrayControlStorage[p] = NULL;
+      s->byteArrayLen[p] = 0;
+      s->byteArrayDirty[p] = 1;
     }}
 
-    ByteArrayHelpers_FreeLock(&s->byteArrayLock[p]);
+    AtomicHelpers_FreeLock(&s->byteArrayLock[p]);
   }}
 }}
 
 
-static void getControlVal(void * modPtr, ModularPortID id, void* ret)
+static void getControlVal(void * modPtr, ModularPortID id, void* ret, unsigned int* len)
 {{
-  if (id < {module_name_u}_CONTROLCOUNT) *(Volt*)ret = (({module_name}*)modPtr)->controlsCurr[id];
+  if (id < {module_name_u}_CONTROLCOUNT)
+  {{
+    *len = sizeof(Volt);
+    *(Volt*)ret = (({module_name}*)modPtr)->controlsCurr[id];
+  }}
+  else if ((id - {module_name_u}_CONTROLCOUNT) < {module_name_u}_MIDI_CONTROLCOUNT)
+  {{
+    ModularPortID port = id - {module_name_u}_CONTROLCOUNT;
+    *len = sizeof(MIDIData);  
+    *(MIDIData*)ret = MIDI_PeakRingBuffer(GET_MIDI_CONTROL_RING_BUFFER(modPtr, port), &((({module_name}*)modPtr)->midiRingRead[port]));
+  }}
+  else if ((id - ({module_name_u}_CONTROLCOUNT + {module_name_u}_MIDI_CONTROLCOUNT)) < {module_name_u}_BYTE_CONTROLCOUNT)
+  {{
+    ModularPortID port = id - ({module_name_u}_CONTROLCOUNT + {module_name_u}_MIDI_CONTROLCOUNT);
+    {module_name}* s = ({module_name}*)modPtr;
+    AtomicHelpers_TryGetLockSpin(&s->byteArrayLock[port]);
+    *len = s->byteArrayLen[port];
+    if (s->byteArrayControlStorage[port])
+    {{
+      memcpy(ret, s->byteArrayControlStorage[port], *len);
+    }}
+    AtomicHelpers_FreeLock(&s->byteArrayLock[port]);
+  }}
 }}
 
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
 {{
-    {module_name} * mi = ({module_name}*)modPtr;
+  {module_name} * mi = ({module_name}*)modPtr;
   if (port < {module_name_u}_INCOUNT) mi->inputPorts[port] = (R4*)readAddr;
   else if ((port - {module_name_u}_INCOUNT) < {module_name_u}_MIDI_INCOUNT) mi->inputMIDIPorts[port - {module_name_u}_INCOUNT] = (MIDIData*)readAddr;
 }}

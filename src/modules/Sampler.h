@@ -3,10 +3,14 @@
 
 #include "Module.h"
 
+#include "ADSR.h"
 
-#define SAMPLER_INCOUNT 6
-#define SAMPLER_OUTCOUNT 3
-#define SAMPLER_CONTROLCOUNT 5
+#define SAMPLER_MAX_LOOP_SECONDS 10
+#define SAMPLER_MAX_LOOP_SAMPLERS (SAMPLER_MAX_LOOP_SECONDS * SAMPLE_RATE)
+
+#define SAMPLER_INCOUNT 7
+#define SAMPLER_OUTCOUNT 1
+#define SAMPLER_CONTROLCOUNT 10
 #define SAMPLER_BYTE_CONTROLCOUNT 1
 #define SAMPLER_MIDI_CONTROLCOUNT 0
 #define SAMPLER_IN_PORT_Pitch	0
@@ -15,16 +19,20 @@
 #define SAMPLER_IN_PORT_Decay	3
 #define SAMPLER_IN_PORT_Sustain	4
 #define SAMPLER_IN_PORT_Release	5
+#define SAMPLER_IN_PORT_RecordGate	6
 
-#define SAMPLER_OUT_PORT_Left	0
-#define SAMPLER_OUT_PORT_Right	1
-#define SAMPLER_OUT_PORT_Mono	2
+#define SAMPLER_OUT_PORT_Audio	0
 
 #define SAMPLER_CONTROL_Pitch	0
 #define SAMPLER_CONTROL_Attack	1
 #define SAMPLER_CONTROL_Decay	2
 #define SAMPLER_CONTROL_Sustain	3
 #define SAMPLER_CONTROL_Release	4
+#define SAMPLER_CONTROL_Source	5
+#define SAMPLER_CONTROL_PlaybackMode	6
+#define SAMPLER_CONTROL_PlaybackStart	7
+#define SAMPLER_CONTROL_LoopStart	8
+#define SAMPLER_CONTROL_LoopEnd	9
 
 #define SAMPLER_BYTE_CONTROL_File	0
 
@@ -77,6 +85,13 @@ typedef struct Sampler
     int channels;      // 1 = mono, 2 = stereo
     int sampleRate;
   } audioBuffer;
+
+  R4 loopAudio[SAMPLER_MAX_LOOP_SAMPLERS];
+  unsigned int loopStartIdx;
+  unsigned int loopEndIdx;
+  unsigned int loopCurrIdx;
+
+  ADSR adsr;
 } Sampler;
 
 ////////////////////////
