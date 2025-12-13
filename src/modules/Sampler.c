@@ -70,6 +70,17 @@
 
 #define CONTROL_PUSH_TO_PREV(sampler)         for (U4 i = 0; i < SAMPLER_CONTROLCOUNT; i++) {(sampler)->controlsPrev[i] = (sampler)->controlsCurr[i];}
 
+/////////////
+//  TYPES  //
+/////////////
+
+typedef enum PlaybackMode
+{
+  PlaybackMode_OneShot,
+  PlaybackMode_Loop,
+} PlaybackMode;
+
+
 /////////////////////////////
 //  FUNCTION DECLERATIONS  //
 /////////////////////////////
@@ -261,6 +272,8 @@ static void updateState(void * modPtr)
   sampler->adsr.module.updateState(&sampler->adsr);
   sampler->adsr.module.pushCurrToPrev(&sampler->adsr);
   R4* envelop = sampler->adsr.outputPortsPrev + (MODULE_BUFFER_SIZE * ADSR_OUT_PORT_ENV);
+
+  PlaybackMode playMode = GET_CONTROL_CURR_PlaybackMode(sampler) < 5 ? PlaybackMode_OneShot : PlaybackMode_Loop;
 
   if (srcModeIsFile)
   {
@@ -531,4 +544,31 @@ static bool reloadAudioFile(Sampler* sampler)
     }
 
     return true;
+}
+
+static void processSample(
+  R4* fullAudio, 
+  unsigned int fullAudioLen, 
+  R4* output, 
+  unsigned int startSampleIdx, 
+  unsigned int loopStartSampleIdx, 
+  unsigned int loopEndSampleIdx, 
+  unsigned int* currentSampleIdx, 
+  PlaybackMode playMode, 
+  R4* gate,
+  R4 lastGate)
+{
+  bool gateWentHigh;
+  for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+  {
+    // check the gate situation
+    R4 thisGate = gate[i];
+    gateWentHigh = lastGate < VOLTSTD_GATE_HIGH_THRESH && thisGate >= VOLTSTD_GATE_HIGH_THRESH;
+    lastGate = thisGate;
+
+    if (gateWentHigh)
+    {
+      *currentSampleIdx = startSampleIdx;
+    }
+  }
 }
