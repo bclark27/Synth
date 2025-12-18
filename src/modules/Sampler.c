@@ -19,9 +19,11 @@
 #define IN_PORT_Sustain(sampler)		((sampler)->inputPorts[SAMPLER_IN_PORT_Sustain])
 #define IN_PORT_Release(sampler)		((sampler)->inputPorts[SAMPLER_IN_PORT_Release])
 #define IN_PORT_RecordGate(sampler)		((sampler)->inputPorts[SAMPLER_IN_PORT_RecordGate])
+#define IN_PORT_RecordAudio(sampler)		((sampler)->inputPorts[SAMPLER_IN_PORT_RecordAudio])
 #define OUT_PORT_Audio(sampler)		(CURR_PORT_ADDR(sampler, SAMPLER_OUT_PORT_Audio))
 
-#define IN_MIDI_PORT_Midi(sampler)		((sampler)->inputPorts[SAMPLER_IN_PORT_Midi])
+#define IN_MIDI_PORT_Midi(sampler)		((sampler)->inputMIDIPorts[SAMPLER_IN_MIDI_PORT_Midi])
+
 #define GET_CONTROL_CURR_Pitch(sampler)	((sampler)->controlsCurr[SAMPLER_CONTROL_Pitch])
 #define GET_CONTROL_PREV_Pitch(sampler)	((sampler)->controlsPrev[SAMPLER_CONTROL_Pitch])
 #define GET_CONTROL_CURR_Attack(sampler)	((sampler)->controlsCurr[SAMPLER_CONTROL_Attack])
@@ -42,6 +44,8 @@
 #define GET_CONTROL_PREV_LoopStart(sampler)	((sampler)->controlsPrev[SAMPLER_CONTROL_LoopStart])
 #define GET_CONTROL_CURR_LoopEnd(sampler)	((sampler)->controlsCurr[SAMPLER_CONTROL_LoopEnd])
 #define GET_CONTROL_PREV_LoopEnd(sampler)	((sampler)->controlsPrev[SAMPLER_CONTROL_LoopEnd])
+#define GET_CONTROL_CURR_CrossFade(sampler)	((sampler)->controlsCurr[SAMPLER_CONTROL_CrossFade])
+#define GET_CONTROL_PREV_CrossFade(sampler)	((sampler)->controlsPrev[SAMPLER_CONTROL_CrossFade])
 
 #define SET_CONTROL_CURR_Pitch(sampler, v)	((sampler)->controlsCurr[SAMPLER_CONTROL_Pitch] = (v))
 #define SET_CONTROL_PREV_Pitch(sampler, v)	((sampler)->controlsPrev[SAMPLER_CONTROL_Pitch] = (v))
@@ -63,6 +67,8 @@
 #define SET_CONTROL_PREV_LoopStart(sampler, v)	((sampler)->controlsPrev[SAMPLER_CONTROL_LoopStart] = (v))
 #define SET_CONTROL_CURR_LoopEnd(sampler, v)	((sampler)->controlsCurr[SAMPLER_CONTROL_LoopEnd] = (v))
 #define SET_CONTROL_PREV_LoopEnd(sampler, v)	((sampler)->controlsPrev[SAMPLER_CONTROL_LoopEnd] = (v))
+#define SET_CONTROL_CURR_CrossFade(sampler, v)	((sampler)->controlsCurr[SAMPLER_CONTROL_CrossFade] = (v))
+#define SET_CONTROL_PREV_CrossFade(sampler, v)	((sampler)->controlsPrev[SAMPLER_CONTROL_CrossFade] = (v))
 
 
 #define GET_MIDI_CONTROL_RING_BUFFER(mod, port)   (((Sampler*)(mod))->midiControlsRingBuffer + (MIDI_STREAM_BUFFER_SIZE * (port)))
@@ -101,6 +107,7 @@ static void getControlVal(void * modPtr, ModularPortID id, void* ret, unsigned i
 static void linkToInput(void * modPtr, ModularPortID port, void * readAddr);
 static void initTables();
 static bool reloadAudioFile(Sampler* sampler);
+static void updateEnvelope(Sampler* sampler);
 
 
 
@@ -109,6 +116,9 @@ static bool reloadAudioFile(Sampler* sampler);
 //////////////////////
 
 static bool tableInitDone = false;
+static R4 zeroVoltTable[MODULE_BUFFER_SIZE];
+static R4 maxCvTable[MODULE_BUFFER_SIZE];
+static R4 gateTriggerTable[MODULE_BUFFER_SIZE];
 
 static char * inPortNames[SAMPLER_INCOUNT + SAMPLER_MIDI_INCOUNT] = {
 	"Pitch",
@@ -118,6 +128,7 @@ static char * inPortNames[SAMPLER_INCOUNT + SAMPLER_MIDI_INCOUNT] = {
 	"Sustain",
 	"Release",
 	"RecordGate",
+  "RecordAudio",
 	"Midi",
 };
 static char * outPortNames[SAMPLER_OUTCOUNT + SAMPLER_MIDI_INCOUNT] = {
@@ -134,6 +145,7 @@ static char * controlNames[SAMPLER_CONTROLCOUNT + SAMPLER_MIDI_CONTROLCOUNT + SA
 	"PlaybackStart",
 	"LoopStart",
 	"LoopEnd",
+	"CrossFade",
 	"File",
 };
 
@@ -171,6 +183,7 @@ static Module vtable = {
 #define DEFAULT_CONTROL_PlaybackStart    0
 #define DEFAULT_CONTROL_LoopStart    0
 #define DEFAULT_CONTROL_LoopEnd    VOLTSTD_MOD_CV_MAX
+#define DEFAULT_CONTROL_CrossFade    0
 
 //////////////////////
 // PUBLIC FUNCTIONS //
@@ -258,48 +271,116 @@ static void updateState(void * modPtr)
 
   R4* out = OUT_PORT_Audio(sampler);
 
+  updateEnvelope(sampler);
+  // if true, then we use the file as src
+  // if false, we are using the recorded audio from the ports
   bool srcModeIsFile = GET_CONTROL_CURR_Source(sampler) < 5; // lot voltage = file mode. high voltage = port input mode
 
-  sampler->adsr.inputPorts[ADSR_IN_PORT_GATE] = IN_PORT_Gate(sampler);
-  sampler->adsr.inputPorts[ADSR_IN_PORT_A] = IN_PORT_Attack(sampler);
-  sampler->adsr.inputPorts[ADSR_IN_PORT_D] = IN_PORT_Decay(sampler);
-  sampler->adsr.inputPorts[ADSR_IN_PORT_S] = IN_PORT_Sustain(sampler);
-  sampler->adsr.inputPorts[ADSR_IN_PORT_R] = IN_PORT_Release(sampler);
-  sampler->adsr.controlsCurr[ADSR_CONTROL_A] = GET_CONTROL_CURR_Attack(sampler);
-  sampler->adsr.controlsCurr[ADSR_CONTROL_D] = GET_CONTROL_CURR_Decay(sampler);
-  sampler->adsr.controlsCurr[ADSR_CONTROL_S] = GET_CONTROL_CURR_Sustain(sampler);
-  sampler->adsr.controlsCurr[ADSR_CONTROL_R] = GET_CONTROL_CURR_Release(sampler);
-  sampler->adsr.module.updateState(&sampler->adsr);
-  sampler->adsr.module.pushCurrToPrev(&sampler->adsr);
+  R4* recordGate = IN_PORT_RecordGate(sampler) ? IN_PORT_RecordGate(sampler) : zeroVoltTable;
+  R4* playbackGate = IN_PORT_Gate(sampler) ? IN_PORT_Gate(sampler) : zeroVoltTable;
+  R4* inputAudio = IN_PORT_RecordAudio(sampler) ? IN_PORT_RecordAudio(sampler) : zeroVoltTable;
+
+  bool samplerIsActive = sampler->adsr.envelopeActive;
+  updateEnvelope(sampler);
+  samplerIsActive |= sampler->adsr.envelopeActive;
+
   R4* envelop = sampler->adsr.outputPortsPrev + (MODULE_BUFFER_SIZE * ADSR_OUT_PORT_ENV);
+  // if the sampler was active at the beginning of the frame or is active at the end, we will consider the sampler as active and try to parse audio. the gate will then determin the exact times when the idx in the audio sample is reset
 
   PlaybackMode playMode = GET_CONTROL_CURR_PlaybackMode(sampler) < 5 ? PlaybackMode_OneShot : PlaybackMode_Loop;
 
+  R4* src;
+  unsigned int srcLen;
   if (srcModeIsFile)
   {
+    src = sampler->audioBuffer.data;
+    srcLen = sampler->audioBuffer.frames;
     if (!AtomicHelpers_TryGetLock(&sampler->byteArrayLock[SAMPLER_BYTE_CONTROL_File]))
     {
-      memset(out, 0, MODULE_BUFFER_SIZE);
-      return;
+      srcLen = 0;
+    }
+    else
+    {
+      if (sampler->byteArrayDirty[SAMPLER_BYTE_CONTROL_File])
+      {
+        // load the new audio from wav file
+        bool loaded = reloadAudioFile(sampler);
+        sampler->byteArrayDirty[SAMPLER_BYTE_CONTROL_File] = false;
+    
+        if (loaded)
+        {
+          // new audio file
+          src = sampler->audioBuffer.data;
+          srcLen = sampler->audioBuffer.frames;
+        }
+        else
+        {
+          srcLen = 0;
+        }
+      }
+    
+      AtomicHelpers_FreeLock(&sampler->byteArrayLock[SAMPLER_BYTE_CONTROL_File]);
     }
   
-    if (sampler->byteArrayDirty[SAMPLER_BYTE_CONTROL_File])
+  }
+  else
+  {
+    src = sampler->portRecordedAudio;
+    srcLen = sampler->portRecordedAudioLength;
+  }
+
+  if (!src || !srcLen)
+  {
+    memset(out, 0, MODULE_BUFFER_SIZE);
+    return;
+  }
+
+  for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+  {
+
+    // first if the record gate has just gone high
+    bool recordGateIsHigh = recordGate[i] >= VOLTSTD_GATE_HIGH_THRESH;
+    bool recordGateWentHigh = sampler->lastRecordGateValue < VOLTSTD_GATE_HIGH_THRESH && recordGateIsHigh;
+    sampler->lastRecordGateValue = recordGate[i];
+
+    // lets also get if out playback gate went high
+    bool playbackGateWentHigh = sampler->lastPlaybackGateValue < VOLTSTD_GATE_HIGH_THRESH && playbackGate[i] >= VOLTSTD_GATE_HIGH_THRESH;
+    sampler->lastPlaybackGateValue = playbackGate[i];
+
+    // On rising edge: reset recording buffer
+    if (recordGateWentHigh)
     {
-      // load the new audio from wav file
-      bool loaded = reloadAudioFile(sampler);
-      sampler->byteArrayDirty[SAMPLER_BYTE_CONTROL_File] = false;
-  
-      if (loaded)
+      sampler->portRecordedAudioLength = 0;
+      sampler->portRecordedAudioStartHead = 0;
+    }
+
+    // While gate is high: record
+    if (recordGateIsHigh)
+    {
+      // Compute write index (tail)
+      U4 writeIdx =
+          (sampler->portRecordedAudioStartHead +
+          sampler->portRecordedAudioLength) %
+          SAMPLER_MAX_RECORD_SAMPLES;
+
+      // Write new sample
+      sampler->portRecordedAudio[writeIdx] = inputAudio[i];
+
+      if (sampler->portRecordedAudioLength < SAMPLER_MAX_RECORD_SAMPLES)
       {
-        printf("YEAAAA WE GOT EM BOYS\n");
+        // Buffer not full yet → just grow
+        sampler->portRecordedAudioLength++;
       }
       else
       {
-        memset(out, 0, MODULE_BUFFER_SIZE);
+        // Buffer full → overwrite oldest
+        sampler->portRecordedAudioStartHead =
+            (sampler->portRecordedAudioStartHead + 1) %
+            SAMPLER_MAX_RECORD_SAMPLES;
       }
     }
-  
-    AtomicHelpers_FreeLock(&sampler->byteArrayLock[SAMPLER_BYTE_CONTROL_File]);
+
+    
   }
 }
 
@@ -421,6 +502,11 @@ static void setControlVal(void * modPtr, ModularPortID id, void* val, unsigned i
       case SAMPLER_CONTROL_LoopEnd:
       v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
       break;
+  
+
+      case SAMPLER_CONTROL_CrossFade:
+      v = CLAMPF(VOLTSTD_MOD_CV_ZERO, VOLTSTD_MOD_CV_MAX, v);
+      break;
 
       default:
         break;
@@ -501,74 +587,126 @@ static void linkToInput(void * modPtr, ModularPortID port, void * readAddr)
 
 static void initTables()
 {
-    
+  for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
+  {
+    zeroVoltTable[i] = VOLTSTD_MOD_CV_ZERO;
+  }
 }
 
 static bool reloadAudioFile(Sampler* sampler)
 {
-    if (sampler->audioBuffer.data) free(sampler->audioBuffer.data);
+  // Free previous buffer
+  if (sampler->audioBuffer.data)
+  {
+    free(sampler->audioBuffer.data);
     sampler->audioBuffer.data = NULL;
-    sampler->audioBuffer.frames = 0;
+  }
 
-    if (sampler->byteArrayControlStorage[SAMPLER_BYTE_CONTROL_File] && sampler->byteArrayLen[SAMPLER_BYTE_CONTROL_File])
+  sampler->audioBuffer.frames = 0;
+  sampler->audioBuffer.channels = 1;
+
+  if (!sampler->byteArrayControlStorage[SAMPLER_BYTE_CONTROL_File] ||
+    sampler->byteArrayLen[SAMPLER_BYTE_CONTROL_File] == 0)
+  {
+    return false;
+  }
+
+  // Copy path to null-terminated string
+  char path[sampler->byteArrayLen[SAMPLER_BYTE_CONTROL_File] + 1];
+  memcpy(path,
+          sampler->byteArrayControlStorage[SAMPLER_BYTE_CONTROL_File],
+          sampler->byteArrayLen[SAMPLER_BYTE_CONTROL_File]);
+  path[sampler->byteArrayLen[SAMPLER_BYTE_CONTROL_File]] = '\0';
+
+  SF_INFO info = {0};
+  SNDFILE* file = sf_open(path, SFM_READ, &info);
+  if (!file)
+  {
+    printf("Failed to open WAV: %s\n", path);
+    return false;
+  }
+
+  sampler->audioBuffer.frames = info.frames;
+  sampler->audioBuffer.sampleRate = info.samplerate;
+
+  // Temporary interleaved read buffer
+  const int inChannels = info.channels;
+  float* interleaved = malloc(sizeof(float) * info.frames * inChannels);
+  if (!interleaved)
+  {
+    sf_close(file);
+    return false;
+  }
+
+  sf_readf_float(file, interleaved, info.frames);
+  sf_close(file);
+
+  // Allocate mono output buffer
+  sampler->audioBuffer.data = malloc(sizeof(float) * info.frames);
+  if (!sampler->audioBuffer.data)
+  {
+    free(interleaved);
+    return false;
+  }
+
+  // Collapse to mono
+  for (int f = 0; f < info.frames; f++)
+  {
+    float sum = 0.0f;
+    for (int c = 0; c < inChannels; c++)
     {
-        char strArr[sampler->byteArrayLen[SAMPLER_BYTE_CONTROL_File] + 1];
-        memcpy(strArr, sampler->byteArrayControlStorage[SAMPLER_BYTE_CONTROL_File], sampler->byteArrayLen[SAMPLER_BYTE_CONTROL_File]);
-        strArr[sampler->byteArrayLen[SAMPLER_BYTE_CONTROL_File]] = 0;
-
-        SF_INFO info = {0};
-        SNDFILE* file = sf_open(strArr, SFM_READ, &info);
-
-        if (!file) 
-        {
-            printf("Failed to open WAV: %s\n", strArr);
-            return false;
-        }
-
-        sampler->audioBuffer.frames = info.frames;
-        sampler->audioBuffer.channels = info.channels;
-        sampler->audioBuffer.sampleRate = info.samplerate;
-
-        int totalSamples = info.frames * info.channels;
-        sampler->audioBuffer.data = malloc(sizeof(float) * totalSamples);
-
-        // libsndfile gives samples in range [-1, 1]
-        sf_readf_float(file, sampler->audioBuffer.data, info.frames);
-        sf_close(file);
-
-        // Scale to [-5, 5]
-        for (int i = 0; i < totalSamples; i++) 
-        {
-            sampler->audioBuffer.data[i] = MAP(-1.f, 1.f, VOLTSTD_AUD_MIN, VOLTSTD_AUD_MAX, sampler->audioBuffer.data[i]);
-        }
+      sum += interleaved[f * inChannels + c];
     }
 
-    return true;
+    // Average channels → mono
+    float mono = sum / (float)inChannels;
+
+    // Scale [-1,1] → [-5,5]
+    sampler->audioBuffer.data[f] =
+      MAP(-1.f, 1.f,
+          VOLTSTD_AUD_MIN, VOLTSTD_AUD_MAX,
+          mono);
+  }
+
+  free(interleaved);
+  return true;
 }
 
-static void processSample(
-  R4* fullAudio, 
-  unsigned int fullAudioLen, 
-  R4* output, 
-  unsigned int startSampleIdx, 
-  unsigned int loopStartSampleIdx, 
-  unsigned int loopEndSampleIdx, 
-  unsigned int* currentSampleIdx, 
-  PlaybackMode playMode, 
-  R4* gate,
-  R4 lastGate)
+static void updateEnvelope(Sampler* sampler)
 {
-  bool gateWentHigh;
-  for (int i = 0; i < MODULE_BUFFER_SIZE; i++)
-  {
-    // check the gate situation
-    R4 thisGate = gate[i];
-    gateWentHigh = lastGate < VOLTSTD_GATE_HIGH_THRESH && thisGate >= VOLTSTD_GATE_HIGH_THRESH;
-    lastGate = thisGate;
 
-    if (gateWentHigh)
+  
+  R4* playbackGate = IN_PORT_Gate(sampler);
+  R4* pitch = IN_PORT_Pitch(sampler);
+  MIDIData* midiIn = IN_MIDI_PORT_Midi(sampler);
+  
+  bool useMidi = (!playbackGate || !pitch) && midiIn;
+
+  if (useMidi)
+  {
+    MIDIData* md;
+    for (int i = 0; i < MIDI_STREAM_BUFFER_SIZE; i++)
     {
-      *currentSampleIdx = startSampleIdx;
+      
     }
+  }
+  else
+  {
+    if (!playbackGate)
+    {
+      playbackGate = zeroVoltTable;
+    }
+
+    sampler->adsr.inputPorts[ADSR_IN_PORT_GATE] = playbackGate;
+    sampler->adsr.inputPorts[ADSR_IN_PORT_A] = IN_PORT_Attack(sampler);
+    sampler->adsr.inputPorts[ADSR_IN_PORT_D] = IN_PORT_Decay(sampler);
+    sampler->adsr.inputPorts[ADSR_IN_PORT_S] = IN_PORT_Sustain(sampler);
+    sampler->adsr.inputPorts[ADSR_IN_PORT_R] = IN_PORT_Release(sampler);
+    sampler->adsr.controlsCurr[ADSR_CONTROL_A] = GET_CONTROL_CURR_Attack(sampler);
+    sampler->adsr.controlsCurr[ADSR_CONTROL_D] = GET_CONTROL_CURR_Decay(sampler);
+    sampler->adsr.controlsCurr[ADSR_CONTROL_S] = GET_CONTROL_CURR_Sustain(sampler);
+    sampler->adsr.controlsCurr[ADSR_CONTROL_R] = GET_CONTROL_CURR_Release(sampler);
+    sampler->adsr.module.updateState(&sampler->adsr);
+    sampler->adsr.module.pushCurrToPrev(&sampler->adsr);
   }
 }

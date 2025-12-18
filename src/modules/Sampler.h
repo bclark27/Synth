@@ -6,11 +6,11 @@
 #include "ADSR.h"
 
 #define SAMPLER_MAX_LOOP_SECONDS 10
-#define SAMPLER_MAX_LOOP_SAMPLERS (SAMPLER_MAX_LOOP_SECONDS * SAMPLE_RATE)
+#define SAMPLER_MAX_RECORD_SAMPLES (SAMPLER_MAX_LOOP_SECONDS * SAMPLE_RATE)
 
-#define SAMPLER_INCOUNT 7
+#define SAMPLER_INCOUNT 8
 #define SAMPLER_OUTCOUNT 1
-#define SAMPLER_CONTROLCOUNT 10
+#define SAMPLER_CONTROLCOUNT 11
 #define SAMPLER_BYTE_CONTROLCOUNT 1
 #define SAMPLER_MIDI_CONTROLCOUNT 0
 #define SAMPLER_IN_PORT_Pitch	0
@@ -20,6 +20,7 @@
 #define SAMPLER_IN_PORT_Sustain	4
 #define SAMPLER_IN_PORT_Release	5
 #define SAMPLER_IN_PORT_RecordGate	6
+#define SAMPLER_IN_PORT_RecordAudio	7
 
 #define SAMPLER_OUT_PORT_Audio	0
 
@@ -33,6 +34,7 @@
 #define SAMPLER_CONTROL_PlaybackStart	7
 #define SAMPLER_CONTROL_LoopStart	8
 #define SAMPLER_CONTROL_LoopEnd	9
+#define SAMPLER_CONTROL_CrossFade	10
 
 #define SAMPLER_BYTE_CONTROL_File	0
 
@@ -79,6 +81,7 @@ typedef struct Sampler
   volatile unsigned int byteArrayLen[SAMPLER_BYTE_CONTROLCOUNT];
   char* byteArrayControlStorage[SAMPLER_BYTE_CONTROLCOUNT];
 
+  // audio data from the actual file
   struct {
     float* data;       // interleaved if stereo
     int frames;        // number of samples per channel
@@ -86,12 +89,20 @@ typedef struct Sampler
     int sampleRate;
   } audioBuffer;
 
-  R4 loopAudio[SAMPLER_MAX_LOOP_SAMPLERS];
-  unsigned int loopStartIdx;
-  unsigned int loopEndIdx;
-  unsigned int loopCurrIdx;
+  // recorded audio data from listening to input ports
+  R4 portRecordedAudio[SAMPLER_MAX_RECORD_SAMPLES];
+  U4 portRecordedAudioLength;
+  U4 portRecordedAudioStartHead;
+  
+  // loop and audio playback indexes. can be common to both file and internal audio recording
+  U4 playbackStartIdx;
+  U4 playbackEndIdx;
+  U4 playbackCurrIdx;
 
   ADSR adsr;
+
+  R4 lastRecordGateValue;
+  R4 lastPlaybackGateValue;
 } Sampler;
 
 ////////////////////////
